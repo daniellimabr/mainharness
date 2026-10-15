@@ -2,6 +2,16 @@
 
 Versões do Main Harness (versionamento semântico; `0.y.z` até a 1.0).
 
+## [0.1.3] - 2026-10-15
+
+### Correções
+
+- fix(release): update the plugin in every attached project
+
+### Outros
+
+- chore(harness): migrate to v0.1.2
+
 ## [0.1.2] - 2026-10-15
 
 ### Correções
