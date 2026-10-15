@@ -1,0 +1,39 @@
+{
+  "skill_name": "adr",
+  "evals": [
+    {
+      "id": 1,
+      "prompt": "Decidimos usar SQLite em vez de arquivos JSON para guardar o cache de consumo. Registra isso como ADR. A pasta docs/adr já tem 0001 até 0007.",
+      "expected_output": "Cria docs/adr/0008-<slug>.md a partir do template, com todas as seções e pelo menos duas alternativas.",
+      "expectations": [
+        "O arquivo criado está em docs/adr/ e se chama 0008-<slug>.md com slug em minúsculas e hífens",
+        "O arquivo tem as seções Contexto, O que a documentação diz, Alternativas avaliadas, Decisão e Consequências",
+        "Lista pelo menos duas alternativas, com prós e contras",
+        "Tem Status e Data (AAAA-MM-DD) no cabeçalho",
+        "Não edita nenhum ADR existente nem o index.md"
+      ]
+    },
+    {
+      "id": 2,
+      "prompt": "Registra um ADR sobre a escolha do Vitest como executor de testes. Eu não sei o que a documentação oficial diz sobre isso, só que o Tech Lead preferiu por ser rápido.",
+      "expected_output": "ADR sem fatos inventados: a seção de documentação cita só o que foi verificado ou diz 'não verificado'.",
+      "expectations": [
+        "A seção 'O que a documentação diz' não traz afirmações sem fonte",
+        "Ou pesquisa/verifica a documentação, ou marca explicitamente o ponto como 'não verificado'",
+        "O status é 'proposto' até Daniel aprovar",
+        "Pede o ok de Daniel antes de marcar como aceito"
+      ]
+    },
+    {
+      "id": 3,
+      "prompt": "O ADR 0003 está desatualizado: agora os hooks rodam por um wrapper em vez de exec direto. Atualiza a decisão.",
+      "expected_output": "Cria um ADR novo que substitui o 0003 e só muda o status do antigo.",
+      "expectations": [
+        "Cria um arquivo novo com o próximo número sequencial em vez de reescrever o conteúdo do 0003",
+        "O ADR novo cita o 0003 no Contexto",
+        "No 0003, a única alteração é o status 'substituído por NNNN'",
+        "Mantém numeração sem reutilizar números"
+      ]
+    }
+  ]
+}

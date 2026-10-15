@@ -1,0 +1,18 @@
+[
+  {"query": "vamos planejar a próxima sprint", "should_trigger": true},
+  {"query": "monta o sprint plan da S02 com base no backlog", "should_trigger": true},
+  {"query": "quero fazer essas três coisas essa semana, organiza em tarefas com estimativa e agentes", "should_trigger": true},
+  {"query": "cria o plano da sprint com critérios de aceite e plano de testes", "should_trigger": true},
+  {"query": "preciso mudar o escopo da S03 que já estava aprovada", "should_trigger": true},
+  {"query": "divide o trabalho em tarefas para os agentes rodarem em paralelo sem mexer nos mesmos arquivos", "should_trigger": true},
+  {"query": "o plano está bom, pode registrar a aprovação da sprint", "should_trigger": true},
+  {"query": "olha o inbox e o backlog e propõe o que cabe na próxima sprint", "should_trigger": true},
+  {"query": "escreve o PRD do filtro de pedidos", "should_trigger": false},
+  {"query": "executa a tarefa T03 da sprint", "should_trigger": false},
+  {"query": "fecha a sprint e escreve o Release Report", "should_trigger": false},
+  {"query": "quanto falta para acabar a S02? mostra o status", "should_trigger": false},
+  {"query": "registra a decisão de arquitetura sobre o cache", "should_trigger": false},
+  {"query": "faz um plano de estudos de TypeScript para mim", "should_trigger": false},
+  {"query": "planeja a viagem de equipe de dezembro", "should_trigger": false},
+  {"query": "escreve o plano de testes de uma função de parsing", "should_trigger": false}
+]

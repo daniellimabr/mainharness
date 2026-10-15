@@ -1,0 +1,18 @@
+[
+  {"query": "registra um ADR sobre a escolha do banco de dados", "should_trigger": true},
+  {"query": "vamos documentar por que escolhemos esbuild em vez de tsc para o bundle", "should_trigger": true},
+  {"query": "decidimos usar fila em memória em vez de Redis, anota essa decisão de arquitetura", "should_trigger": true},
+  {"query": "cria o ADR 0008 sobre a estratégia de cache", "should_trigger": true},
+  {"query": "preciso de um registro de decisão técnica: monorepo ou repos separados?", "should_trigger": true},
+  {"query": "o ADR 0003 mudou, escreve um novo que substitua ele", "should_trigger": true},
+  {"query": "documenta a decisão de usar JSONL para os eventos, com as alternativas que descartamos", "should_trigger": true},
+  {"query": "faz um architecture decision record sobre autenticação por token", "should_trigger": true},
+  {"query": "escreve o PRD da funcionalidade de exportar relatório", "should_trigger": false},
+  {"query": "atualiza o README com as instruções de instalação", "should_trigger": false},
+  {"query": "monta o sprint plan da próxima sprint", "should_trigger": false},
+  {"query": "desenha um diagrama da arquitetura atual do sistema", "should_trigger": false},
+  {"query": "explica o que o ADR 0006 decidiu sobre o limite de 250K", "should_trigger": false},
+  {"query": "escreve o Release Report da S02", "should_trigger": false},
+  {"query": "qual biblioteca de datas é melhor para este projeto? compara as opções", "should_trigger": false},
+  {"query": "adiciona um comentário no código explicando por que usamos esse algoritmo", "should_trigger": false}
+]

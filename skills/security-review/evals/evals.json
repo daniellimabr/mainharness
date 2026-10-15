@@ -1,0 +1,38 @@
+{
+  "skill_name": "security-review",
+  "evals": [
+    {
+      "id": 1,
+      "prompt": "Reviewer: faça a security review da tarefa T05. O commit abc1234 adiciona um comando que recebe --name pela CLI e monta `execSync(\"git tag \" + name)` em src/commands/tag.ts, linha 18.",
+      "expected_output": "Relatório com achado de severidade alta de injeção de comando, com arquivo:linha, cenário e correção.",
+      "expectations": [
+        "Usa 'git show abc1234' (ou git diff) para ler o diff",
+        "Reporta achado ALTA em src/commands/tag.ts:18",
+        "O cenário descreve quem controla --name e o que ele pode injetar",
+        "Sugere correção concreta (execFileSync com argumentos separados e validação do nome)",
+        "Não altera arquivos (só leitura)"
+      ]
+    },
+    {
+      "id": 2,
+      "prompt": "Reviewer: security review da T02. O commit só renomeia variáveis e ajusta a formatação em src/format.ts. Nenhuma entrada externa foi tocada.",
+      "expected_output": "Declara explicitamente que não há achados e lista o que examinou.",
+      "expectations": [
+        "Escreve explicitamente que não há achados ('nenhum achado')",
+        "Lista os arquivos e fluxos examinados",
+        "Não inventa achados de severidade baixa só para preencher"
+      ]
+    },
+    {
+      "id": 3,
+      "prompt": "Reviewer: security review da T07. O commit muda src/api/upload.ts para gravar o arquivo em path.join(pasta, req.nome) e a validação do nome está em src/api/validate.ts, que só é chamada na rota antiga.",
+      "expected_output": "Segue o fluxo entre arquivos e encontra a validação ausente na rota nova (path traversal).",
+      "expectations": [
+        "Abre src/api/validate.ts e verifica onde ela é chamada, não só o diff de upload.ts",
+        "Reporta path traversal com severidade ALTA ou MÉDIA citando arquivo:linha",
+        "Explica o fluxo entrada externa -> validação ausente -> escrita de arquivo",
+        "Propõe correção (validar/normalizar o nome antes do uso e conferir que o caminho final fica dentro da pasta)"
+      ]
+    }
+  ]
+}

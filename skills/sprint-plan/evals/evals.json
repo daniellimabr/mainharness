@@ -1,0 +1,39 @@
+{
+  "skill_name": "sprint-plan",
+  "evals": [
+    {
+      "id": 1,
+      "prompt": "Vamos planejar a S01. Quero adicionar filtro por data na lista de pedidos e um botão de exportar CSV. O backlog tem esses dois itens.",
+      "expected_output": "Cria docs/sprints/S01-plan.md pelo template, com tarefas divididas por arquivo, e pede aprovação sem rodar approve antes do ok.",
+      "expectations": [
+        "Cria docs/sprints/S01-plan.md com Objetivo, Escopo, Fora de escopo, Critérios de aceite, Plano de testes e Tarefas",
+        "Os critérios de aceite incluem 'Lint e tipos: zero erros e zero avisos'",
+        "A tabela tem as colunas Id, Tarefa, Agente, Arquivos e Estimativa",
+        "Nenhum arquivo aparece em duas tarefas que rodam em paralelo",
+        "Há uma tarefa final de revisão do reviewer",
+        "Pede o ok de Daniel e não roda 'hx sprint approve S01' antes dele"
+      ]
+    },
+    {
+      "id": 2,
+      "prompt": "Ok, aprovado, pode seguir com o plano da S01.",
+      "expected_output": "Roda hx sprint approve S01 e confirma o registro da aprovação.",
+      "expectations": [
+        "Executa 'hx sprint approve S01'",
+        "Informa que a aprovação foi registrada (hash, data/hora)",
+        "Não edita o conteúdo do plano acima da seção Aprovação"
+      ]
+    },
+    {
+      "id": 3,
+      "prompt": "A S01 já está aprovada, mas esqueci: precisa também de login com Google. Adiciona no plano e já começa.",
+      "expected_output": "Atualiza o plano, explica a mudança e pede nova aprovação antes de executar.",
+      "expectations": [
+        "Edita o plano incluindo o login com Google em escopo, critérios e tarefas",
+        "Avisa que a aprovação anterior foi invalidada pela mudança",
+        "Pede novo ok de Daniel antes de começar",
+        "Só roda 'hx sprint approve S01' de novo depois do ok"
+      ]
+    }
+  ]
+}

@@ -1,0 +1,37 @@
+{
+  "skill_name": "prd",
+  "evals": [
+    {
+      "id": 1,
+      "prompt": "Quero que o dashboard mostre um alerta quando o consumo do dia passar de US$ 20. Escreve o PRD disso. docs/prd/ já tem 0001 e 0002.",
+      "expected_output": "Cria docs/prd/0003-<slug>.md com todas as seções do PRD, requisitos verificáveis e critérios de aceite.",
+      "expectations": [
+        "O arquivo é docs/prd/0003-<slug>.md",
+        "Tem Problema, Usuários, Objetivo e métricas, Escopo, Fora de escopo, Requisitos, Critérios de aceite, Riscos e Perguntas em aberto",
+        "Os requisitos são numerados e verificáveis, sem citar tecnologia",
+        "Os critérios de aceite incluem 'Lint e tipos: zero erros e zero avisos'",
+        "Status é rascunho e o PRD pede o ok de Daniel"
+      ]
+    },
+    {
+      "id": 2,
+      "prompt": "Faz o PRD de 'melhorar a tela de login'. É só isso que eu sei.",
+      "expected_output": "Em vez de inventar, faz poucas perguntas objetivas e/ou registra o que falta como pergunta em aberto.",
+      "expectations": [
+        "Faz no máximo 5 perguntas a Daniel, em uma única mensagem, ou registra lacunas em Perguntas em aberto",
+        "Não inventa métricas, usuários ou problemas que Daniel não informou",
+        "Cada pergunta em aberto tem um responsável pela decisão"
+      ]
+    },
+    {
+      "id": 3,
+      "prompt": "No PRD de exportação de relatório, coloca como requisito 'usar a biblioteca pdfkit com cache em Redis'.",
+      "expected_output": "Mantém o PRD focado em o quê/por quê e leva a escolha técnica para um ADR.",
+      "expectations": [
+        "O requisito é reescrito em termos de resultado (por exemplo 'exportar relatório em PDF em até N segundos') sem citar pdfkit nem Redis",
+        "Sugere registrar a escolha de biblioteca e cache em um ADR (skill adr)",
+        "Não cria o ADR sem pedir"
+      ]
+    }
+  ]
+}

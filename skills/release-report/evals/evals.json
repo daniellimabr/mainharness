@@ -1,0 +1,39 @@
+{
+  "skill_name": "release-report",
+  "evals": [
+    {
+      "id": 1,
+      "prompt": "A S01 terminou, Daniel aprovou a entrega. Fecha a sprint e faz o Release Report.",
+      "expected_output": "Roda hx sprint close S01, cria docs/sprints/S01-release.md pelo template com os indicadores colados.",
+      "expectations": [
+        "Executa 'hx sprint close S01'",
+        "Cria docs/sprints/S01-release.md",
+        "O relatório contém os indicadores: tempo planejado x real, tokens e US$, retrabalho, reprovações, alertas de contexto e handoffs",
+        "Diz que não há sprint anterior para comparar, ou compara com o S00-release.md se ele existir",
+        "Tem Resumo da entrega, Tarefas, Revisão, Retorno de Daniel e Retrospectiva"
+      ]
+    },
+    {
+      "id": 2,
+      "prompt": "Na S02 o Reviewer reprovou 3 tarefas por falta de teste e na S01 foi 1. Escreve a retrospectiva e cuida das melhorias.",
+      "expected_output": "Retrospectiva com a comparação em números e um hx request para o harness citando esses números.",
+      "expectations": [
+        "A comparação cita 3 reprovações na S02 contra 1 na S01",
+        "Roda 'hx request' com --title, --need, --why, --priority e --example",
+        "O --why do pedido cita os números das reprovações",
+        "O relatório referencia o arquivo criado no inbox"
+      ]
+    },
+    {
+      "id": 3,
+      "prompt": "Fecha a S03 e publica a versão 0.2.0 do harness.",
+      "expected_output": "Fecha a sprint, gera o relatório e atualiza o CHANGELOG via hx release.",
+      "expectations": [
+        "Executa 'hx sprint close S03'",
+        "Executa 'hx release' (patch, minor ou major) para publicar a versão e atualizar o CHANGELOG.md",
+        "Cria docs/sprints/S03-release.md",
+        "Não inclui código nem trechos de prompts no relatório"
+      ]
+    }
+  ]
+}

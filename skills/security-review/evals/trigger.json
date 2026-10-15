@@ -1,0 +1,18 @@
+[
+  {"query": "Reviewer: faça a security review da tarefa T05", "should_trigger": true},
+  {"query": "revisa a segurança do commit da tarefa T03 da sprint", "should_trigger": true},
+  {"query": "main-harness:security-review para o diff da T08", "should_trigger": true},
+  {"query": "confere se o que a T04 mexeu tem algum risco de injeção de comando ou vazamento de segredo", "should_trigger": true},
+  {"query": "faz a revisão de segurança da tarefa seguindo o fluxo de dados entre os arquivos", "should_trigger": true},
+  {"query": "terminei a T06, falta só a parte de segurança da revisão", "should_trigger": true},
+  {"query": "olha o git show desse commit da tarefa procurando falhas de segurança", "should_trigger": true},
+  {"query": "reporta achados de segurança por severidade para a T10", "should_trigger": true},
+  {"query": "faz uma security review da branch inteira antes do merge", "should_trigger": false},
+  {"query": "revisa o código da T05 e vê se o estilo está bom", "should_trigger": false},
+  {"query": "explica o que é SQL injection", "should_trigger": false},
+  {"query": "roda o lint e os testes da tarefa", "should_trigger": false},
+  {"query": "escreve o Release Report da sprint", "should_trigger": false},
+  {"query": "configura as permissões do settings.json do projeto", "should_trigger": false},
+  {"query": "audita as dependências do package.json por vulnerabilidades conhecidas", "should_trigger": false},
+  {"query": "escreve um ADR sobre autenticação", "should_trigger": false}
+]

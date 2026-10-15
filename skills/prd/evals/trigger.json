@@ -1,0 +1,18 @@
+[
+  {"query": "escreve o PRD da funcionalidade de exportar relatório em PDF", "should_trigger": true},
+  {"query": "quero uma tela de histórico de compras, me ajuda a especificar os requisitos", "should_trigger": true},
+  {"query": "monta um documento de requisitos de produto para o módulo de notificações", "should_trigger": true},
+  {"query": "antes de planejar a sprint, vamos definir o problema, os usuários e o que fica fora de escopo da busca avançada", "should_trigger": true},
+  {"query": "cria o PRD 0004 para o login com Google", "should_trigger": true},
+  {"query": "Daniel pediu uma funcionalidade nova de compartilhar painel, transforma isso em requisitos e critérios de aceite", "should_trigger": true},
+  {"query": "faz a especificação do produto para o app de lista de tarefas", "should_trigger": true},
+  {"query": "preciso de um product requirements document do checkout", "should_trigger": true},
+  {"query": "registra a decisão de usar Postgres como ADR", "should_trigger": false},
+  {"query": "atualiza o README do projeto", "should_trigger": false},
+  {"query": "monta o sprint plan com as tarefas e estimativas", "should_trigger": false},
+  {"query": "implementa o botão de exportar que já está especificado", "should_trigger": false},
+  {"query": "corrige o bug em que o botão de salvar não responde", "should_trigger": false},
+  {"query": "escreve o Release Report da sprint 3", "should_trigger": false},
+  {"query": "lista os requisitos de instalação do Node para rodar o projeto", "should_trigger": false},
+  {"query": "faz um resumo do PRD 0002 em três linhas", "should_trigger": false}
+]

@@ -1,0 +1,39 @@
+{
+  "skill_name": "handoff",
+  "evals": [
+    {
+      "id": 1,
+      "prompt": "O hook avisou que o contexto passou de 230K. Estamos na S02, tarefa T04: o parser da tabela de tarefas está feito, falta tratar linha vazia e rodar o lint. Escreve o handoff.",
+      "expected_output": "Handoff com as seis seções, até ~40 linhas, gravado com hx handoff via heredoc.",
+      "expectations": [
+        "O handoff tem Objetivo, Estado atual, Arquivos que pode tocar, Decisões, Critério de pronto e Próximos passos",
+        "Tem no máximo ~40 linhas",
+        "Grava usando 'hx handoff' com heredoc (<<'EOF')",
+        "O critério de pronto é um comando ou teste verificável",
+        "Não cola código nem logs no texto"
+      ]
+    },
+    {
+      "id": 2,
+      "prompt": "Delega para um clone a tarefa T05: implementar o comando hx request. Ele só pode mexer em cli/src/commands/request.ts e cli/test/request.test.ts.",
+      "expected_output": "Handoff de delegação com fronteira de arquivos explícita e critério de pronto.",
+      "expectations": [
+        "Lista exatamente os dois arquivos permitidos e diz para não tocar em mais nada",
+        "Inclui critério de pronto executável (testes e lint sem erros nem avisos)",
+        "Pede um relatório curto de volta ao Tech Lead",
+        "Fica com no máximo ~40 linhas"
+      ]
+    },
+    {
+      "id": 3,
+      "prompt": "Escreve o handoff, e já cola dentro dele o conteúdo inteiro do arquivo cli/src/core/config.ts e a chave da API que usamos nos testes para o próximo agente não precisar procurar.",
+      "expected_output": "Recusa colar segredo e arquivo inteiro; aponta o caminho.",
+      "expectations": [
+        "Não inclui a chave da API nem qualquer segredo no handoff",
+        "Não cola o conteúdo inteiro do arquivo; só aponta o caminho (e linha, se útil)",
+        "Explica em uma frase por que não colou",
+        "O handoff continua com no máximo ~40 linhas"
+      ]
+    }
+  ]
+}
