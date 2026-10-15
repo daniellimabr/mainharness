@@ -6,9 +6,86 @@ Uma linha por arquivo: caminho e propósito. Mantido pelo hook `post-edit`.
 
 - `.claude-plugin/marketplace.json` — marketplace local `harness-stable` (o repo é o próprio plugin)
 - `.claude-plugin/plugin.json` — manifesto do plugin; fonte única da versão
+- `.claude/skills/skill-creator/SKILL.md` — Create new skills, modify and improve existing skills, and measure skill performance. Use when users want to create a...
+- `.claude/skills/skill-creator/SOURCE.md` — Origem
+- `.gitignore` — arquivos fora do git
+- `.prettierignore` — arquivos fora do Prettier
+- `.prettierrc` — configuração do Prettier
 - `CLAUDE.md` — regras deste repo para os agentes
+- `agents/reviewer.md` — Reviewer fixo do Main Harness. Use para revisar cada tarefa entregue da sprint antes de considerá-la pronta - lint e ...
+- `agents/tech-lead.md` — Tech Lead do Main Harness. Sessão principal de todo projeto conectado; também usado como clone para executar uma tare...
+- `agents/writer.md` — Writer fixo do Main Harness. Use para escrever sprint plans, ADRs, PRDs, Release Reports e o CHANGELOG, com diagramas...
+- `bin/hx` — hx on the agents' PATH (Git Bash). Resolves the bundle relative to this script.
+- `bin/hx.cmd` — hx no PATH dos agentes (PowerShell/cmd)
 - `cli/build.mjs` — bundle do hx em arquivo único (`cli/dist/hx.js`)
+- `cli/src/attach/classify.ts` — Classifies a repo's top-level content (root + 1 level) into harness, documentation and system.
+- `cli/src/attach/reorg.ts` — Previous-harness reorganization: git backup, written plan, and the approved move to docs/legacy-harness.
+- `cli/src/attach/setup.ts` — Project setup steps of /attach: templates, default lint, .claude/settings.json and plugins.
+- `cli/src/attach/skills.ts` — Optional skill catalog (ADR 0005): plugin skills/optional/<name> copied into <project>/.claude/skills/<name>.
+- `cli/src/commands/attach.ts` — hx attach [dir] [--approved] [--no-install] [--no-plugins]: connects a repo to the harness.
+- `cli/src/commands/doctor.ts` — hx doctor: checks the machine and the current project for what the harness needs.
+- `cli/src/commands/handoff.ts` — hx handoff [--show|--consume]: saves the agent's handoff (stdin) under ~/.harness/handoffs/<project>.
+- `cli/src/commands/metrics.ts` — hx metrics [sprint] [--emit]: sprint indicators from events + plan, as a markdown table.
+- `cli/src/commands/migrate.ts` — hx migrate: brings a project's harness files to the installed harness version (up or down).
+- `cli/src/commands/release.ts` — hx release patch|minor|major: checks, skill eval gate, version bump, CHANGELOG, commit + tag,
+- `cli/src/commands/request.ts` — hx request: writes a NEW request file into the harness inbox (never edits an existing one).
+- `cli/src/commands/review.ts` — hx review pass|fail <task>: records the Reviewer's verdict for a task.
+- `cli/src/commands/rollback.ts` — hx rollback: moves the stable clone back to the previous release tag.
+- `cli/src/commands/run.ts` — hx run <cmd...>: runs an agent command and prints only the summary (success) or the failures.
+- `cli/src/commands/setup.ts` — hx setup: one-time machine install (config, marketplace, user-level /attach skill).
+- `cli/src/commands/skills.ts` — hx skills [on|off <name>]: lists or toggles optional catalog skills in the current project (ADR 0005).
+- `cli/src/commands/sprint.ts` — hx sprint approve|open|status|feedback|close: sprint lifecycle on docs/sprints/SNN-plan.md.
+- `cli/src/commands/task.ts` — hx task start|done <id>: task times in state and in the plan's "## Execução" list, plus events.
+- `cli/src/commands/usage.ts` — hx usage: ingests the project's Claude Code transcripts and prints tokens and US$ per agent/model.
+- `cli/src/core/args.ts` — Tiny argument parser: positionals + --flag value / --flag=value / --bool.
+- `cli/src/core/config.ts` — ~/.harness/config.json: prices, context limits and harness locations.
+- `cli/src/core/context.ts` — Resolves "who/where" for CLI commands run by agents: project, session, sprint, agent.
+- `cli/src/core/fsx.ts` — Small filesystem helpers: safe JSON reads and atomic writes.
+- `cli/src/core/log.ts` — Error log for hooks and commands: ~/.harness/logs/hx-YYYY-MM-DD.log. Never throws.
+- `cli/src/core/paths.ts` — Locations used by hx: the local data folder (~/.harness) and the plugin root.
+- `cli/src/core/projects.ts` — Connected projects: ~/.harness/projects.json and <project>/.claude/harness.json.
+- `cli/src/core/state.ts` — Per-project runtime state: ~/.harness/state/<project>.json (active sprint, session, task times).
+- `cli/src/core/version.ts` — Harness version: single source is .claude-plugin/plugin.json.
+- `cli/src/events/emit.ts` — Appends validated events to ~/.harness/events/YYYY-MM-DD.jsonl (UTC day). Append-only.
+- `cli/src/events/schema.ts` — Event schema v1 (contract with the Dashboard, see docs/contracts/events.md).
+- `cli/src/events/ulid.ts` — Minimal ULID (26 chars, Crockford base32): 48-bit time + 80-bit randomness.
+- `cli/src/hooks/index.ts` — hx hook <name>: dispatches Claude Code hook events (stdin JSON) to their handlers.
+- `cli/src/hooks/lifecycle.ts` — Stop, SubagentStop, PreCompact and SessionEnd: usage ingestion and the managed 250K context cycle.
+- `cli/src/hooks/post-edit.ts` — PostToolUse(Write|Edit|MultiEdit): keeps index.md current, formats and lints the edited file.
+- `cli/src/hooks/pre-bash.ts` — PreToolUse(Bash|PowerShell): denies destructive commands, asks before risky git operations.
+- `cli/src/hooks/runner.ts` — Shared hook plumbing: stdin JSON in, exit code + stdout/stderr out. Errors never break the session.
+- `cli/src/hooks/session-start.ts` — SessionStart: records the session, migrates the project if needed and injects a short context.
+- `cli/src/index.ts` — hx: single CLI of the Main Harness. Each command lives in its own module.
+- `cli/src/lint/index.ts` — Formats (prettier) and lints (eslint --fix) one file with the project's own tools, when present.
+- `cli/src/migrations/index.ts` — Registry of project migrations between harness versions (ordered by version).
+- `cli/src/release/git.ts` — Thin git wrapper (array args, so paths with spaces are safe).
+- `cli/src/release/skills.ts` — Skill eval gate: every skill changed since the last release needs passing evals/results.json
+- `cli/src/repomap/index.ts` — Repo map (index.md): one line per file with its purpose, kept up to date by the post-edit hook.
+- `cli/src/sprint/cmd.ts` — Shared helpers for sprint commands: --at timestamps, boolean flags and loading a sprint plan.
+- `cli/src/sprint/index.ts` — Sprint plan (docs/sprints/SNN-plan.md): parse the task table, approval hash, execution list, metrics.
+- `cli/src/usage/index.ts` — Usage (tokens and US$) public API: ingest transcripts, current context size, transcript folder.
+- `cli/src/usage/price.ts` — US$ estimate for one response from its transcript usage block and the config price table.
+- `cli/src/usage/transcript.ts` — TranscriptSource: reads Claude Code JSONL transcripts incrementally and emits `usage` events.
+- `cli/test/attach.test.ts` — E2E tests for hx attach and hx skills, in temp folders with spaces.
+- `cli/test/commands.test.ts` — testes de commands
+- `cli/test/doctor.test.ts` — testes de doctor
+- `cli/test/e2e.test.ts` — End to end with paths that have spaces: the real plugin root ("C:\Main Harness" on Daniel's
+- `cli/test/events.test.ts` — testes de events
+- `cli/test/global-setup.ts` — Builds cli/dist/hx.js once before the suite, so integration tests run the real bundle.
+- `cli/test/helpers.ts` — Test helpers: temp folders WITH SPACES, isolated HARNESS_HOME, running the built hx.js.
+- `cli/test/hooks.test.ts` — testes de hooks
+- `cli/test/lint.test.ts` — testes de lint
+- `cli/test/migrate.test.ts` — testes de migrate
+- `cli/test/release.test.ts` — testes de release
+- `cli/test/repomap.test.ts` — testes de repomap
+- `cli/test/sprint.test.ts` — testes de sprint
+- `cli/test/usage.test.ts` — testes de usage
 - `cli/tsconfig.json` — TypeScript estrito do CLI
+- `commands/continue.md` — Retoma a sprint a partir do último handoff (num chat novo)
+- `commands/inbox.md` — Leva os pedidos do inbox do Main Harness para o backlog (só no repo do harness)
+- `commands/release-report.md` — Escreve o Release Report da sprint fechada (indicadores e retrospectiva)
+- `commands/sprint-plan.md` — Monta o sprint plan da próxima sprint a partir da conversa e pede aprovação a Daniel
+- `commands/sprint-run.md` — Executa uma sprint aprovada (em chat novo) até a entrega para Daniel testar
 - `docs/adr/0001-plugin-e-marketplace.md` — ADR: repo é plugin e marketplace
 - `docs/adr/0002-agente-da-sessao-principal.md` — ADR: Tech Lead como sessão principal
 - `docs/adr/0003-hooks-no-windows.md` — ADR: hooks em forma exec chamando o hx
@@ -16,8 +93,42 @@ Uma linha por arquivo: caminho e propósito. Mantido pelo hook `post-edit`.
 - `docs/adr/0005-skills-opcionais-por-projeto.md` — ADR: catálogo opcional por cópia
 - `docs/adr/0006-continuacao-aos-250k.md` — ADR: compactação gerenciada aos 250K
 - `docs/adr/0007-consumo-via-transcripts.md` — ADR: consumo lido dos transcripts
+- `docs/adr/0008-bootstrap-do-attach.md` — ADR 0008 — `/attach` como skill de usuário e plugin ativado por projeto
+- `docs/backlog.md` — Backlog do Main Harness
+- `docs/contracts/events.md` — Contrato de eventos: Main Harness e Dashboard IA
+- `docs/roadmap.md` — Roadmap do Main Harness
 - `docs/sprints/S00-plan.md` — sprint plan S00 (criação do harness)
 - `eslint.config.js` — ESLint flat config
+- `hooks/hooks.json` — hooks do plugin (forma exec chamando o hx)
+- `package-lock.json` — versões travadas das dependências de desenvolvimento
 - `package.json` — scripts e dependências de desenvolvimento
 - `settings.json` — configuração do plugin: agente principal = tech-lead
+- `skills-user/attach/SKILL.md` — Conecta o repo aberto ao Main Harness
+- `skills/adr/SKILL.md` — Registra uma decisão de arquitetura como ADR em docs/adr/NNNN-slug.md, com contexto, o que a documentação diz, altern...
+- `skills/archify/SKILL.md` — Create validated architecture, workflow, sequence, data-flow, lifecycle/state, entity-relationship, class/interface, ...
+- `skills/archify/SOURCE.md` — Origem
+- `skills/handoff/SKILL.md` — Escreve um handoff curto (máx. ~40 linhas): objetivo, estado atual, arquivos que pode tocar, decisões, critério de pr...
+- `skills/optional/frontend-design/SKILL.md` — Guidance for distinctive, intentional visual design when building new UI or reshaping an existing one. Helps with aes...
+- `skills/optional/frontend-design/SOURCE.md` — Origem
+- `skills/optional/webapp-testing/SKILL.md` — Toolkit for interacting with and testing local web applications using Playwright. Supports verifying frontend functio...
+- `skills/optional/webapp-testing/SOURCE.md` — Origem
+- `skills/prd/SKILL.md` — Escreve o PRD (documento de requisitos de produto) de uma funcionalidade em docs/prd/NNNN-slug.md: problema, usuários...
+- `skills/release-report/SKILL.md` — Fecha a sprint e escreve o Release Report docs/sprints/SNN-release.md com indicadores (tempo planejado x real, tokens...
+- `skills/security-review/SKILL.md` — Revisão de segurança POR TAREFA da sprint do Main Harness, só para o Reviewer (chamada como main-harness:security-rev...
+- `skills/sprint-plan/SKILL.md` — Monta o sprint plan docs/sprints/SNN-plan.md a partir da conversa com Daniel: escopo, fora de escopo, critérios de ac...
+- `skills/tdd-workflow/LICENSE` — licença MIT do ECC
+- `skills/tdd-workflow/SKILL.md` — Desenvolvimento guiado por testes nas tarefas da sprint: escrever o teste que falha primeiro, ver falhar (RED), imple...
+- `skills/tdd-workflow/SOURCE.md` — Origem
+- `templates/CLAUDE.md` — {{name}}
+- `templates/adr.md` — ADR NNNN — Título curto da decisão
+- `templates/backlog.md` — Backlog — {{name}}
+- `templates/inbox-request.md` — Pedido ao harness: {{title}}
+- `templates/index.md` — Mapa do repo
+- `templates/lint/.prettierrc` — Prettier padrão para projetos sem lint
+- `templates/lint/eslint.config.js` — ESLint flat config installed by the Main Harness (/attach). Zero errors, zero warnings.
+- `templates/lint/tsconfig.json` — TypeScript estrito padrão para projetos sem tsconfig
+- `templates/prd.md` — PRD — Nome da funcionalidade
+- `templates/release-report.md` — Release Report — SNN: Título da sprint
+- `templates/roadmap.md` — Roadmap — {{name}}
+- `templates/sprint-plan.md` — SNN — Título curto da sprint
 - `vitest.config.mts` — configuração dos testes
