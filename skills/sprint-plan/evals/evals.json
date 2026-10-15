@@ -16,12 +16,15 @@
     },
     {
       "id": 2,
-      "prompt": "Ok, aprovado, pode seguir com o plano da S01.",
+      "prompt": "O plano da S01 está em docs/sprints/S01-plan.md. Ok, aprovado, pode seguir com o plano da S01.",
       "expected_output": "Roda hx sprint approve S01 e confirma o registro da aprovação.",
       "expectations": [
         "Executa 'hx sprint approve S01'",
         "Informa que a aprovação foi registrada (hash, data/hora)",
         "Não edita o conteúdo do plano acima da seção Aprovação"
+      ],
+      "files": [
+        "files/S01-plan.md"
       ]
     },
     {
@@ -33,6 +36,9 @@
         "Avisa que a aprovação anterior foi invalidada pela mudança",
         "Pede novo ok de Daniel antes de começar",
         "Só roda 'hx sprint approve S01' de novo depois do ok"
+      ],
+      "files": [
+        "files/S01-plan.md"
       ]
     }
   ]

@@ -1,0 +1,18 @@
+[
+  {"query": "desenha um diagrama da arquitetura do Main Harness: CLI hx, hooks, clones e o plugin, olhando o código em cli/src", "should_trigger": true},
+  {"query": "converte esse mermaid em algo mais apresentável: flowchart LR; A[PR aberto] --> B{CI passou?}; B -- sim --> C[review]; B -- não --> D[corrigir]; C --> E[merge]", "should_trigger": true},
+  {"query": "preciso de um diagrama de sequência do login com OAuth: navegador, nosso backend, Google e o banco", "should_trigger": true},
+  {"query": "make me a data lineage diagram: Postgres -> Airbyte -> Snowflake raw -> dbt staging -> marts -> Looker", "should_trigger": true},
+  {"query": "visualiza a máquina de estados da tarefa da sprint: planejada, em andamento, em revisão, reprovada, aprovada", "should_trigger": true},
+  {"query": "faz um ERD das tabelas tasks, sprints, agents e usage com as chaves estrangeiras", "should_trigger": true},
+  {"query": "quero um diagrama pro ADR 0009 mostrando o fluxo do hook pre-tool-use até o log de eventos JSONL", "should_trigger": true},
+  {"query": "draw the AWS network topology: 2 public subnets with ALB, 2 private subnets with ECS tasks, RDS in isolated subnets, NAT gateway", "should_trigger": true},
+  {"query": "faz um gráfico de barras com o consumo de tokens por sprint (S01 a S04)", "should_trigger": false},
+  {"query": "monta um dashboard com custo em US$ por agente e por dia", "should_trigger": false},
+  {"query": "explica em texto como funciona a arquitetura dos hooks, sem diagrama", "should_trigger": false},
+  {"query": "registra um ADR sobre usar SVG inline nos relatórios em vez de PNG", "should_trigger": false},
+  {"query": "corrige o CSS do componente Diagram.tsx, as setas estão desalinhadas no Safari", "should_trigger": false},
+  {"query": "gera um gráfico de linha da latência p95 da API na última semana a partir desse CSV", "should_trigger": false},
+  {"query": "lista os arquivos de cli/src e o que cada um faz, em tópicos", "should_trigger": false},
+  {"query": "cria a landing page do produto com uma ilustração no hero", "should_trigger": false}
+]

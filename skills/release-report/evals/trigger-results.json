@@ -1,0 +1,251 @@
+{
+  "skill_name": "release-report",
+  "runner": "claude -p, sandbox with repo skills in .claude/skills",
+  "results": [
+    {
+      "query": "fecha a sprint e escreve o Release Report",
+      "should_trigger": true,
+      "triggers": 2,
+      "runs": 2,
+      "pass": true,
+      "calls": [
+        [
+          "Skill:release-report"
+        ],
+        [
+          "Skill:release-report"
+        ]
+      ]
+    },
+    {
+      "query": "a S02 acabou, faz o relatório com os indicadores e a retrospectiva",
+      "should_trigger": true,
+      "triggers": 2,
+      "runs": 2,
+      "pass": true,
+      "calls": [
+        [
+          "Skill:release-report"
+        ],
+        [
+          "Skill:release-report"
+        ]
+      ]
+    },
+    {
+      "query": "quero ver quanto gastamos em tokens e dólares na sprint e comparar com a anterior, no relatório de fechamento",
+      "should_trigger": true,
+      "triggers": 2,
+      "runs": 2,
+      "pass": true,
+      "calls": [
+        [
+          "Skill:release-report"
+        ],
+        [
+          "Skill:release-report"
+        ]
+      ]
+    },
+    {
+      "query": "Daniel aprovou a entrega, pode encerrar a S01",
+      "should_trigger": true,
+      "triggers": 2,
+      "runs": 2,
+      "pass": true,
+      "calls": [
+        [
+          "Skill:release-report"
+        ],
+        [
+          "Skill:release-report"
+        ]
+      ]
+    },
+    {
+      "query": "faz a retrospectiva da sprint e abre os pedidos de melhoria do harness",
+      "should_trigger": true,
+      "triggers": 2,
+      "runs": 2,
+      "pass": true,
+      "calls": [
+        [
+          "Skill:release-report"
+        ],
+        [
+          "Skill:release-report"
+        ]
+      ]
+    },
+    {
+      "query": "atualiza o CHANGELOG com o que saiu nessa sprint",
+      "should_trigger": true,
+      "triggers": 0,
+      "runs": 2,
+      "pass": false,
+      "calls": [
+        [
+          "Glob"
+        ],
+        [
+          "PowerShell"
+        ]
+      ]
+    },
+    {
+      "query": "gera o docs/sprints/S04-release.md",
+      "should_trigger": true,
+      "triggers": 2,
+      "runs": 2,
+      "pass": true,
+      "calls": [
+        [
+          "Skill:release-report"
+        ],
+        [
+          "Skill:release-report"
+        ]
+      ]
+    },
+    {
+      "query": "o que funcionou e o que não funcionou nessa sprint? documenta",
+      "should_trigger": true,
+      "triggers": 2,
+      "runs": 2,
+      "pass": true,
+      "calls": [
+        [
+          "Skill:release-report"
+        ],
+        [
+          "Skill:release-report"
+        ]
+      ]
+    },
+    {
+      "query": "monta o plano da próxima sprint",
+      "should_trigger": false,
+      "triggers": 0,
+      "runs": 2,
+      "pass": true,
+      "calls": [
+        [
+          "Skill:sprint-plan"
+        ],
+        [
+          "Skill:sprint-plan"
+        ]
+      ]
+    },
+    {
+      "query": "mostra o status atual da sprint em andamento",
+      "should_trigger": false,
+      "triggers": 0,
+      "runs": 2,
+      "pass": true,
+      "calls": [
+        [
+          "PowerShell"
+        ],
+        [
+          "PowerShell"
+        ]
+      ]
+    },
+    {
+      "query": "escreve o README com notas de versão para os usuários do site",
+      "should_trigger": false,
+      "triggers": 0,
+      "runs": 2,
+      "pass": true,
+      "calls": [
+        [
+          "PowerShell"
+        ],
+        [
+          "PowerShell"
+        ]
+      ]
+    },
+    {
+      "query": "faz o deploy da versão nova em produção",
+      "should_trigger": false,
+      "triggers": 0,
+      "runs": 2,
+      "pass": true,
+      "calls": [
+        [
+          "PowerShell"
+        ],
+        [
+          "PowerShell"
+        ]
+      ]
+    },
+    {
+      "query": "cria um relatório de vendas do mês em planilha",
+      "should_trigger": false,
+      "triggers": 0,
+      "runs": 2,
+      "pass": true,
+      "calls": [
+        [
+          "Glob"
+        ],
+        [
+          "Glob"
+        ]
+      ]
+    },
+    {
+      "query": "revisa a segurança do diff da tarefa T05",
+      "should_trigger": false,
+      "triggers": 0,
+      "runs": 2,
+      "pass": true,
+      "calls": [
+        [
+          "Skill:security-review"
+        ],
+        [
+          "Skill:security-review"
+        ]
+      ]
+    },
+    {
+      "query": "explica o que o Release Report da S00 diz sobre custo",
+      "should_trigger": false,
+      "triggers": 0,
+      "runs": 2,
+      "pass": true,
+      "calls": [
+        [
+          "Glob"
+        ],
+        [
+          "Glob"
+        ]
+      ]
+    },
+    {
+      "query": "registra um pedido no inbox para melhorar o hook de lint",
+      "should_trigger": false,
+      "triggers": 0,
+      "runs": 2,
+      "pass": true,
+      "calls": [
+        [
+          "PowerShell"
+        ],
+        [
+          "PowerShell"
+        ]
+      ]
+    }
+  ],
+  "summary": {
+    "total": 16,
+    "passed": 15
+  },
+  "errors": []
+}

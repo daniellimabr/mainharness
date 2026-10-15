@@ -1,0 +1,41 @@
+{
+  "skill_name": "webapp-testing",
+  "evals": [
+    {
+      "id": 1,
+      "prompt": "Testa o formulário de login do app (Vite, 'npm run dev' na porta 5173): com senha errada tem que aparecer 'Credenciais inválidas'; com a certa vai pra /dashboard. Tira screenshot de cada caso.",
+      "expected_output": "Script Playwright em Python rodado via scripts/with_server.py, com espera de networkidle, screenshots e resultado de cada caso.",
+      "files": [],
+      "expectations": [
+        "Roda 'python scripts/with_server.py --help' antes de usar o helper, sem ler o código-fonte dele",
+        "Usa with_server.py com --server 'npm run dev' --port 5173 -- python <script>",
+        "O script usa sync_playwright, chromium headless e page.wait_for_load_state('networkidle') antes de inspecionar",
+        "Usa seletores descritivos (role/text/id) descobertos no DOM renderizado",
+        "Salva um screenshot por caso e fecha o navegador"
+      ]
+    },
+    {
+      "id": 2,
+      "prompt": "tenho um relatorio.html estático em ./out/ com uma tabela e um botão 'Exportar'. verifica se a tabela tem 12 linhas e se o botão existe",
+      "expected_output": "Lê o HTML estático para achar seletores e usa file:// no Playwright, sem subir servidor.",
+      "files": [],
+      "expectations": [
+        "Segue o ramo 'HTML estático' da árvore de decisão: lê o arquivo para identificar seletores",
+        "Usa URL file:// (como em examples/static_html_automation.py), sem with_server.py",
+        "Verifica a contagem de linhas da tabela e a presença do botão e reporta o resultado"
+      ]
+    },
+    {
+      "id": 3,
+      "prompt": "O app já está rodando em http://localhost:3000. Ao clicar em 'Salvar' na tela de perfil nada acontece. Descobre o que está dando errado olhando os logs do console do navegador.",
+      "expected_output": "Reconhecimento-e-ação no servidor já rodando, capturando console logs (padrão de examples/console_logging.py).",
+      "files": [],
+      "expectations": [
+        "Não sobe outro servidor (o app já está rodando)",
+        "Navega, espera networkidle e inspeciona o DOM/screenshot antes de clicar",
+        "Registra um handler page.on('console', ...) para capturar os logs antes da ação",
+        "Clica em 'Salvar' com seletor descoberto e reporta os erros do console encontrados"
+      ]
+    }
+  ]
+}

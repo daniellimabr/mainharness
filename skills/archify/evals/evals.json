@@ -1,0 +1,42 @@
+{
+  "skill_name": "archify",
+  "evals": [
+    {
+      "id": 1,
+      "prompt": "Desenha a arquitetura: usuário no navegador → SPA React → API Node (Express) → Postgres; a API também publica eventos numa fila SQS que um worker consome e grava no S3. Tudo dentro de uma VPC, exceto o navegador.",
+      "expected_output": "Um HTML interativo de arquitetura gerado por finalize com receipt passando, e resposta curta com link.",
+      "files": [],
+      "expectations": [
+        "Escolhe o tipo 'architecture'",
+        "Escreve candidate.json numa pasta .archify/architecture-<slug>-<timestamp>/",
+        "Roda 'node <skill>/bin/archify.mjs finalize architecture ...' e o comando sai com código 0",
+        "O HTML gerado existe e contém todos os componentes citados (navegador, SPA, API, Postgres, SQS, worker, S3) e a fronteira da VPC",
+        "A resposta final é curta, em português, com link Markdown para o HTML"
+      ]
+    },
+    {
+      "id": 2,
+      "prompt": "Converte esse Mermaid num diagrama bonito:\n```mermaid\nsequenceDiagram\n  participant C as Cliente\n  participant G as Gateway\n  participant A as Auth\n  participant S as Serviço\n  C->>G: POST /pedido\n  G->>A: valida token\n  A-->>G: ok\n  G->>S: cria pedido\n  S-->>G: 201\n  G-->>C: 201 Created\n```",
+      "expected_output": "Diagrama de sequência Archify (não renderização literal do Mermaid) com finalize passando.",
+      "files": [],
+      "expectations": [
+        "Mapeia sequenceDiagram para o tipo 'sequence'",
+        "Os 4 participantes e as 6 mensagens (incluindo retornos) aparecem no candidate",
+        "finalize sai com código 0 e gera o HTML",
+        "Não copia estilos do Mermaid; escreve JSON Archify novo"
+      ]
+    },
+    {
+      "id": 3,
+      "prompt": "Faz um diagrama dos estados de um pedido: criado → pago → enviado → entregue; de criado ou pago pode ir para cancelado; de enviado pode ir para 'em devolução' e daí para reembolsado.",
+      "expected_output": "Diagrama de lifecycle com estados terminais marcados, finalize passando.",
+      "files": [],
+      "expectations": [
+        "Escolhe o tipo 'lifecycle'",
+        "Todos os estados citados aparecem (criado, pago, enviado, entregue, cancelado, em devolução, reembolsado)",
+        "Entregue, cancelado e reembolsado aparecem como estados terminais",
+        "finalize sai com código 0 e gera o HTML"
+      ]
+    }
+  ]
+}

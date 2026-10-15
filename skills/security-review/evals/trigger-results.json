@@ -1,0 +1,203 @@
+{
+  "skill_name": "security-review",
+  "description": "Revisão de segurança POR TAREFA da sprint do Main Harness, só para o Reviewer (chamada como main-harness:security-review, não é a security-review embutida do Claude Code que revisa a branch inteira). Lê o diff do commit da tarefa, segue o fluxo de dados entre arquivos e reporta achados por severidade com arquivo:linha, cenário e correção. Use uma vez por tarefa, na revisão da tarefa.",
+  "results": [
+    {
+      "query": "Reviewer: faça a security review da tarefa T05",
+      "should_trigger": true,
+      "trigger_rate": 1.0,
+      "triggers": 2,
+      "runs": 2,
+      "pass": true,
+      "info": [
+        "{\"skill\": \"security-review-skill-7678549b",
+        "{\"skill\": \"security-review-skill-27ced906"
+      ]
+    },
+    {
+      "query": "revisa a segurança do commit da tarefa T03 da sprint",
+      "should_trigger": true,
+      "trigger_rate": 1.0,
+      "triggers": 2,
+      "runs": 2,
+      "pass": true,
+      "info": [
+        "{\"skill\": \"security-review-skill-1c3dc034",
+        "{\"skill\": \"security-review-skill-6a3308a9"
+      ]
+    },
+    {
+      "query": "main-harness:security-review para o diff da T08",
+      "should_trigger": true,
+      "trigger_rate": 1.0,
+      "triggers": 2,
+      "runs": 2,
+      "pass": true,
+      "info": [
+        "{\"skill\": \"security-review-skill-866dd29a",
+        "{\"skill\": \"security-review-skill-a9a391d3"
+      ]
+    },
+    {
+      "query": "confere se o que a T04 mexeu tem algum risco de injeção de comando ou vazamento de segredo",
+      "should_trigger": true,
+      "trigger_rate": 1.0,
+      "triggers": 2,
+      "runs": 2,
+      "pass": true,
+      "info": [
+        "{\"skill\": \"security-review-skill-37056cb1",
+        "{\"skill\": \"security-review-skill-a9fab4bf"
+      ]
+    },
+    {
+      "query": "faz a revisão de segurança da tarefa seguindo o fluxo de dados entre os arquivos",
+      "should_trigger": true,
+      "trigger_rate": 1.0,
+      "triggers": 2,
+      "runs": 2,
+      "pass": true,
+      "info": [
+        "{\"skill\": \"security-review-skill-a9bcd771",
+        "{\"skill\": \"security-review-skill-20b70d0f"
+      ]
+    },
+    {
+      "query": "terminei a T06, falta só a parte de segurança da revisão",
+      "should_trigger": true,
+      "trigger_rate": 1.0,
+      "triggers": 2,
+      "runs": 2,
+      "pass": true,
+      "info": [
+        "{\"skill\": \"security-review-skill-408db724",
+        "{\"skill\": \"security-review-skill-dede9d05"
+      ]
+    },
+    {
+      "query": "olha o git show desse commit da tarefa procurando falhas de segurança",
+      "should_trigger": true,
+      "trigger_rate": 1.0,
+      "triggers": 2,
+      "runs": 2,
+      "pass": true,
+      "info": [
+        "{\"skill\": \"security-review-skill-e99a053b",
+        "{\"skill\": \"security-review-skill-6a7b525e"
+      ]
+    },
+    {
+      "query": "reporta achados de segurança por severidade para a T10",
+      "should_trigger": true,
+      "trigger_rate": 1.0,
+      "triggers": 2,
+      "runs": 2,
+      "pass": true,
+      "info": [
+        "{\"skill\": \"security-review-skill-d6eada9a",
+        "{\"skill\": \"security-review-skill-bffe978e"
+      ]
+    },
+    {
+      "query": "faz uma security review da branch inteira antes do merge",
+      "should_trigger": false,
+      "trigger_rate": 0.0,
+      "triggers": 0,
+      "runs": 2,
+      "pass": true,
+      "info": [
+        "{\"skill\": \"security-review\"}",
+        "{\"skill\": \"security-review\"}"
+      ]
+    },
+    {
+      "query": "revisa o código da T05 e vê se o estilo está bom",
+      "should_trigger": false,
+      "trigger_rate": 0.0,
+      "triggers": 0,
+      "runs": 2,
+      "pass": true,
+      "info": [
+        "result",
+        "result"
+      ]
+    },
+    {
+      "query": "explica o que é SQL injection",
+      "should_trigger": false,
+      "trigger_rate": 0.0,
+      "triggers": 0,
+      "runs": 2,
+      "pass": true,
+      "info": [
+        "result",
+        "result"
+      ]
+    },
+    {
+      "query": "roda o lint e os testes da tarefa",
+      "should_trigger": false,
+      "trigger_rate": 0.0,
+      "triggers": 0,
+      "runs": 2,
+      "pass": true,
+      "info": [
+        "result",
+        "result"
+      ]
+    },
+    {
+      "query": "escreve o Release Report da sprint",
+      "should_trigger": false,
+      "trigger_rate": 0.0,
+      "triggers": 0,
+      "runs": 2,
+      "pass": true,
+      "info": [
+        "result",
+        "result"
+      ]
+    },
+    {
+      "query": "configura as permissões do settings.json do projeto",
+      "should_trigger": false,
+      "trigger_rate": 0.0,
+      "triggers": 0,
+      "runs": 2,
+      "pass": true,
+      "info": [
+        "result",
+        "result"
+      ]
+    },
+    {
+      "query": "audita as dependências do package.json por vulnerabilidades conhecidas",
+      "should_trigger": false,
+      "trigger_rate": 0.0,
+      "triggers": 0,
+      "runs": 2,
+      "pass": true,
+      "info": [
+        "result",
+        "result"
+      ]
+    },
+    {
+      "query": "escreve um ADR sobre autenticação",
+      "should_trigger": false,
+      "trigger_rate": 0.0,
+      "triggers": 0,
+      "runs": 2,
+      "pass": true,
+      "info": [
+        "result",
+        "result"
+      ]
+    }
+  ],
+  "summary": {
+    "total": 16,
+    "passed": 16,
+    "failed": 0
+  }
+}

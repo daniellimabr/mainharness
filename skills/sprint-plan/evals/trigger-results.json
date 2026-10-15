@@ -1,0 +1,251 @@
+{
+  "skill_name": "sprint-plan",
+  "runner": "claude -p, sandbox with repo skills in .claude/skills",
+  "results": [
+    {
+      "query": "vamos planejar a próxima sprint",
+      "should_trigger": true,
+      "triggers": 2,
+      "runs": 2,
+      "pass": true,
+      "calls": [
+        [
+          "Skill:sprint-plan"
+        ],
+        [
+          "Skill:sprint-plan"
+        ]
+      ]
+    },
+    {
+      "query": "monta o sprint plan da S02 com base no backlog",
+      "should_trigger": true,
+      "triggers": 2,
+      "runs": 2,
+      "pass": true,
+      "calls": [
+        [
+          "Skill:sprint-plan"
+        ],
+        [
+          "Skill:sprint-plan"
+        ]
+      ]
+    },
+    {
+      "query": "quero fazer essas três coisas essa semana, organiza em tarefas com estimativa e agentes",
+      "should_trigger": true,
+      "triggers": 0,
+      "runs": 2,
+      "pass": false,
+      "calls": [
+        [
+          "PowerShell"
+        ],
+        [
+          "PowerShell"
+        ]
+      ]
+    },
+    {
+      "query": "cria o plano da sprint com critérios de aceite e plano de testes",
+      "should_trigger": true,
+      "triggers": 2,
+      "runs": 2,
+      "pass": true,
+      "calls": [
+        [
+          "Skill:sprint-plan"
+        ],
+        [
+          "Skill:sprint-plan"
+        ]
+      ]
+    },
+    {
+      "query": "preciso mudar o escopo da S03 que já estava aprovada",
+      "should_trigger": true,
+      "triggers": 2,
+      "runs": 2,
+      "pass": true,
+      "calls": [
+        [
+          "Skill:sprint-plan"
+        ],
+        [
+          "Skill:sprint-plan"
+        ]
+      ]
+    },
+    {
+      "query": "divide o trabalho em tarefas para os agentes rodarem em paralelo sem mexer nos mesmos arquivos",
+      "should_trigger": true,
+      "triggers": 1,
+      "runs": 2,
+      "pass": true,
+      "calls": [
+        [
+          "Skill:sprint-plan"
+        ],
+        [
+          "PowerShell"
+        ]
+      ]
+    },
+    {
+      "query": "o plano está bom, pode registrar a aprovação da sprint",
+      "should_trigger": true,
+      "triggers": 2,
+      "runs": 2,
+      "pass": true,
+      "calls": [
+        [
+          "Skill:sprint-plan"
+        ],
+        [
+          "Skill:sprint-plan"
+        ]
+      ]
+    },
+    {
+      "query": "olha o inbox e o backlog e propõe o que cabe na próxima sprint",
+      "should_trigger": true,
+      "triggers": 0,
+      "runs": 2,
+      "pass": false,
+      "calls": [
+        [
+          "PowerShell"
+        ],
+        [
+          "PowerShell"
+        ]
+      ]
+    },
+    {
+      "query": "escreve o PRD do filtro de pedidos",
+      "should_trigger": false,
+      "triggers": 0,
+      "runs": 2,
+      "pass": true,
+      "calls": [
+        [
+          "Skill:prd"
+        ],
+        [
+          "Skill:prd"
+        ]
+      ]
+    },
+    {
+      "query": "executa a tarefa T03 da sprint",
+      "should_trigger": false,
+      "triggers": 0,
+      "runs": 2,
+      "pass": true,
+      "calls": [
+        [
+          "Glob"
+        ],
+        [
+          "Glob"
+        ]
+      ]
+    },
+    {
+      "query": "fecha a sprint e escreve o Release Report",
+      "should_trigger": false,
+      "triggers": 0,
+      "runs": 2,
+      "pass": true,
+      "calls": [
+        [
+          "Skill:release-report"
+        ],
+        [
+          "Skill:release-report"
+        ]
+      ]
+    },
+    {
+      "query": "quanto falta para acabar a S02? mostra o status",
+      "should_trigger": false,
+      "triggers": 0,
+      "runs": 2,
+      "pass": true,
+      "calls": [
+        [
+          "Glob"
+        ],
+        [
+          "Glob"
+        ]
+      ]
+    },
+    {
+      "query": "registra a decisão de arquitetura sobre o cache",
+      "should_trigger": false,
+      "triggers": 0,
+      "runs": 2,
+      "pass": true,
+      "calls": [
+        [
+          "Skill:adr"
+        ],
+        [
+          "Skill:adr"
+        ]
+      ]
+    },
+    {
+      "query": "faz um plano de estudos de TypeScript para mim",
+      "should_trigger": false,
+      "triggers": 0,
+      "runs": 2,
+      "pass": true,
+      "calls": [
+        [
+          "(no tool)"
+        ],
+        [
+          "(no tool)"
+        ]
+      ]
+    },
+    {
+      "query": "planeja a viagem de equipe de dezembro",
+      "should_trigger": false,
+      "triggers": 0,
+      "runs": 2,
+      "pass": true,
+      "calls": [
+        [
+          "ToolSearch"
+        ],
+        [
+          "PowerShell"
+        ]
+      ]
+    },
+    {
+      "query": "escreve o plano de testes de uma função de parsing",
+      "should_trigger": false,
+      "triggers": 0,
+      "runs": 2,
+      "pass": true,
+      "calls": [
+        [
+          "Glob"
+        ],
+        [
+          "Glob"
+        ]
+      ]
+    }
+  ],
+  "summary": {
+    "total": 16,
+    "passed": 14
+  },
+  "errors": []
+}

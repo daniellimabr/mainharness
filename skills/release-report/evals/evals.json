@@ -3,14 +3,16 @@
   "evals": [
     {
       "id": 1,
-      "prompt": "A S01 terminou, Daniel aprovou a entrega. Fecha a sprint e faz o Release Report.",
-      "expected_output": "Roda hx sprint close S01, cria docs/sprints/S01-release.md pelo template com os indicadores colados.",
+      "prompt": "A S01 terminou, Daniel aprovou a entrega. O docs/sprints/S01-release.md já existe com a seção Execução (tabela de tarefas gravada pelo hx). Fecha a sprint e faz o Release Report.",
+      "expected_output": "Roda hx sprint close S01 e completa o S01-release.md existente com as seções do template e os indicadores colados, sem alterar a tabela de Execução.",
       "expectations": [
         "Executa 'hx sprint close S01'",
-        "Cria docs/sprints/S01-release.md",
+        "Completa o docs/sprints/S01-release.md existente em vez de sobrescrevê-lo com o template",
+        "A tabela da seção Execução fica intacta (não reescreve, não reordena, não muda horários)",
+        "Escreve Observações por tarefa só com o que a tabela não mostra, sem repetir a lista de tarefas",
         "O relatório contém os indicadores: tempo planejado x real, tokens e US$, retrabalho, reprovações, alertas de contexto e handoffs",
         "Diz que não há sprint anterior para comparar, ou compara com o S00-release.md se ele existir",
-        "Tem Resumo da entrega, Tarefas, Revisão, Retorno de Daniel e Retrospectiva"
+        "Tem Resumo da entrega, Execução, Observações por tarefa, Indicadores, Revisão, Retorno de Daniel e Retrospectiva"
       ]
     },
     {
@@ -31,7 +33,7 @@
       "expectations": [
         "Executa 'hx sprint close S03'",
         "Executa 'hx release' (patch, minor ou major) para publicar a versão e atualizar o CHANGELOG.md",
-        "Cria docs/sprints/S03-release.md",
+        "Completa docs/sprints/S03-release.md mantendo a tabela de Execução gravada pelo hx (ou copia o template se o arquivo não existir)",
         "Não inclui código nem trechos de prompts no relatório"
       ]
     }

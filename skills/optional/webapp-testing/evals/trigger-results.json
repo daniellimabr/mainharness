@@ -1,0 +1,187 @@
+{
+  "skill_name": "webapp-testing",
+  "description": "Toolkit for interacting with and testing local web applications using Playwright. Supports verifying frontend functionality, debugging UI behavior, capturing browser screenshots, and viewing browser logs.",
+  "results": [
+    {
+      "query": "tira um screenshot da página /settings do app local (localhost:3000) pra eu ver como ficou o layout",
+      "should_trigger": true,
+      "trigger_rate": 1.0,
+      "triggers": 1,
+      "runs": 1,
+      "pass": true,
+      "info": [
+        "{\"skill\": \"webapp-testing-skill-c3824142"
+      ]
+    },
+    {
+      "query": "the 'Add to cart' button does nothing when I click it on localhost:8080, can you check the browser console logs and figure out why?",
+      "should_trigger": true,
+      "trigger_rate": 1.0,
+      "triggers": 1,
+      "runs": 1,
+      "pass": true,
+      "info": [
+        "{\"skill\": \"webapp-testing-skill-9e9eb329"
+      ]
+    },
+    {
+      "query": "testa no navegador se o fluxo de cadastro do app funciona: npm run dev na 5173, preenche o form e confere a mensagem de sucesso",
+      "should_trigger": true,
+      "trigger_rate": 1.0,
+      "triggers": 1,
+      "runs": 1,
+      "pass": true,
+      "info": [
+        "{\"skill\": \"webapp-testing-skill-7a872792"
+      ]
+    },
+    {
+      "query": "sobe o backend (python server.py na 8000) e o front (npm run dev na 5173) e verifica se a lista de pedidos carrega na tela",
+      "should_trigger": true,
+      "trigger_rate": 1.0,
+      "triggers": 1,
+      "runs": 1,
+      "pass": true,
+      "info": [
+        "{\"skill\": \"webapp-testing-skill-22350587"
+      ]
+    },
+    {
+      "query": "escreve um teste ponta a ponta com Playwright pro login do painel admin e roda",
+      "should_trigger": true,
+      "trigger_rate": 1.0,
+      "triggers": 1,
+      "runs": 1,
+      "pass": true,
+      "info": [
+        "{\"skill\": \"webapp-testing-skill-1d877336"
+      ]
+    },
+    {
+      "query": "verifica se o modal de confirmação abre e fecha certinho no app rodando em localhost:4200",
+      "should_trigger": true,
+      "trigger_rate": 1.0,
+      "triggers": 1,
+      "runs": 1,
+      "pass": true,
+      "info": [
+        "{\"skill\": \"webapp-testing-skill-473308bf"
+      ]
+    },
+    {
+      "query": "can you click through the checkout on my local dev server and tell me which step breaks?",
+      "should_trigger": true,
+      "trigger_rate": 1.0,
+      "triggers": 1,
+      "runs": 1,
+      "pass": true,
+      "info": [
+        "{\"skill\": \"webapp-testing-skill-4533ddc7"
+      ]
+    },
+    {
+      "query": "escreve testes unitários com Vitest pra função formatPrice em src/utils/price.ts",
+      "should_trigger": false,
+      "trigger_rate": 0.0,
+      "triggers": 0,
+      "runs": 1,
+      "pass": true,
+      "info": [
+        "{\"file_path\": \"C:\\\\Users\\\\daniel.ismerio\\\\AppData\\\\Local\\\\Temp\\\\claude\\\\c--Main-"
+      ]
+    },
+    {
+      "query": "abre o dist/index.html gerado no navegador e confere se todos os links do menu estão presentes e clicáveis",
+      "should_trigger": true,
+      "trigger_rate": 1.0,
+      "triggers": 1,
+      "runs": 1,
+      "pass": true,
+      "info": [
+        "{\"skill\": \"webapp-testing-skill-f4234a04"
+      ]
+    },
+    {
+      "query": "busca na web a documentação do Playwright sobre o método locator.filter",
+      "should_trigger": false,
+      "trigger_rate": 0.0,
+      "triggers": 0,
+      "runs": 1,
+      "pass": true,
+      "info": [
+        "ToolSearch"
+      ]
+    },
+    {
+      "query": "desenha a tela de login nova do app, quero algo menos genérico",
+      "should_trigger": false,
+      "trigger_rate": 0.0,
+      "triggers": 0,
+      "runs": 1,
+      "pass": true,
+      "info": [
+        "PowerShell"
+      ]
+    },
+    {
+      "query": "o endpoint POST /api/orders está retornando 500, olha o handler em server/routes/orders.ts",
+      "should_trigger": false,
+      "trigger_rate": 0.0,
+      "triggers": 0,
+      "runs": 1,
+      "pass": true,
+      "info": [
+        "{\"file_path\": \"C:\\\\Users\\\\daniel.ismerio\\\\AppData\\\\Local\\\\Temp\\\\claude\\\\c--Main-"
+      ]
+    },
+    {
+      "query": "faz o scraping dos preços do site da concorrente e salva num CSV",
+      "should_trigger": false,
+      "trigger_rate": 0.0,
+      "triggers": 0,
+      "runs": 1,
+      "pass": true,
+      "info": [
+        "PowerShell"
+      ]
+    },
+    {
+      "query": "configura o GitHub Actions pra rodar os testes Playwright no CI",
+      "should_trigger": false,
+      "trigger_rate": 0.0,
+      "triggers": 0,
+      "runs": 1,
+      "pass": true,
+      "info": [
+        "PowerShell"
+      ]
+    },
+    {
+      "query": "explica a diferença entre Playwright e Cypress pra eu decidir qual usar",
+      "should_trigger": false,
+      "trigger_rate": 0.0,
+      "triggers": 0,
+      "runs": 1,
+      "pass": true,
+      "info": [
+        "no-tool"
+      ]
+    },
+    {
+      "query": "o build do Vite está falhando com 'Cannot find module @/components', arruma o alias",
+      "should_trigger": false,
+      "trigger_rate": 0.0,
+      "triggers": 0,
+      "runs": 1,
+      "pass": true,
+      "info": [
+        "Glob"
+      ]
+    }
+  ],
+  "summary": {
+    "total": 16,
+    "passed": 16,
+    "failed": 0
+  }
+}

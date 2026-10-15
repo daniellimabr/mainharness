@@ -1,0 +1,15 @@
+{
+  "skill": "security-review",
+  "skillSha256": "8b46c22a1b7264249d50b4881ca29b40b7e3607b4c0e28ff55f22147e56f6a34",
+  "date": "2026-10-15T16:27:15.309Z",
+  "passed": true,
+  "trigger": {
+    "passed": 16,
+    "total": 16
+  },
+  "evals": {
+    "passed": 3,
+    "total": 3
+  },
+  "notes": "Modelo: opus padrao (claude-opus-5-5) em acionamento e casos; tudo rodou antes da troca para haiku. Trigger: 2 runs/consulta (runner Windows proprio, um diretorio isolado por execucao). Casos via claude -p em repos fixture: T05 cmd injection ALTA, T02 'nenhum achado', T07 path traversal seguindo validate.ts."
+}

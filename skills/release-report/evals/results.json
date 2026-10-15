@@ -1,0 +1,15 @@
+{
+  "skill": "release-report",
+  "skillSha256": "cdc14ff5061347d44ba4903f327e656537fdd43cfd897dbbf7b1ec1a25ba4ec3",
+  "date": "2026-10-15T16:15:02.077Z",
+  "passed": true,
+  "trigger": {
+    "passed": 15,
+    "total": 16
+  },
+  "evals": {
+    "passed": 3,
+    "total": 3
+  },
+  "notes": "1 falha: 'atualiza o CHANGELOG' explora arquivos antes; caso 1 atualizado para a seção Execução (tabela intacta)"
+}

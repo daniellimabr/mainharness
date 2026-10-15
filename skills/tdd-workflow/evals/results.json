@@ -1,0 +1,15 @@
+{
+  "skill": "tdd-workflow",
+  "skillSha256": "63cea84d66145470ddbfccb3f732a7b3bd6775fa932cc50a9fc155866ac3bdde",
+  "date": "2026-10-15T16:27:15.477Z",
+  "passed": true,
+  "trigger": {
+    "passed": 16,
+    "total": 16
+  },
+  "evals": {
+    "passed": 3,
+    "total": 3
+  },
+  "notes": "Modelo: opus padrao (claude-opus-5-5) em acionamento e casos; tudo rodou antes da troca para haiku. Trigger: 1 run/consulta. Casos via claude -p com Vitest real: RED->GREEN, commit unico (T03), regressao 90->5400, plano de testes sem codigo."
+}

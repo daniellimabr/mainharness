@@ -13,3 +13,5 @@ Itens ainda não planejados. Pedidos dos projetos chegam pelo `inbox/` e `/inbox
 | B003 | Evoluir para cópias isoladas do repo (git worktrees) se houver colisão de arquivos entre agentes | roadmap | baixa | aberto |
 | B004 | Remover duplicações apontadas na revisão da S00: wrappers de git em 4 lugares, `runTool` × `runFixed`, `ESLINT_CONFIGS` repetido (Ponytail) | retro | média | aberto |
 | B005 | Retomar a sessão sozinho após o limite de uso (ex.: tarefa agendada às 04:30). Bloqueado pelo classificador de segurança do Claude Code; precisa de autorização explícita de Daniel | retro | baixa | aberto |
+| B006 | Reduzir consumo: Reviewer no Sonnet para revisão de rotina; evals de skill no Haiku com 1 rodada por consulta; contar as sessões `claude -p` dos evals no `hx usage` (hoje ficam fora). S00: evals e Opus em tudo estouraram a franquia 2x | retro | alta | aberto |
+| B007 | Voltar a `frontend-design` ao catálogo opcional (está em `skills-pending/`): o caso 1 dos evals falha 3x (o plano visual não aparece na resposta antes do código). Opções: adaptar mais o corpo ou rever a expectativa | retro | média | aberto |

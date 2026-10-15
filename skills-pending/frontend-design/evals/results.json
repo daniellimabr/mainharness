@@ -1,0 +1,15 @@
+{
+  "skill": "frontend-design",
+  "skillSha256": "99ba361c0adf86d4bf773ca11cc7dcf405dbc22bb873034f7a97949ff88ebc6f",
+  "date": "2026-10-15T17:00:36.599Z",
+  "passed": false,
+  "trigger": {
+    "passed": 13,
+    "total": 16
+  },
+  "evals": {
+    "passed": 2,
+    "total": 3
+  },
+  "notes": "Ultima tentativa: caso 1 refeito com claude-sonnet-5-5 (1 execucao) com a instrucao em negrito no topo de Process. Falhou de novo: nenhum texto antes do primeiro Write; a resposta so traz resumo depois do codigo, sem hex e sem o que a revisao mudou. Casos 2 e 3 passam (sonnet). Trigger 13/16 (opus), description original."
+}

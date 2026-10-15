@@ -75,10 +75,8 @@ describe("hx attach", () => {
 
     const hj = readJ(path.join(dir, ".claude", "harness.json"));
     expect(hj).toMatchObject({ project: "my-web-app", name: "My Web App", web: true });
-    expect([...(hj.optionalSkills as string[])].sort()).toEqual([
-      "frontend-design",
-      "webapp-testing",
-    ]);
+    // frontend-design is out of the catalog until its evals pass (backlog B007)
+    expect([...(hj.optionalSkills as string[])].sort()).toEqual(["webapp-testing"]);
     expect(fs.existsSync(path.join(dir, ".claude", "skills", "webapp-testing", "SKILL.md"))).toBe(
       true,
     );
@@ -127,16 +125,14 @@ describe("hx attach", () => {
     expect(starts[0]?.data).toEqual({ source: "attach", model: null });
 
     // hx skills on|off
-    const off = runHx(["skills", "off", "frontend-design"], { cwd: dir, env });
+    const off = runHx(["skills", "off", "webapp-testing"], { cwd: dir, env });
     expect(off.code).toBe(0);
-    expect(fs.existsSync(path.join(dir, ".claude", "skills", "frontend-design"))).toBe(false);
-    expect(readJ(path.join(dir, ".claude", "harness.json")).optionalSkills).toEqual([
-      "webapp-testing",
-    ]);
+    expect(fs.existsSync(path.join(dir, ".claude", "skills", "webapp-testing"))).toBe(false);
+    expect(readJ(path.join(dir, ".claude", "harness.json")).optionalSkills).toEqual([]);
     const list = runHx(["skills"], { cwd: dir, env });
-    expect(list.stdout).toMatch(/frontend-design.*desligada/);
-    expect(runHx(["skills", "on", "frontend-design"], { cwd: dir, env }).code).toBe(0);
-    expect(fs.existsSync(path.join(dir, ".claude", "skills", "frontend-design", "SKILL.md"))).toBe(
+    expect(list.stdout).toMatch(/webapp-testing.*desligada/);
+    expect(runHx(["skills", "on", "webapp-testing"], { cwd: dir, env }).code).toBe(0);
+    expect(fs.existsSync(path.join(dir, ".claude", "skills", "webapp-testing", "SKILL.md"))).toBe(
       true,
     );
     expect(runHx(["skills", "on", "nao-existe"], { cwd: dir, env }).code).toBe(1);

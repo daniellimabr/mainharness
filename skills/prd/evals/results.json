@@ -1,0 +1,15 @@
+{
+  "skill": "prd",
+  "skillSha256": "c25d4140c7bed6a9478d687cd19c8b7104547574801e73abce2686a90e9c1557",
+  "date": "2026-10-15T16:14:57.021Z",
+  "passed": true,
+  "trigger": {
+    "passed": 16,
+    "total": 16
+  },
+  "evals": {
+    "passed": 3,
+    "total": 3
+  },
+  "notes": "acionamento 2 rodadas/consulta; casos via claude -p avaliados lendo a saída"
+}

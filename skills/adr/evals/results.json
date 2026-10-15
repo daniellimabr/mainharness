@@ -1,0 +1,15 @@
+{
+  "skill": "adr",
+  "skillSha256": "47ab3dce19f3f5d627d8b678d00d14a35b391e98051fd4f877675ea354d60f49",
+  "date": "2026-10-15T16:14:55.167Z",
+  "passed": true,
+  "trigger": {
+    "passed": 16,
+    "total": 16
+  },
+  "evals": {
+    "passed": 3,
+    "total": 3
+  },
+  "notes": "acionamento 2 rodadas/consulta em sandbox com as skills do repo; casos via claude -p avaliados lendo a saída"
+}

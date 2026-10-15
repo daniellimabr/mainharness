@@ -1,0 +1,15 @@
+{
+  "skill": "archify",
+  "skillSha256": "9e3280a2cbb0dfb46ecadbabdbbc76f39f6ec65243f98f8456c29f7acaecbf74",
+  "date": "2026-10-15T16:27:15.728Z",
+  "passed": true,
+  "trigger": {
+    "passed": 15,
+    "total": 16
+  },
+  "evals": {
+    "passed": 3,
+    "total": 3
+  },
+  "notes": "Modelo: opus padrao (claude-opus-5-5) em acionamento e casos; tudo rodou antes da troca para haiku. Trigger: 1 run/consulta; falha: 'diagrama pro ADR 0009' comecou com Glob. Casos: architecture, sequence e lifecycle com finalize pass (1a tentativa de 2 casos falhou no browser check por sobrecarga; repeticao passou)."
+}

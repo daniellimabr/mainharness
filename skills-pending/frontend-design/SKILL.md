@@ -35,6 +35,8 @@ Consider written content carefully. Often a design brief may not contain real co
 
 ## Process: plan, review against the brief, build, critique
 
+**Write the plan and its review as visible text in your reply before any file write or code** (palette as named hex values, type, layout, principles; then what the review changed and why). Thinking it through privately does not count.
+
 For calibration, AI-generated design right now clusters around some traits:
 1. a warm cream background (near #F4F1EA) with a high-contrast serif display and a terracotta or warm-clay accent (often near #D97757 — Anthropic's own Claude-interaction accent, so on a user's brief it reads as a tell);
 2. a near-black background with a single bright acid-green or vermilion accent;

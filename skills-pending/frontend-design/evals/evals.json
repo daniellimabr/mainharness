@@ -1,0 +1,41 @@
+{
+  "skill_name": "frontend-design",
+  "evals": [
+    {
+      "id": 1,
+      "prompt": "Cria uma landing page (um index.html só, CSS inline) para uma oficina de restauro de bicicletas antigas em Curitiba chamada 'Raio & Aro'. Quero que pareça artesanal, não template de SaaS.",
+      "expected_output": "Plano de design (paleta 4–6 hex, tipografia, layout, princípios) revisado contra o brief antes do código, e uma página que foge dos defaults listados.",
+      "files": [],
+      "expectations": [
+        "Antes do código, apresenta um plano com paleta de 4 a 6 cores nomeadas em hex, tipografia, conceito de layout e princípios",
+        "Revisa o plano contra o brief e diz o que mudou e por quê antes de construir",
+        "A página não usa os clichês listados (fundo creme ~#F4F1EA com acento terracota, kit de cards SaaS, eyebrow em CAIXA ALTA acima de cada título, '→' em botões)",
+        "Usa conteúdo real do assunto (restauro de bicicletas, Curitiba) e CTA em voz ativa",
+        "É responsiva, tem foco visível de teclado e respeita prefers-reduced-motion"
+      ]
+    },
+    {
+      "id": 2,
+      "prompt": "Redesenha a tela vazia e a mensagem de erro do nosso app de controle de gastos: hoje aparece 'Ops! Algo deu errado :(' e uma tela branca quando não há lançamentos.",
+      "expected_output": "Copy e visual de estado vazio e erro que orientam a ação, sem desculpas vagas.",
+      "files": [],
+      "expectations": [
+        "A mensagem de erro diz o que aconteceu e como resolver, sem pedir desculpas nem ser vaga",
+        "O estado vazio convida a uma ação clara (ex.: 'Adicionar lançamento') com verbo ativo",
+        "Usa linguagem do usuário, não termos de sistema",
+        "Mantém consistência de nome entre o botão e a confirmação"
+      ]
+    },
+    {
+      "id": 3,
+      "prompt": "faz uma página de produto pra um app. qualquer coisa, só quero ver uma proposta",
+      "expected_output": "Como o brief não diz o assunto, propõe um assunto, público e função concretos e confirma antes (ou declara a proposta) em vez de um template genérico.",
+      "files": [],
+      "expectations": [
+        "Identifica que o brief não define o assunto e propõe um assunto concreto, público e função principal",
+        "Pede confirmação ou deixa explícito que é uma proposta a confirmar",
+        "Não entrega o default 'número grande + label + gradiente' no hero sem justificar"
+      ]
+    }
+  ]
+}

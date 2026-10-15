@@ -1,0 +1,63 @@
+[
+  {
+    "query": "cria uma landing page pra minha cafeteria em Floripa, quero algo com personalidade e não com cara de template",
+    "should_trigger": true
+  },
+  {
+    "query": "redesenha a tela de onboarding do app, tá muito genérica, escolhe tipografia e paleta melhores",
+    "should_trigger": true
+  },
+  {
+    "query": "build a portfolio site for a ceramic artist — single page, bold typography, make it feel handmade",
+    "should_trigger": true
+  },
+  {
+    "query": "faz o visual da página de preços do Main Harness Cloud, três planos, quero que fuja do padrão SaaS de cards",
+    "should_trigger": true
+  },
+  {
+    "query": "quero uma direção visual nova pro dashboard interno de sprints: cores, fontes e layout, depois implementa em React",
+    "should_trigger": true
+  },
+  {
+    "query": "a home do nosso site parece feita por IA (fundo creme, serifa, laranja). me ajuda a dar uma identidade própria",
+    "should_trigger": true
+  },
+  {
+    "query": "design a sign-up page for a kids' coding club app, ages 8-11, and code it in HTML/CSS",
+    "should_trigger": true
+  },
+  {
+    "query": "reescreve os textos dos botões e mensagens de erro da tela de checkout, e ajusta o layout pra ficar mais claro",
+    "should_trigger": true
+  },
+  {
+    "query": "o botão de salvar está desalinhado 2px no Firefox, corrige o CSS",
+    "should_trigger": false
+  },
+  {
+    "query": "testa no navegador se o formulário de contato envia certinho em localhost:5173",
+    "should_trigger": false
+  },
+  {
+    "query": "desenha um diagrama da arquitetura do frontend: rotas, stores e chamadas à API",
+    "should_trigger": false
+  },
+  {
+    "query": "faz um gráfico de pizza com a distribuição de gastos por categoria",
+    "should_trigger": false
+  },
+  {
+    "query": "converte esse componente de class component pra hooks, sem mudar nada visual",
+    "should_trigger": false
+  },
+  {
+    "query": "add aria-labels to the icon buttons in Toolbar.tsx, accessibility audit flagged them",
+    "should_trigger": false
+  },
+  { "query": "escreve o PRD da nova tela de relatórios", "should_trigger": false },
+  {
+    "query": "configura o Tailwind no projeto Vite, só a instalação e o config",
+    "should_trigger": false
+  }
+]

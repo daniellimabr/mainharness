@@ -1,0 +1,43 @@
+{
+  "skill_name": "tdd-workflow",
+  "evals": [
+    {
+      "id": 1,
+      "prompt": "Implementa a T03 do docs/sprints/S01-plan.md: a função slugify(title) em src/slug.ts tem que gerar slug em minúsculas, trocar espaços por hífen e remover acentos. Critérios de aceite estão no plano. O projeto usa Vitest.",
+      "expected_output": "Escreve o teste primeiro, roda e vê falhar (RED) pelo motivo certo, implementa o mínimo, roda de novo (GREEN), e fecha com um commit único e relatório com a tabela de garantias.",
+      "files": [],
+      "expectations": [
+        "Lê o sprint plan (tarefa, critérios de aceite e plano de testes) antes de codar",
+        "Descobre o executor de testes pelo package.json/config em vez de presumir npm test",
+        "Escreve o teste antes de qualquer código de produção e o executa vendo falhar (RED) por comportamento ausente",
+        "Implementa só o necessário e roda o mesmo teste até passar (GREEN)",
+        "Faz um único commit da tarefa com mensagem '<tipo>(<escopo>): ... (T03)' em inglês, sem commits de checkpoint",
+        "O relatório tem a tabela garantia → teste → tipo → resultado, só com testes realmente rodados"
+      ]
+    },
+    {
+      "id": 2,
+      "prompt": "bug: parseDuration('1h30m') em src/duration.ts devolve 90 em vez de 5400 (deveria ser segundos). corrige isso",
+      "expected_output": "Reproduz o bug com um teste que falha antes de mexer no código, corrige, confirma GREEN e roda a suíte da área.",
+      "files": [],
+      "expectations": [
+        "Cria um teste de regressão que reproduz o bug (espera 5400) antes de editar src/duration.ts",
+        "Executa o teste e mostra a falha (RED) com o valor 90",
+        "Corrige o código sem alterar o teste para casar com o bug",
+        "Roda o teste e a suíte da área tocada e mostra GREEN"
+      ]
+    },
+    {
+      "id": 3,
+      "prompt": "Monta a seção 'Plano de testes' do docs/sprints/S02-plan.md. Critérios de aceite: (1) 'hx export' gera CSV com cabeçalho; (2) linhas vazias do log são ignoradas; (3) erro claro se o arquivo de saída já existir.",
+      "expected_output": "Plano de testes com cada critério mapeado a um tipo de teste e ao que prova, mais a verificação de lint e tipos.",
+      "files": [],
+      "expectations": [
+        "Cada um dos 3 critérios de aceite aparece com um tipo de teste (unitário, integração, ponta a ponta ou manual)",
+        "Para cada critério diz o que o teste prova",
+        "Inclui 'Lint e tipos: zero erros e zero avisos' como critério verificado por comando",
+        "Não implementa código de produção nesta tarefa"
+      ]
+    }
+  ]
+}

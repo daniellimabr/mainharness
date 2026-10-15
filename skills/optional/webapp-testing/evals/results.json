@@ -1,0 +1,15 @@
+{
+  "skill": "webapp-testing",
+  "skillSha256": "87d89a26381a529c2117bd8892086234f52e0a611d510149620d40373038f89e",
+  "date": "2026-10-15T16:27:15.931Z",
+  "passed": true,
+  "trigger": {
+    "passed": 16,
+    "total": 16
+  },
+  "evals": {
+    "passed": 3,
+    "total": 3
+  },
+  "notes": "Modelo: opus padrao (claude-opus-5-5) em acionamento e casos; tudo rodou antes da troca para haiku. Trigger: 1 run/consulta (2 negativos refeitos apos corrigir bug do runner). Casos sem Playwright nem app: avaliados pelos scripts escritos (with_server --help, file://, page.on console, networkidle)."
+}
