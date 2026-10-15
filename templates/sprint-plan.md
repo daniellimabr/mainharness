@@ -1,0 +1,45 @@
+# SNN — Título curto da sprint
+
+- **Projeto:** nome-do-projeto
+- **Versão do harness:** 0.0.0
+- **Status:** aguardando aprovação
+
+## Objetivo
+
+Uma ou duas frases: o que Daniel recebe ao fim da sprint.
+
+## Escopo
+
+1. Entrega concreta.
+2. Entrega concreta.
+
+## Fora de escopo
+
+O que fica para depois (vai para o backlog).
+
+## Critérios de aceite
+
+1. Critério verificável.
+2. **Lint e tipos: zero erros e zero avisos.**
+
+## Plano de testes
+
+- **Unitários:** o que cada tarefa testa antes do código (tdd-workflow).
+- **Integração/E2E:** fluxos ponta a ponta, dados de teste, limpeza.
+
+## Tarefas
+
+| Id | Tarefa | Agente | Arquivos | Estimativa |
+|---|---|---|---|---|
+| T01 | Descrição curta | tech-lead | `caminho/arquivo` | 20 min |
+| T02 | Descrição curta | tech-lead | `caminho/arquivo` | 1 h |
+| T03 | Revisão: lint e tipos zerados, testes, critérios de aceite | reviewer | (só leitura) | 30 min |
+
+## Aprovação
+
+- **Aprovado por:** _pendente_
+- **Data/hora (UTC):** _pendente_
+- **Hash SHA-256 do plano** (conteúdo antes desta seção, finais de linha normalizados para LF): _pendente_
+- **Versão do harness:** _pendente_
+
+<!-- Preenchido por `hx sprint approve SNN` após o ok de Daniel. Qualquer mudança acima desta seção invalida a aprovação. A seção "## Execução" é criada por `hx sprint open` e fica fora do hash. -->

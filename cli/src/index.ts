@@ -35,7 +35,7 @@ const HELP = `hx <command> [args]
   task start|done <id>        marca tarefa do sprint ativo
   sprint open|close|approve|feedback|status <id>
   review pass|fail <task>     resultado da revisão
-  handoff [--file f|--show]   grava/mostra o handoff
+  handoff [--show|--consume]  grava (stdin)/mostra o handoff
   run <cmd...>                roda e mostra só falhas e resumo
   request --title t ...       cria pedido no inbox do harness
   metrics [sprint]            indicadores da sprint
