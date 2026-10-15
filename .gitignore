@@ -4,3 +4,4 @@ coverage/
 .remember/
 .claude/settings.local.json
 skills/*/evals/workspace/
+__pycache__/
