@@ -66,3 +66,21 @@ describe("pre-bash recheck: xargs with options before rm", () => {
     expect(c("ls | xargs -I {} rm -rf {}")).not.toBeNull();
   });
 });
+
+describe("pre-bash recheck 3: guards around ea66275", () => {
+  it.each([
+    'pwsh -Interactive -c "Remove-Item -Recurse -Force C:\\"',
+    'powershell -NoProfile -SomeNewOpt x -Command "Remove-Item -Recurse -Force C:\\"',
+    "find .git -name '*.lock' -delete",
+    "find / -name '*.tmp' -delete",
+  ])("%s is denied", (cmd) => {
+    expect(c(cmd)?.decision).toBe("deny");
+  });
+
+  it.each(['powershell -NoProfile -Command "npm test"', "find . -name '*.tmp' -print"])(
+    "%s stays allowed",
+    (cmd) => {
+      expect(c(cmd)).toBeNull();
+    },
+  );
+});
