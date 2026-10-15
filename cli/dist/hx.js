@@ -1194,7 +1194,13 @@ function baseName(w) {
 }
 function expandPath(t, cwd) {
   const h = os2.homedir();
-  let p = t.replace(/^~(?=$|[\\/])/, h).replace(/^(\$HOME|\$\{HOME\}|\$env:USERPROFILE|\$env:HOME|%USERPROFILE%|%HOMEPATH%)/i, h);
+  let p = t.replace(/^~(?=$|[\\/])/, h).replace(/^(\$HOME|\$\{HOME\}|\$env:USERPROFILE|\$env:HOME|%USERPROFILE%|%HOMEPATH%)/i, h).replace(
+    /\$\{(\w+)\}|\$env:(\w+)|\$(\w+)|%(\w+)%/gi,
+    (m, a, b2, c, d) => {
+      const name = a ?? b2 ?? c ?? d;
+      return shellVars.get(name) ?? process.env[name] ?? m;
+    }
+  );
   if (/[$%]/.test(p)) return null;
   const drive = /^\/(?:cygdrive\/|mnt\/)?([a-zA-Z])(\/.*)?$/.exec(p);
   if (process.platform === "win32" && drive) p = `${drive[1]}:${drive[2] ?? "/"}`;
@@ -1213,12 +1219,21 @@ function recursiveTargets(cmd, args) {
   if (!recursive) return null;
   return args.filter((a) => !a.startsWith("-") && !/^\/[a-zA-Z]$/.test(a));
 }
+function tempRoots() {
+  const t = path14.join(os2.tmpdir(), "claude");
+  try {
+    return [t, fs13.realpathSync.native(t)];
+  } catch {
+    return [t];
+  }
+}
 function checkDeleteTarget(t, cwd, root) {
   const abs = expandPath(t, cwd);
   if (abs === null)
     return { decision: "ask", reason: `Apagar recursivamente "${t}": alvo n\xE3o verific\xE1vel.` };
   if (abs.split(/[\\/]/).includes(".git"))
     return { decision: "deny", reason: `Bloqueado: apagar a pasta .git ("${t}").` };
+  if (tempRoots().some((r) => samePathKey(abs) !== samePathKey(r) && isInside(abs, r))) return null;
   if (samePathKey(abs) === samePathKey(root) || !isInside(abs, root))
     return { decision: "deny", reason: `Bloqueado: apagar "${t}" fora da pasta do projeto.` };
   return null;
@@ -1314,13 +1329,17 @@ function innerCommand(cmd, args) {
   }
   return null;
 }
-function classifyCommand(command, cwd, root, stable) {
+function classifyCommand(command, cwd, root, stable, vars = /* @__PURE__ */ new Map()) {
+  shellVars = vars;
   let dir = cwd;
   let ask = null;
   for (const seg of splitCommand(command)) {
     let words = seg.words;
-    while (words.length && (/^[A-Za-z_]\w*=/.test(words[0]) || WRAPPERS.has(baseName(words[0]))))
+    while (words.length && (/^[A-Za-z_]\w*=/.test(words[0]) || WRAPPERS.has(baseName(words[0])) || words[0] === "export")) {
+      const m = /^([A-Za-z_]\w*)=(.*)$/s.exec(words[0]);
+      if (m && words.length === 1) vars.set(m[1], m[2]);
       words = words.slice(1);
+    }
     const cmd = baseName(words[0] ?? "");
     const args = words.slice(1);
     let v = null;
@@ -1331,7 +1350,7 @@ function classifyCommand(command, cwd, root, stable) {
     }
     if (!v) {
       const inner = cmd === "hx" && args[0] === "run" ? args.slice(1).join(" ") : innerCommand(cmd, args);
-      v = typeof inner === "string" ? classifyCommand(inner, dir, root, stable) : inner;
+      v = typeof inner === "string" ? classifyCommand(inner, dir, root, stable, vars) : inner;
     }
     if (!v && cmd === "xargs") {
       if (args.some((a) => RECURSIVE_DELETE.has(baseName(a)))) v = UNCHECKABLE;
@@ -1395,7 +1414,7 @@ function preBash(input) {
     }
   });
 }
-var fs13, os2, path14, RECURSIVE_DELETE, GIT_WRITES, FILE_WRITERS, COPIERS, WRAPPERS, UNCHECKABLE, PS_VALUE_OPTS, PS_COMMAND;
+var fs13, os2, path14, shellVars, RECURSIVE_DELETE, GIT_WRITES, FILE_WRITERS, COPIERS, WRAPPERS, UNCHECKABLE, PS_VALUE_OPTS, PS_COMMAND;
 var init_pre_bash = __esm({
   "cli/src/hooks/pre-bash.ts"() {
     "use strict";
@@ -1406,6 +1425,7 @@ var init_pre_bash = __esm({
     init_fsx();
     init_projects();
     init_runner();
+    shellVars = /* @__PURE__ */ new Map();
     RECURSIVE_DELETE = /* @__PURE__ */ new Set(["rm", "remove-item", "ri", "del", "erase", "rd", "rmdir"]);
     GIT_WRITES = /* @__PURE__ */ new Set([
       "commit",

@@ -1,6 +1,7 @@
 // T13 review: security probes for pre-bash and for the project id taken from .claude/harness.json.
 // Every gap found in review is fixed; these cases guard against regressions.
 import * as fs from "node:fs";
+import * as os from "node:os";
 import * as path from "node:path";
 import { afterAll, describe, expect, it } from "vitest";
 import { classifyCommand } from "../src/hooks/pre-bash";
@@ -25,7 +26,11 @@ describe("pre-bash: cases that already work (regression guard)", () => {
     ["rm -rf -- ..", "deny"],
     ["\\rm -rf ..", "deny"],
     ["/usr/bin/rm -rf ..", "deny"],
-    ['X=/c/Users; rm -rf "$X"', "ask"],
+    ['X=/c/Users; rm -rf "$X"', "deny"],
+    [`SP="${os.tmpdir()}/claude/hx-scratch"; rm -rf "$SP/proj/r-*"`, null],
+    [`rm -rf "${os.tmpdir()}/claude/hx-scratch/x"`, null],
+    [`rm -rf "${os.tmpdir()}/claude"`, "deny"],
+    ['rm -rf "$NOPE_UNSET_VAR/x"', "ask"],
     ["rm -rf $(pwd)/..", "ask"],
     ["cd .. && rm -rf outro", "deny"],
     ["sudo rm -rf /", "deny"],

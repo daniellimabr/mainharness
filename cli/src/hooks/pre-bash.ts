@@ -93,12 +93,22 @@ function baseName(w: string): string {
     .toLowerCase();
 }
 
-/** Expands home-like variables and Git Bash drive paths; returns null for unknown variables. */
+/** Variables assigned earlier in the command line being classified (X=...; rm -rf "$X"). */
+let shellVars = new Map<string, string>();
+
+/** Expands ~, variables (assignments in the command, then the environment) and Git Bash drives; null if unknown. */
 function expandPath(t: string, cwd: string): string | null {
   const h = os.homedir();
   let p = t
     .replace(/^~(?=$|[\\/])/, h)
-    .replace(/^(\$HOME|\$\{HOME\}|\$env:USERPROFILE|\$env:HOME|%USERPROFILE%|%HOMEPATH%)/i, h);
+    .replace(/^(\$HOME|\$\{HOME\}|\$env:USERPROFILE|\$env:HOME|%USERPROFILE%|%HOMEPATH%)/i, h)
+    .replace(
+      /\$\{(\w+)\}|\$env:(\w+)|\$(\w+)|%(\w+)%/gi,
+      (m, a?: string, b?: string, c?: string, d?: string) => {
+        const name = (a ?? b ?? c ?? d) as string;
+        return shellVars.get(name) ?? process.env[name] ?? m;
+      },
+    );
   if (/[$%]/.test(p)) return null;
   const drive = /^\/(?:cygdrive\/|mnt\/)?([a-zA-Z])(\/.*)?$/.exec(p);
   if (process.platform === "win32" && drive) p = `${drive[1]}:${drive[2] ?? "/"}`;
@@ -125,12 +135,23 @@ function recursiveTargets(cmd: string, args: string[]): string[] | null {
   return args.filter((a) => !a.startsWith("-") && !/^\/[a-zA-Z]$/.test(a));
 }
 
+/** Claude Code scratch area in the system temp folder (short and long form on Windows). */
+function tempRoots(): string[] {
+  const t = path.join(os.tmpdir(), "claude");
+  try {
+    return [t, fs.realpathSync.native(t)];
+  } catch {
+    return [t];
+  }
+}
+
 function checkDeleteTarget(t: string, cwd: string, root: string): Verdict | null {
   const abs = expandPath(t, cwd);
   if (abs === null)
     return { decision: "ask", reason: `Apagar recursivamente "${t}": alvo não verificável.` };
   if (abs.split(/[\\/]/).includes(".git"))
     return { decision: "deny", reason: `Bloqueado: apagar a pasta .git ("${t}").` };
+  if (tempRoots().some((r) => samePathKey(abs) !== samePathKey(r) && isInside(abs, r))) return null;
   if (samePathKey(abs) === samePathKey(root) || !isInside(abs, root))
     return { decision: "deny", reason: `Bloqueado: apagar "${t}" fora da pasta do projeto.` };
   return null;
@@ -305,16 +326,23 @@ export function classifyCommand(
   cwd: string,
   root: string,
   stable: string,
+  vars = new Map<string, string>(),
 ): Verdict | null {
+  shellVars = vars;
   let dir = cwd;
   let ask: Verdict | null = null;
   for (const seg of splitCommand(command)) {
     let words = seg.words;
     while (
       words.length &&
-      (/^[A-Za-z_]\w*=/.test(words[0] as string) || WRAPPERS.has(baseName(words[0] as string)))
-    )
+      (/^[A-Za-z_]\w*=/.test(words[0] as string) ||
+        WRAPPERS.has(baseName(words[0] as string)) ||
+        words[0] === "export")
+    ) {
+      const m = /^([A-Za-z_]\w*)=(.*)$/s.exec(words[0] as string);
+      if (m && words.length === 1) vars.set(m[1] as string, m[2] as string); // plain assignment
       words = words.slice(1);
+    }
     const cmd = baseName(words[0] ?? "");
     const args = words.slice(1);
     let v: Verdict | null = null;
@@ -327,7 +355,7 @@ export function classifyCommand(
     if (!v) {
       const inner =
         cmd === "hx" && args[0] === "run" ? args.slice(1).join(" ") : innerCommand(cmd, args);
-      v = typeof inner === "string" ? classifyCommand(inner, dir, root, stable) : inner;
+      v = typeof inner === "string" ? classifyCommand(inner, dir, root, stable, vars) : inner;
     }
     if (!v && cmd === "xargs") {
       if (args.some((a) => RECURSIVE_DELETE.has(baseName(a)))) v = UNCHECKABLE;
