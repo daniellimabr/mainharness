@@ -272,8 +272,9 @@ function checkGit(args: string[], cwd: string, stable: string): Verdict | null {
 const COPIERS = new Set(["cp", "copy", "copy-item", "cpi", "robocopy", "xcopy", "rsync", "ln"]);
 const WRAPPERS = new Set(["sudo", "env", "command", "exec", "time", "nohup", "call"]);
 const UNCHECKABLE: Verdict = { decision: "ask", reason: "Comando não verificável: confirme." };
-const PS_VALUE_OPTS =
-  /^-(ex|executionpolicy|w|windowstyle|v|version|inputformat|outputformat|configurationname|workingdirectory|wd)$/i;
+// PowerShell accepts any unambiguous prefix of a parameter name.
+const PS_VALUE_OPTS = /^-(ex[a-z]*|ep|w[a-z]*|v[a-z]*|in[a-z]*|o[a-z]*|conf[a-z]*|wd)$/i;
+const PS_COMMAND = /^-c(o(m(m(a(n(d)?)?)?)?)?)?$/i;
 
 /** The command line a shell will run (-c / -Command / bare args / /c), UNCHECKABLE, or null. */
 function innerCommand(cmd: string, args: string[]): string | Verdict | null {
@@ -286,13 +287,14 @@ function innerCommand(cmd: string, args: string[]): string | Verdict | null {
     return k >= 0 ? args.slice(k + 1).join(" ") : null;
   }
   if (cmd !== "powershell" && cmd !== "pwsh") return null;
+  const c = args.findIndex((a) => PS_COMMAND.test(a));
   for (let k = 0; k < args.length; k++) {
     const a = args[k] as string;
     if (/^-(e|ec|en[a-z]*)$/i.test(a)) return UNCHECKABLE; // -EncodedCommand
-    if (/^-c(o(m(m(a(n(d)?)?)?)?)?)?$/i.test(a)) return args.slice(k + 1).join(" ");
+    if (k === c) return args.slice(k + 1).join(" ");
     if (/^-f(i(l(e)?)?)?$/i.test(a)) return null; // runs a script file
     if (PS_VALUE_OPTS.test(a)) k++;
-    else if (!a.startsWith("-")) return args.slice(k).join(" "); // bare args = -Command
+    else if (!a.startsWith("-")) return args.slice(c > k ? c + 1 : k).join(" "); // bare args = -Command
   }
   return null;
 }
@@ -328,8 +330,7 @@ export function classifyCommand(
       v = typeof inner === "string" ? classifyCommand(inner, dir, root, stable) : inner;
     }
     if (!v && cmd === "xargs") {
-      const inner = args.find((a) => !a.startsWith("-"));
-      if (inner && RECURSIVE_DELETE.has(baseName(inner))) v = UNCHECKABLE;
+      if (args.some((a) => RECURSIVE_DELETE.has(baseName(a)))) v = UNCHECKABLE;
     }
     if (
       !v &&
@@ -343,7 +344,10 @@ export function classifyCommand(
     ) {
       const k = args.findIndex((a) => a.startsWith("-"));
       for (const t of (k < 0 ? args : args.slice(0, k)).concat(k === 0 ? ["."] : [])) {
-        const r = checkDeleteTarget(t, dir, root);
+        // find deletes what it matches, not the search root itself: the root is fine
+        const abs = expandPath(t, dir);
+        const r =
+          abs && samePathKey(abs) === samePathKey(root) ? null : checkDeleteTarget(t, dir, root);
         if (r && (!v || r.decision === "deny")) v = r;
       }
     }

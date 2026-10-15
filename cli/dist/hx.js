@@ -1303,13 +1303,14 @@ function innerCommand(cmd, args) {
     return k >= 0 ? args.slice(k + 1).join(" ") : null;
   }
   if (cmd !== "powershell" && cmd !== "pwsh") return null;
+  const c = args.findIndex((a) => PS_COMMAND.test(a));
   for (let k = 0; k < args.length; k++) {
     const a = args[k];
     if (/^-(e|ec|en[a-z]*)$/i.test(a)) return UNCHECKABLE;
-    if (/^-c(o(m(m(a(n(d)?)?)?)?)?)?$/i.test(a)) return args.slice(k + 1).join(" ");
+    if (k === c) return args.slice(k + 1).join(" ");
     if (/^-f(i(l(e)?)?)?$/i.test(a)) return null;
     if (PS_VALUE_OPTS.test(a)) k++;
-    else if (!a.startsWith("-")) return args.slice(k).join(" ");
+    else if (!a.startsWith("-")) return args.slice(c > k ? c + 1 : k).join(" ");
   }
   return null;
 }
@@ -1333,15 +1334,15 @@ function classifyCommand(command, cwd, root, stable) {
       v = typeof inner === "string" ? classifyCommand(inner, dir, root, stable) : inner;
     }
     if (!v && cmd === "xargs") {
-      const inner = args.find((a) => !a.startsWith("-"));
-      if (inner && RECURSIVE_DELETE.has(baseName(inner))) v = UNCHECKABLE;
+      if (args.some((a) => RECURSIVE_DELETE.has(baseName(a)))) v = UNCHECKABLE;
     }
     if (!v && cmd === "find" && args.some(
       (a, i) => a === "-delete" || (a === "-exec" || a === "-execdir") && RECURSIVE_DELETE.has(baseName(args[i + 1] ?? ""))
     )) {
       const k = args.findIndex((a) => a.startsWith("-"));
       for (const t of (k < 0 ? args : args.slice(0, k)).concat(k === 0 ? ["."] : [])) {
-        const r = checkDeleteTarget(t, dir, root);
+        const abs = expandPath(t, dir);
+        const r = abs && samePathKey(abs) === samePathKey(root) ? null : checkDeleteTarget(t, dir, root);
         if (r && (!v || r.decision === "deny")) v = r;
       }
     }
@@ -1394,7 +1395,7 @@ function preBash(input) {
     }
   });
 }
-var fs13, os2, path14, RECURSIVE_DELETE, GIT_WRITES, FILE_WRITERS, COPIERS, WRAPPERS, UNCHECKABLE, PS_VALUE_OPTS;
+var fs13, os2, path14, RECURSIVE_DELETE, GIT_WRITES, FILE_WRITERS, COPIERS, WRAPPERS, UNCHECKABLE, PS_VALUE_OPTS, PS_COMMAND;
 var init_pre_bash = __esm({
   "cli/src/hooks/pre-bash.ts"() {
     "use strict";
@@ -1465,7 +1466,8 @@ var init_pre_bash = __esm({
     COPIERS = /* @__PURE__ */ new Set(["cp", "copy", "copy-item", "cpi", "robocopy", "xcopy", "rsync", "ln"]);
     WRAPPERS = /* @__PURE__ */ new Set(["sudo", "env", "command", "exec", "time", "nohup", "call"]);
     UNCHECKABLE = { decision: "ask", reason: "Comando n\xE3o verific\xE1vel: confirme." };
-    PS_VALUE_OPTS = /^-(ex|executionpolicy|w|windowstyle|v|version|inputformat|outputformat|configurationname|workingdirectory|wd)$/i;
+    PS_VALUE_OPTS = /^-(ex[a-z]*|ep|w[a-z]*|v[a-z]*|in[a-z]*|o[a-z]*|conf[a-z]*|wd)$/i;
+    PS_COMMAND = /^-c(o(m(m(a(n(d)?)?)?)?)?)?$/i;
   }
 });
 

@@ -79,7 +79,9 @@ Uma linha por arquivo: caminho e propósito. Mantido pelo hook `post-edit`.
 - `cli/test/migrate.test.ts` — testes de migrate
 - `cli/test/release.test.ts` — testes de release
 - `cli/test/repomap.test.ts` — testes de repomap
+- `cli/test/review-security-recheck.test.ts` — Re-review of T13 fixes (commit 0aeaf25): remaining bypasses and false positives in pre-bash.
 - `cli/test/review-security.test.ts` — testes de segurança do pre-bash (achados do Reviewer)
+- `cli/test/review-security-recheck.test.ts` — testes de segurança do pre-bash (segunda revisão)
 - `cli/test/sprint.test.ts` — testes de sprint
 - `cli/test/usage.test.ts` — testes de usage
 - `cli/tsconfig.json` — TypeScript estrito do CLI
