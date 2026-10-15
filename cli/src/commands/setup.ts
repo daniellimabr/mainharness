@@ -5,6 +5,7 @@ import { parseArgs } from "../core/args";
 import { ensureConfig, loadConfig } from "../core/config";
 import { readJson } from "../core/fsx";
 import { claudeHome, home, pluginRoot } from "../core/paths";
+import { addToUserPath, shimDir, writeShims } from "../core/shim";
 import { runTool } from "./doctor";
 
 const PLACEHOLDER = "C:/harness-stable";
@@ -46,6 +47,20 @@ export function run(args: string[]): number {
     const stable = cfg.stableDir.replace(/\\/g, "/").replace(/\/+$/, "");
     fs.writeFileSync(skill, fs.readFileSync(skill, "utf8").split(PLACEHOLDER).join(stable));
   }
-  say("Pronto. Rode hx doctor para conferir.");
+  say(`instalando o comando hx em ${shimDir()} (aponta para ${cfg.stableDir})`);
+  let restart = false;
+  if (!dry) {
+    writeShims(cfg.stableDir);
+    const r = addToUserPath(shimDir());
+    if (r === "added") {
+      say("pasta do hx adicionada ao PATH do usuário");
+      restart = true;
+    } else if (r && r !== "present") console.error(r);
+  }
+  say(
+    restart
+      ? "Pronto. Feche e abra o VS Code para o hx valer nos chats novos; depois rode hx doctor."
+      : "Pronto. Rode hx doctor para conferir.",
+  );
   return 0;
 }

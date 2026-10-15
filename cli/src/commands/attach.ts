@@ -10,6 +10,7 @@ import { loadConfig } from "../core/config";
 import { readJson } from "../core/fsx";
 import { readHarnessJson, registerProject, slugify, writeHarnessJson } from "../core/projects";
 import { harnessVersion } from "../core/version";
+import { git as gitRun } from "../release/git";
 import { emit, utcStamp } from "../events/emit";
 import { buildRepoMap } from "../repomap/index";
 import { runDoctor } from "./doctor";
@@ -67,6 +68,13 @@ export function run(args: string[]): number {
     console.log(`Harness anterior movido para docs/legacy-harness/ (${c.harness.length} itens).`);
   }
 
+  // Git: one commit per task needs a repo; a new one gets an initial commit at the end.
+  if (!git) gitRun(root, ["init", "-q", "-b", "main"]);
+  const ignore = path.join(root, ".gitignore");
+  const ignored = fs.existsSync(ignore) ? fs.readFileSync(ignore, "utf8") : "";
+  if (!/^\/?node_modules\/?$/m.test(ignored))
+    fs.appendFileSync(ignore, `${ignored && !ignored.endsWith("\n") ? "\n" : ""}node_modules/\n`);
+
   // 3. Project registration.
   const name = path.basename(root);
   const prev = readHarnessJson(root);
@@ -109,6 +117,17 @@ export function run(args: string[]): number {
   // index.md last, so the map lists what attach created.
   createIfMissing(path.join(root, "index.md"), indexMd(root, vars));
 
+  let gitMsg = "git: repositório existente (nada commitado pelo attach).";
+  if (!git) {
+    try {
+      gitRun(root, ["add", "-A"]);
+      gitRun(root, ["commit", "-q", "-m", "chore: attach Main Harness"]);
+      gitMsg = "git: repositório criado na main, com o primeiro commit.";
+    } catch (e) {
+      gitMsg = `git: repositório criado na main; primeiro commit falhou (${(e as Error).message}).`;
+    }
+  }
+
   // 8. Doctor (non fatal) and session.start.
   let doctorMsg: string;
   try {
@@ -129,6 +148,7 @@ export function run(args: string[]): number {
         : "Projeto não web: sem skills opcionais.",
       lintMsg,
       pluginMsg,
+      gitMsg,
       doctorMsg,
       "",
       "Próximo passo: Abra um chat novo neste repo para carregar o harness.",

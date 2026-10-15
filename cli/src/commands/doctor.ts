@@ -6,6 +6,7 @@ import * as path from "node:path";
 import { readJson } from "../core/fsx";
 import { claudeHome, home, pluginRoot } from "../core/paths";
 import { resolveProject } from "../core/projects";
+import { hxOnPath } from "../core/shim";
 import { compareVersions } from "../core/version";
 
 const TIMEOUT = 5000;
@@ -147,6 +148,11 @@ export function runDoctor(opts: { projectRoot?: string } = {}): { ok: boolean; l
     cv
       ? `CLI claude ${cv} é antigo para o Opus 5.5: rode claude update (mínimo 2.1.280)`
       : "CLI claude não encontrado: instale o Claude Code",
+  );
+  check(
+    hxOnPath(),
+    "comando hx no PATH",
+    "comando hx fora do PATH: rode hx setup e reabra o VS Code",
   );
   check(
     fs.existsSync(home.config()),

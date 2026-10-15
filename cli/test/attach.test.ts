@@ -77,6 +77,14 @@ describe("hx attach", () => {
     expect(hj).toMatchObject({ project: "my-web-app", name: "My Web App", web: true });
     // frontend-design is out of the catalog until its evals pass (backlog B007)
     expect([...(hj.optionalSkills as string[])].sort()).toEqual(["webapp-testing"]);
+
+    // not a git repo before: attach creates it on main, ignores node_modules, first commit
+    expect(fs.readFileSync(path.join(dir, ".gitignore"), "utf8")).toMatch(/^node_modules\/$/m);
+    const git = (...a: string[]) =>
+      spawnSync("git", a, { cwd: dir, encoding: "utf8" }).stdout.trim();
+    expect(git("branch", "--show-current")).toBe("main");
+    expect(git("log", "--format=%s")).toBe("chore: attach Main Harness");
+    expect(git("ls-files")).not.toMatch(/node_modules/);
     expect(fs.existsSync(path.join(dir, ".claude", "skills", "webapp-testing", "SKILL.md"))).toBe(
       true,
     );

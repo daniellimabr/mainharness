@@ -25,3 +25,7 @@ Os agentes rodam `hx task`, `hx sprint`, `hx request` etc. O `hx request` grava 
 
 - Uma única regra cobre todas as gravações externas, e o `pre-bash` continua vigiando o resto.
 - Se `bin/` no PATH falhar no Windows (validação na T14), plano B: os comandos e skills chamam `node "${CLAUDE_PLUGIN_ROOT}/cli/dist/hx.js"`, que é substituído no texto da skill.
+
+## Revisão (S00, teste no Dashboard IA)
+
+Na prática, com o Claude Code 2.1.300 no Windows, a pasta `bin/` do plugin **não** entrou no PATH (nem no Bash, onde a documentação diz que entraria; no PowerShell a documentação já dizia que não). Decisão: o `hx setup` instala os atalhos `hx` (Git Bash) e `hx.cmd` (PowerShell/cmd) em `%USERPROFILE%\.harness\bin`, apontando para a versão estável, e adiciona essa pasta ao PATH do usuário (registro `HKCU\Environment`). O `hx doctor` acusa quando o `hx` não está no PATH. O `bin/` do plugin continua, sem custo, para quando funcionar.

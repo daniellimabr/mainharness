@@ -242,6 +242,9 @@ describe("hook session-start (bundle)", () => {
       "# Mapa\n\n## Arquivos\n\n- `a.ts` — a\n- `b.ts` — b\n\n## Notas\n\nx\n",
     );
     writeStateJson({ activeSprint: "S01", session: null, tasks: {} });
+    const hjFile = path.join(proj, ".claude", "harness.json");
+    const hj = JSON.parse(fs.readFileSync(hjFile, "utf8")) as Record<string, unknown>;
+    fs.writeFileSync(hjFile, JSON.stringify({ ...hj, version: "0.0.1" })); // older than the plugin
     const r = runHx(["hook", "session-start"], {
       cwd: proj,
       stdin: { source: "startup", session_id: "sess-1", model: "claude-opus-5-5", cwd: proj },

@@ -44,6 +44,7 @@ Uma linha por arquivo: caminho e propósito. Mantido pelo hook `post-edit`.
 - `cli/src/core/log.ts` — Error log for hooks and commands: ~/.harness/logs/hx-YYYY-MM-DD.log. Never throws.
 - `cli/src/core/paths.ts` — Locations used by hx: the local data folder (~/.harness) and the plugin root.
 - `cli/src/core/projects.ts` — Connected projects: ~/.harness/projects.json and <project>/.claude/harness.json.
+- `cli/src/core/shim.ts` — hx on the PATH of every shell: launchers in ~/.harness/bin pointing at the stable bundle,
 - `cli/src/core/state.ts` — Per-project runtime state: ~/.harness/state/<project>.json (active sprint, session, task times).
 - `cli/src/core/time.ts` — Times shown to people, in the configured timezone (America/Sao_Paulo, UTC−3).
 - `cli/src/core/version.ts` — Harness version: single source is .claude-plugin/plugin.json.
