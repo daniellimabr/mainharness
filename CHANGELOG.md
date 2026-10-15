@@ -2,6 +2,16 @@
 
 Versões do Main Harness (versionamento semântico; `0.y.z` até a 1.0).
 
+## [0.1.1] - 2026-10-15
+
+### Correções
+
+- fix(attach,setup): hx on PATH via shims, git init on attach
+
+### Outros
+
+- chore(harness): migrate to v0.1.0
+
 ## [0.1.0] - 2026-10-15
 
 ### Novidades
