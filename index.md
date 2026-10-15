@@ -20,4 +20,4 @@ Uma linha por arquivo: caminho e propósito. Mantido pelo hook `post-edit`.
 - `eslint.config.js` — ESLint flat config
 - `package.json` — scripts e dependências de desenvolvimento
 - `settings.json` — configuração do plugin: agente principal = tech-lead
-- `vitest.config.ts` — configuração dos testes
+- `vitest.config.mts` — configuração dos testes
