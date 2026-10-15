@@ -1,0 +1,12 @@
+{
+  "name": "harness-stable",
+  "description": "Local marketplace for the Main Harness plugin (stable clone at C:\\harness-stable).",
+  "owner": { "name": "Daniel" },
+  "plugins": [
+    {
+      "name": "main-harness",
+      "source": "./",
+      "description": "AI agent team harness: sprints, hooks, events for the Dashboard."
+    }
+  ]
+}

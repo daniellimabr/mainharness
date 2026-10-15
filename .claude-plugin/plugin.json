@@ -1,0 +1,8 @@
+{
+  "name": "main-harness",
+  "displayName": "Main Harness",
+  "version": "0.0.0",
+  "description": "A team of AI agents (Tech Lead, Reviewer, Writer) that develops a repo directed by a human: sprints, hooks, events for the Dashboard.",
+  "author": { "name": "Daniel" },
+  "license": "UNLICENSED"
+}

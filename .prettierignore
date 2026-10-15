@@ -1,0 +1,8 @@
+node_modules
+cli/dist
+skills
+.claude
+templates
+inbox
+package-lock.json
+*.md

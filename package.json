@@ -1,0 +1,29 @@
+{
+  "name": "main-harness",
+  "private": true,
+  "description": "Main Harness: Claude Code plugin that runs a project with a team of AI agents directed by a human.",
+  "type": "commonjs",
+  "scripts": {
+    "build": "node cli/build.mjs",
+    "typecheck": "tsc -p cli --noEmit",
+    "lint": "eslint . --max-warnings 0",
+    "format": "prettier --write .",
+    "format:check": "prettier --check .",
+    "test": "vitest run",
+    "check": "npm run typecheck && npm run lint && npm run format:check && npm test"
+  },
+  "engines": {
+    "node": ">=20"
+  },
+  "devDependencies": {
+    "@eslint/js": "^10.0.1",
+    "@types/node": "^26.6.5",
+    "esbuild": "^0.28.2",
+    "eslint": "^10.12.0",
+    "globals": "^17.13.0",
+    "prettier": "^3.9.10",
+    "typescript": "^6.0.3",
+    "typescript-eslint": "^8.71.2",
+    "vitest": "^5.0.4"
+  }
+}
