@@ -2,6 +2,12 @@
 
 Versões do Main Harness (versionamento semântico; `0.y.z` até a 1.0).
 
+## [0.1.2] - 2026-10-15
+
+### Correções
+
+- fix(setup): sh shim uses C:/ path so it works in any bash
+
 ## [0.1.1] - 2026-10-15
 
 ### Correções
