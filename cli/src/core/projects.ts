@@ -59,8 +59,10 @@ export function findProjectRoot(dir: string): string | null {
   }
 }
 
+/** Reads <project>/.claude/harness.json. The id goes into file paths, so a non-slug id is rejected. */
 export function readHarnessJson(projectDir: string): HarnessJson | null {
-  return readJson<HarnessJson | null>(harnessJsonPath(projectDir), null);
+  const h = readJson<HarnessJson | null>(harnessJsonPath(projectDir), null);
+  return h && /^[a-z0-9-]+$/.test(h.project) ? h : null;
 }
 
 export function writeHarnessJson(projectDir: string, data: HarnessJson): void {

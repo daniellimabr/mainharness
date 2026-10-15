@@ -83,8 +83,10 @@ export function splitCommand(cmd: string): Segment[] {
   return segs;
 }
 
-/** Command name without directory, extension and case. */
+/** Command name without directory, extension and case. Bash drops escapes in a bare name (r\m = rm). */
 function baseName(w: string): string {
+  const unescaped = w.replace(/\\(.)/g, "$1");
+  if (!/[/:]/.test(unescaped) && !w.startsWith(".")) w = unescaped;
   return path
     .basename(w.replace(/\\/g, "/"))
     .replace(/\.exe$/i, "")
@@ -108,7 +110,8 @@ const RECURSIVE_DELETE = new Set(["rm", "remove-item", "ri", "del", "erase", "rd
 
 function recursiveTargets(cmd: string, args: string[]): string[] | null {
   if (!RECURSIVE_DELETE.has(cmd)) return null;
-  const isPs = (a: string) => /^-r(e(c(u(r(s(e)?)?)?)?)?)?$/i.test(a);
+  args = args.map((a) => a.replace(/^-(literal)?path:/i, "")); // -Path:C:\x
+  const isPs = (a: string) => /^-r(e(c(u(r(s(e)?)?)?)?)?)?(:.*)?$/i.test(a);
   const isUnix = (a: string) => a === "--recursive" || (/^-[rRfivdI]+$/.test(a) && /[rR]/.test(a));
   const isCmd = (a: string) => /^\/s$/i.test(a);
   const recursive = args.some((a) =>
@@ -268,7 +271,31 @@ function checkGit(args: string[], cwd: string, stable: string): Verdict | null {
 
 const COPIERS = new Set(["cp", "copy", "copy-item", "cpi", "robocopy", "xcopy", "rsync", "ln"]);
 const WRAPPERS = new Set(["sudo", "env", "command", "exec", "time", "nohup", "call"]);
-const SHELLS = new Set(["bash", "sh", "zsh", "powershell", "pwsh", "cmd"]);
+const UNCHECKABLE: Verdict = { decision: "ask", reason: "Comando não verificável: confirme." };
+const PS_VALUE_OPTS =
+  /^-(ex|executionpolicy|w|windowstyle|v|version|inputformat|outputformat|configurationname|workingdirectory|wd)$/i;
+
+/** The command line a shell will run (-c / -Command / bare args / /c), UNCHECKABLE, or null. */
+function innerCommand(cmd: string, args: string[]): string | Verdict | null {
+  if (cmd === "cmd") {
+    const k = args.findIndex((a) => /^\/[ck]$/i.test(a));
+    return k >= 0 ? args.slice(k + 1).join(" ") : null;
+  }
+  if (cmd === "bash" || cmd === "sh" || cmd === "zsh") {
+    const k = args.findIndex((a) => /^-[a-z]*c$/.test(a));
+    return k >= 0 ? args.slice(k + 1).join(" ") : null;
+  }
+  if (cmd !== "powershell" && cmd !== "pwsh") return null;
+  for (let k = 0; k < args.length; k++) {
+    const a = args[k] as string;
+    if (/^-(e|ec|en[a-z]*)$/i.test(a)) return UNCHECKABLE; // -EncodedCommand
+    if (/^-c(o(m(m(a(n(d)?)?)?)?)?)?$/i.test(a)) return args.slice(k + 1).join(" ");
+    if (/^-f(i(l(e)?)?)?$/i.test(a)) return null; // runs a script file
+    if (PS_VALUE_OPTS.test(a)) k++;
+    else if (!a.startsWith("-")) return args.slice(k).join(" "); // bare args = -Command
+  }
+  return null;
+}
 
 /** Classifies a full command line. Returns null when it may run normally. */
 export function classifyCommand(
@@ -295,9 +322,30 @@ export function classifyCommand(
       if (abs && isInside(abs, stable))
         v = { decision: "deny", reason: `Bloqueado: ${stable} só muda via hx release/rollback.` };
     }
-    if (!v && SHELLS.has(cmd)) {
-      const k = args.findIndex((a) => /^(-c|-command|\/c|\/k)$/i.test(a));
-      if (k >= 0) v = classifyCommand(args.slice(k + 1).join(" "), dir, root, stable);
+    if (!v) {
+      const inner =
+        cmd === "hx" && args[0] === "run" ? args.slice(1).join(" ") : innerCommand(cmd, args);
+      v = typeof inner === "string" ? classifyCommand(inner, dir, root, stable) : inner;
+    }
+    if (!v && cmd === "xargs") {
+      const inner = args.find((a) => !a.startsWith("-"));
+      if (inner && RECURSIVE_DELETE.has(baseName(inner))) v = UNCHECKABLE;
+    }
+    if (
+      !v &&
+      cmd === "find" &&
+      args.some(
+        (a, i) =>
+          a === "-delete" ||
+          ((a === "-exec" || a === "-execdir") &&
+            RECURSIVE_DELETE.has(baseName(args[i + 1] ?? ""))),
+      )
+    ) {
+      const k = args.findIndex((a) => a.startsWith("-"));
+      for (const t of (k < 0 ? args : args.slice(0, k)).concat(k === 0 ? ["."] : [])) {
+        const r = checkDeleteTarget(t, dir, root);
+        if (r && (!v || r.decision === "deny")) v = r;
+      }
     }
     if (!v && ["cd", "set-location", "sl", "chdir", "pushd"].includes(cmd)) {
       const target = args.find((a) => !a.startsWith("-") && !/^\/d$/i.test(a));
@@ -306,6 +354,7 @@ export function classifyCommand(
     if (!v && cmd === "git") v = checkGit(args, dir, stable);
     if (!v) {
       const targets = recursiveTargets(cmd, args);
+      if (targets?.length === 0 && cmd !== "rm") v = UNCHECKABLE; // target from the pipeline
       for (const t of targets ?? []) {
         const r = checkDeleteTarget(t, dir, root);
         if (r && (!v || r.decision === "deny")) v = r;

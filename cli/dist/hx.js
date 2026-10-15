@@ -223,7 +223,8 @@ function findProjectRoot(dir) {
   }
 }
 function readHarnessJson(projectDir) {
-  return readJson(harnessJsonPath(projectDir), null);
+  const h = readJson(harnessJsonPath(projectDir), null);
+  return h && /^[a-z0-9-]+$/.test(h.project) ? h : null;
 }
 function writeHarnessJson(projectDir, data) {
   writeJson(harnessJsonPath(projectDir), data);
@@ -1187,6 +1188,8 @@ function splitCommand(cmd) {
   return segs;
 }
 function baseName(w) {
+  const unescaped = w.replace(/\\(.)/g, "$1");
+  if (!/[/:]/.test(unescaped) && !w.startsWith(".")) w = unescaped;
   return path14.basename(w.replace(/\\/g, "/")).replace(/\.exe$/i, "").toLowerCase();
 }
 function expandPath(t, cwd) {
@@ -1200,7 +1203,8 @@ function expandPath(t, cwd) {
 }
 function recursiveTargets(cmd, args) {
   if (!RECURSIVE_DELETE.has(cmd)) return null;
-  const isPs = (a) => /^-r(e(c(u(r(s(e)?)?)?)?)?)?$/i.test(a);
+  args = args.map((a) => a.replace(/^-(literal)?path:/i, ""));
+  const isPs = (a) => /^-r(e(c(u(r(s(e)?)?)?)?)?)?(:.*)?$/i.test(a);
   const isUnix = (a) => a === "--recursive" || /^-[rRfivdI]+$/.test(a) && /[rR]/.test(a);
   const isCmd = (a) => /^\/s$/i.test(a);
   const recursive = args.some(
@@ -1289,6 +1293,26 @@ function checkGit(args, cwd, stable) {
     return { decision: "ask", reason: "git rebase reescreve hist\xF3rico: confirme." };
   return null;
 }
+function innerCommand(cmd, args) {
+  if (cmd === "cmd") {
+    const k = args.findIndex((a) => /^\/[ck]$/i.test(a));
+    return k >= 0 ? args.slice(k + 1).join(" ") : null;
+  }
+  if (cmd === "bash" || cmd === "sh" || cmd === "zsh") {
+    const k = args.findIndex((a) => /^-[a-z]*c$/.test(a));
+    return k >= 0 ? args.slice(k + 1).join(" ") : null;
+  }
+  if (cmd !== "powershell" && cmd !== "pwsh") return null;
+  for (let k = 0; k < args.length; k++) {
+    const a = args[k];
+    if (/^-(e|ec|en[a-z]*)$/i.test(a)) return UNCHECKABLE;
+    if (/^-c(o(m(m(a(n(d)?)?)?)?)?)?$/i.test(a)) return args.slice(k + 1).join(" ");
+    if (/^-f(i(l(e)?)?)?$/i.test(a)) return null;
+    if (PS_VALUE_OPTS.test(a)) k++;
+    else if (!a.startsWith("-")) return args.slice(k).join(" ");
+  }
+  return null;
+}
 function classifyCommand(command, cwd, root, stable) {
   let dir = cwd;
   let ask = null;
@@ -1304,9 +1328,22 @@ function classifyCommand(command, cwd, root, stable) {
       if (abs && isInside(abs, stable))
         v = { decision: "deny", reason: `Bloqueado: ${stable} s\xF3 muda via hx release/rollback.` };
     }
-    if (!v && SHELLS.has(cmd)) {
-      const k = args.findIndex((a) => /^(-c|-command|\/c|\/k)$/i.test(a));
-      if (k >= 0) v = classifyCommand(args.slice(k + 1).join(" "), dir, root, stable);
+    if (!v) {
+      const inner = cmd === "hx" && args[0] === "run" ? args.slice(1).join(" ") : innerCommand(cmd, args);
+      v = typeof inner === "string" ? classifyCommand(inner, dir, root, stable) : inner;
+    }
+    if (!v && cmd === "xargs") {
+      const inner = args.find((a) => !a.startsWith("-"));
+      if (inner && RECURSIVE_DELETE.has(baseName(inner))) v = UNCHECKABLE;
+    }
+    if (!v && cmd === "find" && args.some(
+      (a, i) => a === "-delete" || (a === "-exec" || a === "-execdir") && RECURSIVE_DELETE.has(baseName(args[i + 1] ?? ""))
+    )) {
+      const k = args.findIndex((a) => a.startsWith("-"));
+      for (const t of (k < 0 ? args : args.slice(0, k)).concat(k === 0 ? ["."] : [])) {
+        const r = checkDeleteTarget(t, dir, root);
+        if (r && (!v || r.decision === "deny")) v = r;
+      }
     }
     if (!v && ["cd", "set-location", "sl", "chdir", "pushd"].includes(cmd)) {
       const target = args.find((a) => !a.startsWith("-") && !/^\/d$/i.test(a));
@@ -1315,6 +1352,7 @@ function classifyCommand(command, cwd, root, stable) {
     if (!v && cmd === "git") v = checkGit(args, dir, stable);
     if (!v) {
       const targets = recursiveTargets(cmd, args);
+      if (targets?.length === 0 && cmd !== "rm") v = UNCHECKABLE;
       for (const t of targets ?? []) {
         const r = checkDeleteTarget(t, dir, root);
         if (r && (!v || r.decision === "deny")) v = r;
@@ -1356,7 +1394,7 @@ function preBash(input) {
     }
   });
 }
-var fs13, os2, path14, RECURSIVE_DELETE, GIT_WRITES, FILE_WRITERS, COPIERS, WRAPPERS, SHELLS;
+var fs13, os2, path14, RECURSIVE_DELETE, GIT_WRITES, FILE_WRITERS, COPIERS, WRAPPERS, UNCHECKABLE, PS_VALUE_OPTS;
 var init_pre_bash = __esm({
   "cli/src/hooks/pre-bash.ts"() {
     "use strict";
@@ -1426,7 +1464,8 @@ var init_pre_bash = __esm({
     ]);
     COPIERS = /* @__PURE__ */ new Set(["cp", "copy", "copy-item", "cpi", "robocopy", "xcopy", "rsync", "ln"]);
     WRAPPERS = /* @__PURE__ */ new Set(["sudo", "env", "command", "exec", "time", "nohup", "call"]);
-    SHELLS = /* @__PURE__ */ new Set(["bash", "sh", "zsh", "powershell", "pwsh", "cmd"]);
+    UNCHECKABLE = { decision: "ask", reason: "Comando n\xE3o verific\xE1vel: confirme." };
+    PS_VALUE_OPTS = /^-(ex|executionpolicy|w|windowstyle|v|version|inputformat|outputformat|configurationname|workingdirectory|wd)$/i;
   }
 });
 
