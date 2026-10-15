@@ -97,7 +97,7 @@ Dashboard IA, publicação no GitHub, git worktrees, OpenTelemetry, limite de ga
 ## Aprovação
 
 - **Aprovado por:** Daniel
-- **Data/hora (UTC):** 2026-10-15T04:59:39Z
+- **Data/hora:** 2026-10-15 01:59:39 (horário de Brasília) — UTC 2026-10-15T04:59:39Z
 - **Hash SHA-256 do plano** (conteúdo antes desta seção, finais de linha normalizados para LF): `49ffeb0c472e1c571b3ce3490e9c92f139bb31567e226cca3eadca2365502cad`
 - **Versão do harness:** pré-0.1.0
 - O evento `sprint.approved` é gravado assim que o `hx` ficar pronto, com esta data/hora e este hash.

@@ -190,7 +190,8 @@ var init_config = __esm({
       contextStrategy: "compact",
       harnessRepo: "C:\\Main Harness",
       stableDir: "C:\\harness-stable",
-      inboxDir: "C:\\Main Harness\\inbox"
+      inboxDir: "C:\\Main Harness\\inbox",
+      timezone: "America/Sao_Paulo"
     };
   }
 });
@@ -1620,9 +1621,57 @@ var init_migrate = __esm({
   }
 });
 
+// cli/src/core/time.ts
+function parts(iso) {
+  const fmt2 = new Intl.DateTimeFormat("pt-BR", {
+    timeZone: loadConfig().timezone,
+    year: "numeric",
+    month: "2-digit",
+    day: "2-digit",
+    hour: "2-digit",
+    minute: "2-digit",
+    second: "2-digit",
+    hourCycle: "h23"
+  });
+  return Object.fromEntries(fmt2.formatToParts(new Date(iso)).map((p) => [p.type, p.value]));
+}
+function localHM(iso) {
+  const p = parts(iso);
+  return `${p.hour}:${p.minute}`;
+}
+function localDateTime(iso) {
+  const p = parts(iso);
+  return `${p.year}-${p.month}-${p.day} ${p.hour}:${p.minute}:${p.second}`;
+}
+var init_time = __esm({
+  "cli/src/core/time.ts"() {
+    "use strict";
+    init_config();
+  }
+});
+
 // cli/src/sprint/index.ts
 function planPath(projectRoot, sprintId2) {
   return path16.join(projectRoot, "docs", "sprints", `${sprintId2}-plan.md`);
+}
+function releasePath(projectRoot, sprintId2) {
+  return path16.join(projectRoot, "docs", "sprints", `${sprintId2}-release.md`);
+}
+function releaseStub(sprintId2) {
+  return `# ${sprintId2} \u2014 Release Report
+
+> Sprint em andamento. A tabela de execu\xE7\xE3o abaixo \xE9 atualizada pelo \`hx\` a cada tarefa; o Writer completa o restante no fechamento (skill release-report), mantendo esta tabela.
+
+`;
+}
+function readExecution(projectRoot, sprintId2) {
+  const file2 = releasePath(projectRoot, sprintId2);
+  return fs15.existsSync(file2) ? parsePlan(fs15.readFileSync(file2, "utf8")).execution : {};
+}
+function updateExecution(projectRoot, sprintId2, tasks, lineFor) {
+  const file2 = releasePath(projectRoot, sprintId2);
+  const text = fs15.existsSync(file2) ? fs15.readFileSync(file2, "utf8") : releaseStub(sprintId2);
+  writePlan2(file2, text, writeExecution(text, tasks, lineFor));
 }
 function planRel(sprintId2) {
   return `docs/sprints/${sprintId2}-plan.md`;
@@ -1675,7 +1724,7 @@ function parsePlan(text) {
       approval = {
         sha256: sha,
         approver: /\*\*Aprovado por:\*\*\s*(.+)/.exec(body)?.[1]?.trim() ?? "",
-        at: /\*\*Data\/hora \(UTC\):\*\*\s*(\S+)/.exec(body)?.[1] ?? ""
+        at: /\*\*Data\/hora[^*]*\*\*.*?(\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2}Z)/.exec(body)?.[1] ?? ""
       };
     }
   }
@@ -1683,8 +1732,10 @@ function parsePlan(text) {
   const esec = section(t, /^## Execução[^\n]*$/m);
   if (esec) {
     for (const line2 of t.slice(esec.start, esec.end).split("\n")) {
-      const m = /^- \[([ xX])\] (T\d+)\b/.exec(line2);
-      if (m?.[2]) execution[m[2].toUpperCase()] = { done: m[1] !== " ", line: line2 };
+      const row = /^\|\s*(\S+)\s*\|\s*(T\d+)\s*\|/.exec(line2);
+      if (row?.[2]) execution[row[2].toUpperCase()] = { done: row[1] === DONE, line: line2 };
+      const legacy = /^- \[([ xX])\] (T\d+)\b/.exec(line2);
+      if (legacy?.[2]) execution[legacy[2].toUpperCase()] = { done: legacy[1] !== " ", line: line2 };
     }
   }
   return { title, tasks, approval, execution };
@@ -1694,7 +1745,7 @@ function fillApproval(text, a, harness) {
   const block = `## Aprova\xE7\xE3o
 
 - **Aprovado por:** ${a.approver}
-- **Data/hora (UTC):** ${a.at}
+- **Data/hora:** ${localDateTime(a.at)} (hor\xE1rio de Bras\xEDlia) \u2014 UTC ${a.at}
 - **Hash SHA-256 do plano** (conte\xFAdo antes desta se\xE7\xE3o, finais de linha normalizados para LF): \`${a.sha256}\`
 - **Vers\xE3o do harness:** ${harness}
 
@@ -1704,20 +1755,26 @@ function fillApproval(text, a, harness) {
   return out.replace(/\n+$/, "\n");
 }
 function taskLine(t, times) {
-  const base2 = `${t.id} \u2014 ${t.title} \xB7 plan ${fmtMin(t.planned_min)}`;
+  const title = t.title.replace(/\|/g, "/");
+  const row = (status, start = "", end = "", dur = "") => `| ${status} | ${t.id} | ${title} | ${t.agent} | ${fmtMin(t.planned_min)} | ${start} | ${end} | ${dur} |`;
   if (times?.end) {
     const start = times.start ?? times.end;
-    const dur = fmtMin((times.duration_s ?? 0) / 60);
-    return `- [x] ${base2} \xB7 ${hhmm(start)} \u2192 ${hhmm(times.end)} (${dur})`;
+    return row(DONE, localHM(start), localHM(times.end), fmtMin((times.duration_s ?? 0) / 60));
   }
-  if (times?.start) return `- [ ] ${base2} \xB7 in\xEDcio ${hhmm(times.start)}`;
-  return `- [ ] ${base2}`;
+  if (times?.start) return row(DOING, localHM(times.start));
+  return row(TODO);
+}
+function execTable(lines) {
+  return `${EXEC_NOTE}
+
+${EXEC_HEADER}
+${lines.join("\n")}`;
 }
 function writeExecution(text, tasks, lineFor) {
   const t = lf(text);
   const block = `${EXEC_HEADING}
 
-${tasks.map(lineFor).join("\n")}
+${execTable(tasks.map(lineFor))}
 
 `;
   const sec = section(t, /^## Execução[^\n]*$/m);
@@ -1731,9 +1788,15 @@ function renderTaskList(projectRoot, sprintId2) {
   const file2 = planPath(projectRoot, sprintId2);
   if (!fs15.existsSync(file2)) return "";
   const plan = parsePlan(fs15.readFileSync(file2, "utf8"));
-  const lines = plan.tasks.map((t) => plan.execution[t.id]?.line ?? taskLine(t));
+  plan.execution = readExecution(projectRoot, sprintId2);
+  const lines = plan.tasks.map((t) => {
+    const line2 = plan.execution[t.id]?.line;
+    return line2?.startsWith("|") ? line2 : taskLine(t);
+  });
   const done = plan.tasks.filter((t) => plan.execution[t.id]?.done).length;
-  return [`Sprint ${sprintId2} \u2014 ${done}/${plan.tasks.length} feitas`, ...lines].join("\n");
+  return `Sprint ${sprintId2} \u2014 ${done}/${plan.tasks.length} feitas
+
+${execTable(lines)}`;
 }
 function computeMetrics(project, sprintId2, plan) {
   const evs = readEvents((e) => e.project === project && e.sprint === sprintId2);
@@ -1811,19 +1874,24 @@ function renderMetrics(sprintId2, plan, m) {
     `| Handoffs | ${m.handoffs} |`
   ].join("\n");
 }
-var import_node_crypto2, fs15, path16, APPROVAL_RE, EXEC_HEADING, lf, cells, hhmm, r1, r4, num, usd2, tok;
+var import_node_crypto2, fs15, path16, APPROVAL_RE, EXEC_HEADING, lf, cells, DONE, DOING, TODO, EXEC_HEADER, EXEC_NOTE, r1, r4, num, usd2, tok;
 var init_sprint = __esm({
   "cli/src/sprint/index.ts"() {
     "use strict";
     import_node_crypto2 = require("node:crypto");
     fs15 = __toESM(require("node:fs"));
     path16 = __toESM(require("node:path"));
+    init_time();
     init_emit();
     APPROVAL_RE = /^## Aprovação/m;
     EXEC_HEADING = "## Execu\xE7\xE3o";
     lf = (text) => text.replace(/\r\n/g, "\n");
     cells = (row) => row.trim().replace(/^\||\|$/g, "").split("|").map((c) => c.trim());
-    hhmm = (iso) => iso.slice(11, 16);
+    DONE = "\u2705";
+    DOING = "\u{1F504}";
+    TODO = "\u2B1C";
+    EXEC_HEADER = "| Status | Id | Tarefa | Agente | Planejado | In\xEDcio | Fim | Dura\xE7\xE3o |\n|---|---|---|---|---|---|---|---|";
+    EXEC_NOTE = "Hor\xE1rios de Bras\xEDlia (UTC\u22123). \u2705 feita \xB7 \u{1F504} em andamento \xB7 \u2B1C a fazer.";
     r1 = (x) => Math.round(x * 10) / 10;
     r4 = (x) => Math.round(x * 1e4) / 1e4;
     num = (v) => typeof v === "number" && Number.isFinite(v) ? v : 0;
@@ -1854,9 +1922,9 @@ function sessionStart(input) {
     s2.session = session;
   });
   const version = harnessVersion();
-  const parts = [`Main Harness ${version} \u2014 projeto ${p.harness.name || p.id} (${p.id}).`];
+  const parts2 = [`Main Harness ${version} \u2014 projeto ${p.harness.name || p.id} (${p.id}).`];
   const migration = migrationNote(p.root, p.harness.version, version);
-  if (migration) parts.push(migration);
+  if (migration) parts2.push(migration);
   emit({
     type: "session.start",
     project: p.id,
@@ -1865,11 +1933,11 @@ function sessionStart(input) {
     data: { source, model: typeof input.model === "string" ? input.model : null }
   });
   const index = summarizeIndex(p.root);
-  if (index) parts.push(index);
+  if (index) parts2.push(index);
   if (state.activeSprint) {
     try {
       const tasks = renderTaskList(p.root, state.activeSprint);
-      parts.push(tasks || `Sprint ativa: ${state.activeSprint}.`);
+      parts2.push(tasks || `Sprint ativa: ${state.activeSprint}.`);
     } catch (err) {
       logError("hook session-start tasks", err);
     }
@@ -1880,7 +1948,7 @@ function sessionStart(input) {
       let text = fs16.readFileSync(lh.file, "utf8");
       if (text.length > HANDOFF_MAX) text = `${text.slice(0, HANDOFF_MAX)}
 [...]`;
-      parts.push(`\xDAltimo handoff:
+      parts2.push(`\xDAltimo handoff:
 ${text.trim()}
 
 Continue a sprint a partir deste handoff.`);
@@ -1893,7 +1961,7 @@ Continue a sprint a partir deste handoff.`);
     }
   }
   return jsonOut({
-    hookSpecificOutput: { hookEventName: "SessionStart", additionalContext: parts.join("\n\n") }
+    hookSpecificOutput: { hookEventName: "SessionStart", additionalContext: parts2.join("\n\n") }
   });
 }
 var fs16, HANDOFF_MAX;
@@ -1988,7 +2056,9 @@ function loadPlan(root, sprintId2) {
   if (!fs17.existsSync(file2))
     throw new Error(`plano n\xE3o encontrado: docs/sprints/${sprintId2}-plan.md`);
   const text = fs17.readFileSync(file2, "utf8");
-  return { file: file2, text, plan: parsePlan(text) };
+  const plan = parsePlan(text);
+  plan.execution = readExecution(root, sprintId2);
+  return { file: file2, text, plan };
 }
 function createNew(dir, stem, content) {
   for (let n2 = 1; ; n2++) {
@@ -2030,7 +2100,7 @@ function run3(args) {
   const sprint = ctx.sprint;
   if (!sprint) throw new Error("nenhuma sprint aberta (rode hx sprint open SNN)");
   const id = raw.toUpperCase();
-  const { file: file2, text, plan } = loadPlan(ctx.root, sprint);
+  const { plan } = loadPlan(ctx.root, sprint);
   const task = plan.tasks.find((t) => t.id === id);
   if (!task) throw new Error(`tarefa ${id} n\xE3o est\xE1 no plano ${sprint}`);
   const at = atFlag(p);
@@ -2044,14 +2114,11 @@ function run3(args) {
   const st = updateState(ctx.id, (s2) => {
     s2.tasks[id] = times;
   });
-  writePlan2(
-    file2,
-    text,
-    writeExecution(
-      text,
-      plan.tasks,
-      (t) => t.id === id ? taskLine(t, times) : plan.execution[t.id]?.line ?? taskLine(t, st.tasks[t.id])
-    )
+  updateExecution(
+    ctx.root,
+    sprint,
+    plan.tasks,
+    (t) => t.id === id ? taskLine(t, times) : plan.execution[t.id]?.line ?? taskLine(t, st.tasks[t.id])
   );
   const ev = { project: ctx.id, session: ctx.session, sprint, task: id, agent: ctx.agent, ts: at };
   if (sub === "start") emit({ ...ev, type: "task.start", data: { planned_min: task.planned_min } });
@@ -2131,7 +2198,7 @@ function approve(ctx, p, id, force) {
   return 0;
 }
 function open(ctx, p, id) {
-  const { file: file2, text, plan } = loadPlan(ctx.root, id);
+  const { text, plan } = loadPlan(ctx.root, id);
   if (!plan.approval)
     throw new Error(
       `plano ${id} ainda n\xE3o aprovado (rode hx sprint approve ${id} ap\xF3s o ok de Daniel)`
@@ -2147,14 +2214,11 @@ function open(ctx, p, id) {
     s2.activeSprint = id;
     s2.sprintOpenedAt ??= at;
   });
-  writePlan2(
-    file2,
-    text,
-    writeExecution(
-      text,
-      plan.tasks,
-      (t) => plan.execution[t.id]?.line ?? taskLine(t, st.tasks[t.id])
-    )
+  updateExecution(
+    ctx.root,
+    id,
+    plan.tasks,
+    (t) => plan.execution[t.id]?.line ?? taskLine(t, st.tasks[t.id])
   );
   emit({ ...base(ctx, id), type: "sprint.open", ts: at, data: { tasks: plan.tasks.length } });
   console.log(renderTaskList(ctx.root, id));
@@ -2295,7 +2359,7 @@ function run6(args) {
     `- **Projeto:** ${ctx.id}`,
     `- **Sprint:** ${ctx.sprint ?? "\u2014"}`,
     `- **Sess\xE3o:** ${ctx.session ?? "\u2014"}`,
-    `- **Data (UTC):** ${at}`,
+    `- **Data:** ${localDateTime(at)} (hor\xE1rio de Bras\xEDlia)`,
     ""
   ].join("\n");
   const file2 = createNew(dir, stamp2, `${header}
@@ -2326,6 +2390,7 @@ var init_handoff = __esm({
     init_context();
     init_paths();
     init_state();
+    init_time();
     init_emit();
     init_cmd();
     EMPTY2 = "handoff vazio: envie o texto pela entrada padr\xE3o (ex.: hx handoff <<'EOF' ... EOF)";
@@ -2338,12 +2403,12 @@ __export(run_exports, {
   run: () => run7
 });
 function run7(args) {
-  const parts = args[0] === "--" ? args.slice(1) : args;
-  if (!parts.length) {
+  const parts2 = args[0] === "--" ? args.slice(1) : args;
+  if (!parts2.length) {
     console.error("uso: hx run <comando>");
     return 1;
   }
-  const cmd = parts.length === 1 ? parts[0] : parts.map((a) => /\s/.test(a) ? `"${a}"` : a).join(" ");
+  const cmd = parts2.length === 1 ? parts2[0] : parts2.map((a) => /\s/.test(a) ? `"${a}"` : a).join(" ");
   const t0 = Date.now();
   const r = (0, import_node_child_process3.spawnSync)(cmd, {
     shell: true,

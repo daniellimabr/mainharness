@@ -87,7 +87,8 @@ describe("e2e with spaces in every path", () => {
     expect(hx(["task", "start", "T01", "--at", "2026-10-15T10:00:00Z"]).code).toBe(0);
     const done = hx(["task", "done", "T01", "--at", "2026-10-15T10:21:00Z"]);
     expect(done.code).toBe(0);
-    expect(fs.readFileSync(plan, "utf8")).toMatch(/- \[x\] T01 .*\(21 min\)/);
+    const release = fs.readFileSync(plan.replace("-plan.md", "-release.md"), "utf8");
+    expect(release).toMatch(/\| ✅ \| T01 \|.*\| 21 min \|/);
     const ev = readEventsIn(home).find((e) => e.type === "task.done");
     expect((ev?.data as { duration_s: number }).duration_s).toBe(1260);
   });

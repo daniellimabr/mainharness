@@ -35,7 +35,7 @@ Uma linha por arquivo: caminho e propósito. Mantido pelo hook `post-edit`.
 - `cli/src/commands/setup.ts` — hx setup: one-time machine install (config, marketplace, user-level /attach skill).
 - `cli/src/commands/skills.ts` — hx skills [on|off <name>]: lists or toggles optional catalog skills in the current project (ADR 0005).
 - `cli/src/commands/sprint.ts` — hx sprint approve|open|status|feedback|close: sprint lifecycle on docs/sprints/SNN-plan.md.
-- `cli/src/commands/task.ts` — hx task start|done <id>: task times in state and in the plan's "## Execução" list, plus events.
+- `cli/src/commands/task.ts` — hx task start|done <id>: task times in state and in the "## Execução" table of SNN-release.md, plus events.
 - `cli/src/commands/usage.ts` — hx usage: ingests the project's Claude Code transcripts and prints tokens and US$ per agent/model.
 - `cli/src/core/args.ts` — Tiny argument parser: positionals + --flag value / --flag=value / --bool.
 - `cli/src/core/config.ts` — ~/.harness/config.json: prices, context limits and harness locations.
@@ -45,6 +45,7 @@ Uma linha por arquivo: caminho e propósito. Mantido pelo hook `post-edit`.
 - `cli/src/core/paths.ts` — Locations used by hx: the local data folder (~/.harness) and the plugin root.
 - `cli/src/core/projects.ts` — Connected projects: ~/.harness/projects.json and <project>/.claude/harness.json.
 - `cli/src/core/state.ts` — Per-project runtime state: ~/.harness/state/<project>.json (active sprint, session, task times).
+- `cli/src/core/time.ts` — Times shown to people, in the configured timezone (America/Sao_Paulo, UTC−3).
 - `cli/src/core/version.ts` — Harness version: single source is .claude-plugin/plugin.json.
 - `cli/src/events/emit.ts` — Appends validated events to ~/.harness/events/YYYY-MM-DD.jsonl (UTC day). Append-only.
 - `cli/src/events/schema.ts` — Event schema v1 (contract with the Dashboard, see docs/contracts/events.md).
@@ -62,7 +63,7 @@ Uma linha por arquivo: caminho e propósito. Mantido pelo hook `post-edit`.
 - `cli/src/release/skills.ts` — Skill eval gate: every skill changed since the last release needs passing evals/results.json
 - `cli/src/repomap/index.ts` — Repo map (index.md): one line per file with its purpose, kept up to date by the post-edit hook.
 - `cli/src/sprint/cmd.ts` — Shared helpers for sprint commands: --at timestamps, boolean flags and loading a sprint plan.
-- `cli/src/sprint/index.ts` — Sprint plan (docs/sprints/SNN-plan.md): parse the task table, approval hash, execution list, metrics.
+- `cli/src/sprint/index.ts` — Sprint plan (docs/sprints/SNN-plan.md): parse the task table, approval hash, execution table (SNN-release.md), metrics.
 - `cli/src/usage/index.ts` — Usage (tokens and US$) public API: ingest transcripts, current context size, transcript folder.
 - `cli/src/usage/price.ts` — US$ estimate for one response from its transcript usage block and the config price table.
 - `cli/src/usage/transcript.ts` — TranscriptSource: reads Claude Code JSONL transcripts incrementally and emits `usage` events.
@@ -78,6 +79,7 @@ Uma linha por arquivo: caminho e propósito. Mantido pelo hook `post-edit`.
 - `cli/test/migrate.test.ts` — testes de migrate
 - `cli/test/release.test.ts` — testes de release
 - `cli/test/repomap.test.ts` — testes de repomap
+- `cli/test/review-security.test.ts` — testes de segurança do pre-bash (achados do Reviewer)
 - `cli/test/sprint.test.ts` — testes de sprint
 - `cli/test/usage.test.ts` — testes de usage
 - `cli/tsconfig.json` — TypeScript estrito do CLI
@@ -98,6 +100,7 @@ Uma linha por arquivo: caminho e propósito. Mantido pelo hook `post-edit`.
 - `docs/contracts/events.md` — Contrato de eventos: Main Harness e Dashboard IA
 - `docs/roadmap.md` — Roadmap do Main Harness
 - `docs/sprints/S00-plan.md` — sprint plan S00 (criação do harness)
+- `docs/sprints/S00-release.md` — Release Report da S00 (tabela de execução gerada pelo hx)
 - `eslint.config.js` — ESLint flat config
 - `hooks/hooks.json` — hooks do plugin (forma exec chamando o hx)
 - `package-lock.json` — versões travadas das dependências de desenvolvimento

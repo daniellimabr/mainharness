@@ -14,7 +14,7 @@ import {
   renderMetrics,
   renderTaskList,
   taskLine,
-  writeExecution,
+  updateExecution,
   writePlan,
 } from "../sprint/index";
 
@@ -77,7 +77,7 @@ function approve(ctx: CommandContext, p: Parsed, id: string, force: boolean): nu
 }
 
 function open(ctx: CommandContext, p: Parsed, id: string): number {
-  const { file, text, plan } = loadPlan(ctx.root, id);
+  const { text, plan } = loadPlan(ctx.root, id);
   if (!plan.approval)
     throw new Error(
       `plano ${id} ainda não aprovado (rode hx sprint approve ${id} após o ok de Daniel)`,
@@ -93,14 +93,11 @@ function open(ctx: CommandContext, p: Parsed, id: string): number {
     s.activeSprint = id;
     s.sprintOpenedAt ??= at;
   });
-  writePlan(
-    file,
-    text,
-    writeExecution(
-      text,
-      plan.tasks,
-      (t) => plan.execution[t.id]?.line ?? taskLine(t, st.tasks[t.id]),
-    ),
+  updateExecution(
+    ctx.root,
+    id,
+    plan.tasks,
+    (t) => plan.execution[t.id]?.line ?? taskLine(t, st.tasks[t.id]),
   );
   emit({ ...base(ctx, id), type: "sprint.open", ts: at, data: { tasks: plan.tasks.length } });
   console.log(renderTaskList(ctx.root, id));

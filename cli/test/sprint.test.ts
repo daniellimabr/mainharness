@@ -112,17 +112,21 @@ describe("sprint commands (real bundle, project with spaces)", () => {
     const o = hx("sprint", "open", "S01", "--at", "2026-10-15T02:00:00Z");
     expect(o.code).toBe(0);
     expect(o.stdout).toContain("Sprint S01 — 0/3 feitas");
-    expect(o.stdout).toContain("- [ ] T01 — Descrição curta · plan 20 min");
+    expect(o.stdout).toContain("| ⬜ | T01 | Descrição curta | tech-lead | 20 min |");
 
     const s = hx("task", "start", "t01", "--at", "2026-10-15T02:05:00Z");
     expect(s.code).toBe(0);
-    expect(s.stdout).toContain("- [ ] T01 — Descrição curta · plan 20 min · início 02:05");
+    expect(s.stdout).toContain("| 🔄 | T01 | Descrição curta | tech-lead | 20 min | 23:05 |");
     const d = hx("task", "done", "T01", "--at", "2026-10-15T02:25:00Z");
     expect(d.stdout).toContain(
-      "- [x] T01 — Descrição curta · plan 20 min · 02:05 → 02:25 (20 min)",
+      "| ✅ | T01 | Descrição curta | tech-lead | 20 min | 23:05 | 23:25 | 20 min |",
     );
     expect(d.stdout).toContain("1/3 feitas");
-    expect(fs.readFileSync(plan, "utf8")).toContain("02:05 → 02:25 (20 min)");
+    expect(fs.readFileSync(plan, "utf8")).not.toContain("## Execução");
+    const release = fs.readFileSync(plan.replace("-plan.md", "-release.md"), "utf8");
+    expect(release).toContain(
+      "| ✅ | T01 | Descrição curta | tech-lead | 20 min | 23:05 | 23:25 | 20 min |",
+    );
     expect(renderTaskList(dir, "S01")).toContain("1/3 feitas");
 
     // marking tasks does not invalidate the approval

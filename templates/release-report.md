@@ -9,11 +9,13 @@
 
 O que mudou para Daniel, em linguagem simples (3 a 5 linhas).
 
-## Tarefas
+## Execução
 
-| Id | Tarefa | Situação | Observação |
-|---|---|---|---|
-| T01 | | feita | |
+(Tabela gerada pelo `hx` durante a sprint, em horário de Brasília. Não edite.)
+
+## Observações por tarefa
+
+- T01: 
 
 ## Indicadores
 

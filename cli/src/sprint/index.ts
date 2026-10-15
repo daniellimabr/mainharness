@@ -3,6 +3,7 @@ import { createHash } from "node:crypto";
 import * as fs from "node:fs";
 import * as path from "node:path";
 import type { TaskTimes } from "../core/state";
+import { localDateTime, localHM } from "../core/time";
 import { readEvents } from "../events/emit";
 import type { HarnessEvent } from "../events/schema";
 
@@ -34,6 +35,37 @@ const EXEC_HEADING = "## Execução";
 
 export function planPath(projectRoot: string, sprintId: string): string {
   return path.join(projectRoot, "docs", "sprints", `${sprintId}-plan.md`);
+}
+
+/** Release Report of the sprint: holds the live execution table (the approved plan never changes). */
+export function releasePath(projectRoot: string, sprintId: string): string {
+  return path.join(projectRoot, "docs", "sprints", `${sprintId}-release.md`);
+}
+
+function releaseStub(sprintId: string): string {
+  return (
+    `# ${sprintId} — Release Report\n\n` +
+    "> Sprint em andamento. A tabela de execução abaixo é atualizada pelo `hx` a cada tarefa; " +
+    "o Writer completa o restante no fechamento (skill release-report), mantendo esta tabela.\n\n"
+  );
+}
+
+/** Execution rows recorded in the Release Report (empty when it does not exist yet). */
+export function readExecution(projectRoot: string, sprintId: string): Plan["execution"] {
+  const file = releasePath(projectRoot, sprintId);
+  return fs.existsSync(file) ? parsePlan(fs.readFileSync(file, "utf8")).execution : {};
+}
+
+/** Creates/updates "## Execução" in docs/sprints/SNN-release.md. */
+export function updateExecution(
+  projectRoot: string,
+  sprintId: string,
+  tasks: PlanTask[],
+  lineFor: (t: PlanTask) => string,
+): void {
+  const file = releasePath(projectRoot, sprintId);
+  const text = fs.existsSync(file) ? fs.readFileSync(file, "utf8") : releaseStub(sprintId);
+  writePlan(file, text, writeExecution(text, tasks, lineFor));
 }
 
 /** Path relative to the project, with forward slashes (for events). */
@@ -108,7 +140,8 @@ export function parsePlan(text: string): Plan {
       approval = {
         sha256: sha,
         approver: /\*\*Aprovado por:\*\*\s*(.+)/.exec(body)?.[1]?.trim() ?? "",
-        at: /\*\*Data\/hora \(UTC\):\*\*\s*(\S+)/.exec(body)?.[1] ?? "",
+        at:
+          /\*\*Data\/hora[^*]*\*\*.*?(\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2}Z)/.exec(body)?.[1] ?? "",
       };
     }
   }
@@ -116,8 +149,10 @@ export function parsePlan(text: string): Plan {
   const esec = section(t, /^## Execução[^\n]*$/m);
   if (esec) {
     for (const line of t.slice(esec.start, esec.end).split("\n")) {
-      const m = /^- \[([ xX])\] (T\d+)\b/.exec(line);
-      if (m?.[2]) execution[m[2].toUpperCase()] = { done: m[1] !== " ", line };
+      const row = /^\|\s*(\S+)\s*\|\s*(T\d+)\s*\|/.exec(line);
+      if (row?.[2]) execution[row[2].toUpperCase()] = { done: row[1] === DONE, line };
+      const legacy = /^- \[([ xX])\] (T\d+)\b/.exec(line);
+      if (legacy?.[2]) execution[legacy[2].toUpperCase()] = { done: legacy[1] !== " ", line };
     }
   }
   return { title, tasks, approval, execution };
@@ -129,7 +164,7 @@ export function fillApproval(text: string, a: Approval, harness: string): string
   const block =
     `## Aprovação\n\n` +
     `- **Aprovado por:** ${a.approver}\n` +
-    `- **Data/hora (UTC):** ${a.at}\n` +
+    `- **Data/hora:** ${localDateTime(a.at)} (horário de Brasília) — UTC ${a.at}\n` +
     `- **Hash SHA-256 do plano** (conteúdo antes desta seção, finais de linha normalizados para LF): \`${a.sha256}\`\n` +
     `- **Versão do harness:** ${harness}\n\n`;
   const sec = section(t, /^## Aprovação[^\n]*$/m);
@@ -139,18 +174,29 @@ export function fillApproval(text: string, a: Approval, harness: string): string
   return out.replace(/\n+$/, "\n");
 }
 
-const hhmm = (iso: string) => iso.slice(11, 16);
+const DONE = "✅";
+const DOING = "🔄";
+const TODO = "⬜";
+const EXEC_HEADER =
+  "| Status | Id | Tarefa | Agente | Planejado | Início | Fim | Duração |\n" +
+  "|---|---|---|---|---|---|---|---|";
+const EXEC_NOTE = "Horários de Brasília (UTC−3). ✅ feita · 🔄 em andamento · ⬜ a fazer.";
 
-/** One execution line for a task, from its recorded times. */
+/** One execution table row for a task, from its recorded times. */
 export function taskLine(t: PlanTask, times?: TaskTimes): string {
-  const base = `${t.id} — ${t.title} · plan ${fmtMin(t.planned_min)}`;
+  const title = t.title.replace(/\|/g, "/");
+  const row = (status: string, start = "", end = "", dur = "") =>
+    `| ${status} | ${t.id} | ${title} | ${t.agent} | ${fmtMin(t.planned_min)} | ${start} | ${end} | ${dur} |`;
   if (times?.end) {
     const start = times.start ?? times.end;
-    const dur = fmtMin((times.duration_s ?? 0) / 60);
-    return `- [x] ${base} · ${hhmm(start)} → ${hhmm(times.end)} (${dur})`;
+    return row(DONE, localHM(start), localHM(times.end), fmtMin((times.duration_s ?? 0) / 60));
   }
-  if (times?.start) return `- [ ] ${base} · início ${hhmm(times.start)}`;
-  return `- [ ] ${base}`;
+  if (times?.start) return row(DOING, localHM(times.start));
+  return row(TODO);
+}
+
+function execTable(lines: string[]): string {
+  return `${EXEC_NOTE}\n\n${EXEC_HEADER}\n${lines.join("\n")}`;
 }
 
 /** Creates or updates "## Execução" (after the approval section, outside the hash). */
@@ -160,7 +206,7 @@ export function writeExecution(
   lineFor: (t: PlanTask) => string,
 ): string {
   const t = lf(text);
-  const block = `${EXEC_HEADING}\n\n${tasks.map(lineFor).join("\n")}\n\n`;
+  const block = `${EXEC_HEADING}\n\n${execTable(tasks.map(lineFor))}\n\n`;
   const sec = section(t, /^## Execução[^\n]*$/m);
   const out = sec
     ? t.slice(0, sec.start) + block + t.slice(sec.end)
@@ -178,9 +224,13 @@ export function renderTaskList(projectRoot: string, sprintId: string): string {
   const file = planPath(projectRoot, sprintId);
   if (!fs.existsSync(file)) return "";
   const plan = parsePlan(fs.readFileSync(file, "utf8"));
-  const lines = plan.tasks.map((t) => plan.execution[t.id]?.line ?? taskLine(t));
+  plan.execution = readExecution(projectRoot, sprintId);
+  const lines = plan.tasks.map((t) => {
+    const line = plan.execution[t.id]?.line;
+    return line?.startsWith("|") ? line : taskLine(t);
+  });
   const done = plan.tasks.filter((t) => plan.execution[t.id]?.done).length;
-  return [`Sprint ${sprintId} — ${done}/${plan.tasks.length} feitas`, ...lines].join("\n");
+  return `Sprint ${sprintId} — ${done}/${plan.tasks.length} feitas\n\n${execTable(lines)}`;
 }
 
 export interface SprintMetrics {

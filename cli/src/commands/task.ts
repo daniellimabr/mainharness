@@ -1,10 +1,10 @@
-// hx task start|done <id>: task times in state and in the plan's "## Execução" list, plus events.
+// hx task start|done <id>: task times in state and in the "## Execução" table of SNN-release.md, plus events.
 import { flagStr, parseArgs } from "../core/args";
 import { commandContext } from "../core/context";
 import { readState, updateState, type TaskTimes } from "../core/state";
 import { emit } from "../events/emit";
 import { atFlag, loadPlan } from "../sprint/cmd";
-import { renderTaskList, taskLine, writeExecution, writePlan } from "../sprint/index";
+import { renderTaskList, taskLine, updateExecution } from "../sprint/index";
 
 export function run(args: string[]): number {
   const p = parseArgs(args);
@@ -17,7 +17,7 @@ export function run(args: string[]): number {
   const sprint = ctx.sprint;
   if (!sprint) throw new Error("nenhuma sprint aberta (rode hx sprint open SNN)");
   const id = raw.toUpperCase();
-  const { file, text, plan } = loadPlan(ctx.root, sprint);
+  const { plan } = loadPlan(ctx.root, sprint);
   const task = plan.tasks.find((t) => t.id === id);
   if (!task) throw new Error(`tarefa ${id} não está no plano ${sprint}`);
   const at = atFlag(p);
@@ -32,14 +32,8 @@ export function run(args: string[]): number {
   const st = updateState(ctx.id, (s) => {
     s.tasks[id] = times;
   });
-  writePlan(
-    file,
-    text,
-    writeExecution(text, plan.tasks, (t) =>
-      t.id === id
-        ? taskLine(t, times)
-        : (plan.execution[t.id]?.line ?? taskLine(t, st.tasks[t.id])),
-    ),
+  updateExecution(ctx.root, sprint, plan.tasks, (t) =>
+    t.id === id ? taskLine(t, times) : (plan.execution[t.id]?.line ?? taskLine(t, st.tasks[t.id])),
   );
   const ev = { project: ctx.id, session: ctx.session, sprint, task: id, agent: ctx.agent, ts: at };
   if (sub === "start") emit({ ...ev, type: "task.start", data: { planned_min: task.planned_min } });

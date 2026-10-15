@@ -16,9 +16,9 @@ Fecha o ciclo: a sprint termina com números e com melhorias para o harness, nã
 ## Passos
 
 1. Rode `hx sprint close SNN`. Ele imprime os indicadores e grava `sprint.close` e `sprint.metrics`. Para só rever os números: `hx metrics SNN`.
-2. Copie `${CLAUDE_PLUGIN_ROOT}/templates/release-report.md` para `docs/sprints/SNN-release.md` e preencha.
+2. `docs/sprints/SNN-release.md` já existe: o `hx` grava nele a seção `## Execução` (tabela de tarefas, horário de Brasília). Complete-o com as demais seções de `${CLAUDE_PLUGIN_ROOT}/templates/release-report.md`, **sem alterar a tabela de Execução**. Se o arquivo não existir, copie o template.
 3. **Resumo da entrega:** 3 a 5 linhas para Daniel, sem jargão.
-4. **Tarefas:** uma linha por tarefa, com situação e observação (ex.: reprovada uma vez por falta de teste).
+4. **Observações por tarefa:** só o que a tabela não mostra (ex.: reprovada uma vez por falta de teste).
 5. **Indicadores:** cole o bloco do `hx sprint close`. Garanta que apareçam:
    - tempo planejado × real (total e por tarefa);
    - tokens e US$ por tarefa e por agente (valores **estimados**: a assinatura não cobra por token);
@@ -39,7 +39,7 @@ Fecha o ciclo: a sprint termina com números e com melhorias para o harness, nã
 
 ## Antes de terminar
 
-- [ ] `SNN-release.md` criado e com todas as seções.
+- [ ] `SNN-release.md` com todas as seções e a tabela de Execução intacta.
 - [ ] Tabela de indicadores colada do `hx`.
 - [ ] Comparação com a sprint anterior (ou "sem base").
 - [ ] Cada melhoria tem um `hx request` e o link.

@@ -3,7 +3,7 @@ import * as fs from "node:fs";
 import * as path from "node:path";
 import { flagStr, type Parsed } from "../core/args";
 import { utcStamp } from "../events/emit";
-import { parsePlan, planPath, type Plan } from "./index";
+import { parsePlan, planPath, readExecution, type Plan } from "./index";
 
 /** --at <ISO> (UTC stamp) or now. */
 export function atFlag(p: Parsed): string {
@@ -29,7 +29,9 @@ export function loadPlan(
   if (!fs.existsSync(file))
     throw new Error(`plano não encontrado: docs/sprints/${sprintId}-plan.md`);
   const text = fs.readFileSync(file, "utf8");
-  return { file, text, plan: parsePlan(text) };
+  const plan = parsePlan(text);
+  plan.execution = readExecution(root, sprintId); // live table lives in SNN-release.md
+  return { file, text, plan };
 }
 
 export const sprintId = (s: string | undefined) => (s ? s.toUpperCase() : undefined);

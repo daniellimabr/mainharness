@@ -5,6 +5,7 @@ import { flagStr, parseArgs } from "../core/args";
 import { commandContext } from "../core/context";
 import { home } from "../core/paths";
 import { readState, updateState } from "../core/state";
+import { localDateTime } from "../core/time";
 import { emit, utcStamp } from "../events/emit";
 import { createNew } from "../sprint/cmd";
 
@@ -48,7 +49,7 @@ export function run(args: string[]): number {
     `- **Projeto:** ${ctx.id}`,
     `- **Sprint:** ${ctx.sprint ?? "—"}`,
     `- **Sessão:** ${ctx.session ?? "—"}`,
-    `- **Data (UTC):** ${at}`,
+    `- **Data:** ${localDateTime(at)} (horário de Brasília)`,
     "",
   ].join("\n");
   const file = createNew(dir, stamp, `${header}\n${body}\n`);

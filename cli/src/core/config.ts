@@ -20,6 +20,8 @@ export interface Config {
   harnessRepo: string;
   stableDir: string;
   inboxDir: string;
+  /** IANA timezone for times shown to people (events stay UTC). */
+  timezone: string;
 }
 
 export const DEFAULT_CONFIG: Config = {
@@ -53,6 +55,7 @@ export const DEFAULT_CONFIG: Config = {
   harnessRepo: "C:\\Main Harness",
   stableDir: "C:\\harness-stable",
   inboxDir: "C:\\Main Harness\\inbox",
+  timezone: "America/Sao_Paulo",
 };
 
 /** Reads config.json merged over defaults; env vars override limits (used by tests). */
