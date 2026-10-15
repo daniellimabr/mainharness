@@ -155,7 +155,7 @@ describe("hx setup", () => {
     expect(fs.existsSync(HX)).toBe(true);
     // hx launchers for Git Bash and PowerShell, pointing at the stable bundle
     const sh = fs.readFileSync(path.join(env.home, "bin", "hx"), "utf8");
-    expect(sh).toContain('exec node "/c/harness stable/cli/dist/hx.js" "$@"');
+    expect(sh).toContain('exec node "C:/harness stable/cli/dist/hx.js" "$@"');
     const cmd = fs.readFileSync(path.join(env.home, "bin", "hx.cmd"), "utf8");
     expect(cmd).toContain('@node "C:\\harness stable\\cli\\dist\\hx.js" %*');
     expect(hxOnPath([path.join(env.home, "bin")].join(path.delimiter))).toBe(true);

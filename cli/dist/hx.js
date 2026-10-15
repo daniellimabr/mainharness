@@ -3024,7 +3024,7 @@ var init_git = __esm({
 // cli/src/core/shim.ts
 function writeShims(stableDir) {
   const js = path25.join(path25.resolve(stableDir), "cli", "dist", "hx.js");
-  const posix = js.replace(/\\/g, "/").replace(/^([a-zA-Z]):/, (_m, d) => `/${d.toLowerCase()}`);
+  const posix = js.replace(/\\/g, "/");
   fs25.mkdirSync(shimDir(), { recursive: true });
   fs25.writeFileSync(path25.join(shimDir(), "hx"), `#!/bin/sh
 exec node "${posix}" "$@"

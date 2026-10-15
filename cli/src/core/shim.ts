@@ -11,9 +11,8 @@ export const shimDir = (): string => path.join(harnessHome(), "bin");
 /** Writes hx (sh, for Git Bash) and hx.cmd (PowerShell/cmd) that run <stableDir>/cli/dist/hx.js. */
 export function writeShims(stableDir: string): void {
   const js = path.join(path.resolve(stableDir), "cli", "dist", "hx.js");
-  const posix = js
-    .replace(/\\/g, "/")
-    .replace(/^([a-zA-Z]):/, (_m, d: string) => `/${d.toLowerCase()}`);
+  // C:/x form: node is a Windows program, and /c/x only resolves in Git Bash (not Cygwin).
+  const posix = js.replace(/\\/g, "/");
   fs.mkdirSync(shimDir(), { recursive: true });
   fs.writeFileSync(path.join(shimDir(), "hx"), `#!/bin/sh\nexec node "${posix}" "$@"\n`, {
     mode: 0o755,
