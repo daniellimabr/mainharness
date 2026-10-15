@@ -1,0 +1,3 @@
+#!/bin/sh
+# hx on the agents' PATH (Git Bash). Resolves the bundle relative to this script.
+exec node "$(dirname "$0")/../cli/dist/hx.js" "$@"
