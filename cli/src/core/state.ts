@@ -16,6 +16,7 @@ export interface ProjectState {
   tasks: Record<string, TaskTimes>;
   lastHandoff?: { file: string; at: string; consumed?: boolean };
   lastContextAlertAt?: string;
+  lastCompactAt?: string;
 }
 
 const EMPTY: ProjectState = { activeSprint: null, session: null, tasks: {} };
