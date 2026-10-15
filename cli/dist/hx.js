@@ -2967,6 +2967,15 @@ function installPlugins(root) {
   writeJson(file2, s2);
   return `plugins: o comando claude falhou; ${failed.join(", ")} ligados direto no settings.`;
 }
+function updatePlugins(roots) {
+  const bin = process.env.HARNESS_CLAUDE_BIN || "claude";
+  const live = roots.filter((r) => fs24.existsSync(r));
+  const failed = live.filter(
+    (r) => runFixed(r, bin, ["plugin", "update", PLUGINS[0], "--scope", "project"]).status !== 0
+  );
+  const ok = live.length - failed.length;
+  return `- plugin atualizado em ${ok} projeto(s)${failed.length ? `; falhou em: ${failed.join(", ")}` : ""}.`;
+}
 var import_node_child_process5, fs24, path24, PLUGINS, LINT_DEV_DEPS, ESLINT_CONFIGS2;
 var init_setup = __esm({
   "cli/src/attach/setup.ts"() {
@@ -3733,6 +3742,7 @@ function release(kind, skipChecks) {
   console.log(`Vers\xE3o ${tag} publicada.`);
   console.log(`- CHANGELOG atualizado; ${gates.length} skill(s) com evals conferidos.`);
   console.log(`- Vers\xE3o est\xE1vel (${cfg.stableDir}) agora em ${tag}. Vale nos chats novos.`);
+  console.log(updatePlugins(readProjects().map((p) => p.path)));
   return 0;
 }
 function run15(args) {
@@ -3776,9 +3786,11 @@ var init_release = __esm({
     import_node_child_process9 = require("node:child_process");
     fs30 = __toESM(require("node:fs"));
     path30 = __toESM(require("node:path"));
+    init_setup();
     init_args();
     init_config();
     init_fsx();
+    init_projects();
     init_version();
     init_emit();
     init_git();

@@ -3,9 +3,11 @@
 import { spawnSync } from "node:child_process";
 import * as fs from "node:fs";
 import * as path from "node:path";
+import { updatePlugins } from "../attach/setup";
 import { flagStr, parseArgs } from "../core/args";
 import { loadConfig } from "../core/config";
 import { readJson, samePathKey, writeJson } from "../core/fsx";
+import { readProjects } from "../core/projects";
 import { bumpVersion } from "../core/version";
 import { emit } from "../events/emit";
 import { git, versionTags } from "../release/git";
@@ -106,6 +108,7 @@ function release(kind: "patch" | "minor" | "major", skipChecks: boolean): number
   console.log(`Versão ${tag} publicada.`);
   console.log(`- CHANGELOG atualizado; ${gates.length} skill(s) com evals conferidos.`);
   console.log(`- Versão estável (${cfg.stableDir}) agora em ${tag}. Vale nos chats novos.`);
+  console.log(updatePlugins(readProjects().map((p) => p.path)));
   return 0;
 }
 

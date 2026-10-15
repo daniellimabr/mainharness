@@ -28,3 +28,7 @@ O harness é distribuído como plugin do Claude Code a partir de um marketplace 
 
 - Chats abertos continuam com os arquivos que já carregaram (hooks rodam `node` no caminho da pasta; um release no meio do chat troca os arquivos por baixo). Para evitar quebra, o `hx.js` é um arquivo único e o checkout troca tudo de uma vez. Risco aceito e registrado; a validação prática está na T14 da S00.
 - Não há `npm install` no plugin: o `cli/dist/hx.js` é versionado já compilado.
+
+## Revisão (S00, teste no Dashboard IA)
+
+Na prática o Claude Code **não** lê o plugin direto de `C:\harness-stable`: guarda uma cópia por versão em `~/.claude/plugins/cache/harness-stable/main-harness/<versão>` para cada projeto. Por isso o `hx release`, depois de mover a cópia estável, roda `claude plugin update main-harness@harness-stable --scope project` em cada projeto de `projects.json`. A versão nova continua valendo no próximo chat.

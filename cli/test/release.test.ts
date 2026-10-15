@@ -89,12 +89,36 @@ describe("hx release / rollback", () => {
     expect(changelog).toMatch(/feat: initial harness/);
     expect(git(stable, ["describe", "--tags", "--exact-match", "HEAD"])).toBe("v0.1.0");
 
+    // A second release updates the plugin in every attached project (Claude Code caches it per version).
+    const proj = path.join(stableParent, "Some Project");
+    fs.mkdirSync(proj);
+    fs.writeFileSync(
+      path.join(home, "projects.json"),
+      JSON.stringify({
+        projects: [
+          { id: "some-project", path: proj },
+          { id: "gone", path: path.join(stableParent, "gone") },
+        ],
+      }),
+    );
+    const log = path.join(stableParent, "claude.log");
+    const fake = path.join(stableParent, "fake claude.js");
+    fs.writeFileSync(
+      fake,
+      `require("fs").appendFileSync(${JSON.stringify(log)}, process.cwd() + " " + process.argv.slice(2).join(" ") + "\\n");`,
+    );
+    env.HARNESS_CLAUDE_BIN = fake;
+
     // A second release only checks skills changed since v0.1.0 (none here).
     write("cli.txt", "x");
     commit("fix: something");
     const r2 = runHx(["release", "patch"], { cwd: repo, env });
     expect(r2.code).toBe(0);
     expect(git(stable, ["describe", "--tags", "--exact-match", "HEAD"])).toBe("v0.1.1");
+    expect(fs.readFileSync(log, "utf8").trim()).toBe(
+      `${proj} plugin update main-harness@harness-stable --scope project`,
+    );
+    expect(r2.stdout).toContain("plugin atualizado em 1 projeto(s)");
     expect(
       fs.readFileSync(path.join(repo, "CHANGELOG.md"), "utf8").indexOf("[0.1.1]"),
     ).toBeLessThan(fs.readFileSync(path.join(repo, "CHANGELOG.md"), "utf8").indexOf("[0.1.0]"));
