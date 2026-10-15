@@ -25,7 +25,7 @@ function fakeClaudeBin(dir: string): string {
   const bin = path.join(dir, "fake-claude.js");
   fs.writeFileSync(
     bin,
-    `require("fs").appendFileSync(${JSON.stringify(path.join(dir, "calls.txt"))}, JSON.stringify(process.argv.slice(2)) + "\\n"); console.log("2.0.0 (Claude Code)");`,
+    `require("fs").appendFileSync(${JSON.stringify(path.join(dir, "calls.txt"))}, JSON.stringify(process.argv.slice(2)) + "\\n"); console.log("2.1.300 (Claude Code)");`,
   );
   return bin;
 }

@@ -2979,10 +2979,11 @@ function runDoctor(opts = {}) {
     `Python ${py}`,
     "Python 3.8+ n\xE3o encontrado (o Security Guidance precisa): instale o Python"
   );
+  const cv = /(\d+\.\d+\.\d+)/.exec(runTool("claude", ["--version"]).out)?.[1];
   check(
-    runTool("claude", ["--version"]).ok,
-    "CLI claude",
-    "CLI claude n\xE3o encontrado: instale o Claude Code"
+    !!cv && compareVersions(cv, "2.1.280") >= 0,
+    `CLI claude ${cv}`,
+    cv ? `CLI claude ${cv} \xE9 antigo para o Opus 5.5: rode claude update (m\xEDnimo 2.1.280)` : "CLI claude n\xE3o encontrado: instale o Claude Code"
   );
   check(
     fs25.existsSync(home.config()),
@@ -3070,6 +3071,7 @@ var init_doctor = __esm({
     init_fsx();
     init_paths();
     init_projects();
+    init_version();
     TIMEOUT = 5e3;
     SKILLS = [
       "adr",

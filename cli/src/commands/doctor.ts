@@ -6,6 +6,7 @@ import * as path from "node:path";
 import { readJson } from "../core/fsx";
 import { claudeHome, home, pluginRoot } from "../core/paths";
 import { resolveProject } from "../core/projects";
+import { compareVersions } from "../core/version";
 
 const TIMEOUT = 5000;
 const SKILLS = [
@@ -138,10 +139,14 @@ export function runDoctor(opts: { projectRoot?: string } = {}): { ok: boolean; l
     `Python ${py}`,
     "Python 3.8+ não encontrado (o Security Guidance precisa): instale o Python",
   );
+  // claude-opus-5-5 (Tech Lead/Reviewer) needs Claude Code 2.1.280+.
+  const cv = /(\d+\.\d+\.\d+)/.exec(runTool("claude", ["--version"]).out)?.[1];
   check(
-    runTool("claude", ["--version"]).ok,
-    "CLI claude",
-    "CLI claude não encontrado: instale o Claude Code",
+    !!cv && compareVersions(cv, "2.1.280") >= 0,
+    `CLI claude ${cv}`,
+    cv
+      ? `CLI claude ${cv} é antigo para o Opus 5.5: rode claude update (mínimo 2.1.280)`
+      : "CLI claude não encontrado: instale o Claude Code",
   );
   check(
     fs.existsSync(home.config()),

@@ -1,0 +1,18 @@
+{
+  "env": {
+    "ENABLE_STOP_REVIEW": "0",
+    "ENABLE_COMMIT_REVIEW": "0"
+  },
+  "permissions": {
+    "allow": [
+      "Bash(hx *)",
+      "PowerShell(hx *)"
+    ]
+  },
+  "enabledPlugins": {
+    "main-harness@harness-stable": true,
+    "ponytail@ponytail": true,
+    "security-guidance@claude-plugins-official": true
+  },
+  "autoCompactWindow": 250000
+}
