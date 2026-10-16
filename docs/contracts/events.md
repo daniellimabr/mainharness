@@ -25,7 +25,7 @@ Todo evento tem estes campos, sempre presentes (use `null` quando não se aplica
 | `session` | texto ou null | Id da sessão do Claude Code |
 | `sprint` | texto ou null | Ex.: `S01` |
 | `task` | texto ou null | Ex.: `T04` |
-| `agent` | texto ou null | Ex.: `tech-lead`, `reviewer`, `writer` |
+| `agent` | texto ou null | Ex.: `tech-lead`, `reviewer`, `eval` |
 | `type` | texto | Um dos tipos da tabela abaixo |
 | `data` | objeto | Campos do tipo (tabela abaixo) |
 
