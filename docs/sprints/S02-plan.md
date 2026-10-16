@@ -89,6 +89,6 @@ B002 (auditoria `claude-code-setup`, fica para a S03), B005 (bloqueado) e B007 (
 ## Aprovação
 
 - **Aprovado por:** Daniel
-- **Data/hora:** 2026-10-16 02:29:39 (horário de Brasília) — UTC 2026-10-16T05:29:39Z
-- **Hash SHA-256 do plano** (conteúdo antes desta seção, finais de linha normalizados para LF): `a3245b2391d7b454f446ff2585c3ec531c573c1ee05d2291473440e3a00b07d0`
+- **Data/hora:** 2026-10-16 07:10:18 (horário de Brasília) — UTC 2026-10-16T10:10:18Z
+- **Hash SHA-256 do plano** (conteúdo antes desta seção, finais de linha normalizados para LF): `d3dc829c368cdf768092848d3046e0455da502a73af5570dff8a3fd4fad17ba9`
 - **Versão do harness:** 0.2.1
