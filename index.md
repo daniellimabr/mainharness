@@ -24,6 +24,7 @@ Uma linha por arquivo: caminho e propósito. Mantido pelo hook `post-edit`.
 - `cli/src/attach/skills.ts` — Optional skill catalog (ADR 0005): plugin skills/optional/<name> copied into <project>/.claude/skills/<name>.
 - `cli/src/commands/attach.ts` — hx attach [dir] [--approved] [--no-install] [--no-plugins]: connects a repo to the harness.
 - `cli/src/commands/doctor.ts` — hx doctor: checks the machine and the current project for what the harness needs.
+- `cli/src/commands/eval.ts` — hx eval <skill>|--changed: runs a skill's evals with `claude -p` (Sonnet) and stamps results.json.
 - `cli/src/commands/handoff.ts` — hx handoff [--show|--consume]: saves the agent's handoff (stdin) under ~/.harness/handoffs/<project>.
 - `cli/src/commands/metrics.ts` — hx metrics [sprint] [--emit]: sprint indicators from events + plan, as a markdown table.
 - `cli/src/commands/migrate.ts` — hx migrate: brings a project's harness files to the installed harness version (up or down).
@@ -48,6 +49,7 @@ Uma linha por arquivo: caminho e propósito. Mantido pelo hook `post-edit`.
 - `cli/src/core/state.ts` — Per-project runtime state: ~/.harness/state/<project>.json (active sprint, session, task times).
 - `cli/src/core/time.ts` — Times shown to people, in the configured timezone (America/Sao_Paulo, UTC−3).
 - `cli/src/core/version.ts` — Harness version: single source is .claude-plugin/plugin.json.
+- `cli/src/eval/run.ts` — hx eval runner: `claude -p` sessions (Sonnet, 1 run per query, max 3 at once), each in a temp
 - `cli/src/events/emit.ts` — Appends validated events to ~/.harness/events/YYYY-MM-DD.jsonl (UTC day). Append-only.
 - `cli/src/events/schema.ts` — Event schema v1 (contract with the Dashboard, see docs/contracts/events.md).
 - `cli/src/events/ulid.ts` — Minimal ULID (26 chars, Crockford base32): 48-bit time + 80-bit randomness.
@@ -72,6 +74,7 @@ Uma linha por arquivo: caminho e propósito. Mantido pelo hook `post-edit`.
 - `cli/test/commands.test.ts` — testes de commands
 - `cli/test/doctor.test.ts` — testes de doctor
 - `cli/test/e2e.test.ts` — End to end with paths that have spaces: the real plugin root ("C:\Main Harness" on Daniel's
+- `cli/test/eval.test.ts` — (sem descrição)
 - `cli/test/events.test.ts` — testes de events
 - `cli/test/global-setup.ts` — Builds cli/dist/hx.js once before the suite, so integration tests run the real bundle.
 - `cli/test/helpers.ts` — Test helpers: temp folders WITH SPACES, isolated HARNESS_HOME, running the built hx.js.
@@ -99,11 +102,14 @@ Uma linha por arquivo: caminho e propósito. Mantido pelo hook `post-edit`.
 - `docs/adr/0006-continuacao-aos-250k.md` — ADR: compactação gerenciada aos 250K
 - `docs/adr/0007-consumo-via-transcripts.md` — ADR: consumo lido dos transcripts
 - `docs/adr/0008-bootstrap-do-attach.md` — ADR 0008 — `/attach` como skill de usuário e plugin ativado por projeto
+- `docs/adr/0009-consumo-enxuto.md` — ADR 0009 — Consumo enxuto: evals no Sonnet, Reviewer no Sonnet e sem Writer
 - `docs/backlog.md` — Backlog do Main Harness
 - `docs/contracts/events.md` — Contrato de eventos: Main Harness e Dashboard IA
 - `docs/roadmap.md` — Roadmap do Main Harness
 - `docs/sprints/S00-plan.md` — sprint plan S00 (criação do harness)
 - `docs/sprints/S00-release.md` — Release Report da S00 (tabela de execução gerada pelo hx)
+- `docs/sprints/S01-plan.md` — S01 — Evals baratos, Reviewer no Sonnet e plugins companheiros (v0.2.0)
+- `docs/sprints/S01-release.md` — S01 — Release Report
 - `eslint.config.js` — ESLint flat config
 - `hooks/hooks.json` — hooks do plugin (forma exec chamando o hx)
 - `package-lock.json` — versões travadas das dependências de desenvolvimento
