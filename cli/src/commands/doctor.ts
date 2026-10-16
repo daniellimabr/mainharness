@@ -4,12 +4,13 @@ import * as fs from "node:fs";
 import * as os from "node:os";
 import * as path from "node:path";
 import { PLUGINS } from "../attach/setup";
-import { readJson, samePathKey } from "../core/fsx";
+import { readJson, readText, samePathKey } from "../core/fsx";
 import { runTool } from "../core/proc";
 import { claudeHome, home, pluginRoot } from "../core/paths";
 import { resolveProject } from "../core/projects";
 import { hxOnPath } from "../core/shim";
 import { compareVersions } from "../core/version";
+import { userHomeVarSet } from "./setup";
 
 const TIMEOUT = 5000;
 const SKILLS = [
@@ -122,7 +123,10 @@ function eventsWritable(): boolean {
   }
 }
 
-export function runDoctor(opts: { projectRoot?: string } = {}): { ok: boolean; lines: string[] } {
+export function runDoctor(opts: { projectRoot?: string; homeVarSet?: () => boolean } = {}): {
+  ok: boolean;
+  lines: string[];
+} {
   const lines: string[] = [];
   let problems = 0;
   const check = (ok: boolean, good: string, bad: string, warnOnly = false) => {
@@ -176,6 +180,12 @@ export function runDoctor(opts: { projectRoot?: string } = {}): { ok: boolean; l
     "marketplace harness-stable",
     "marketplace harness-stable não registrado: rode hx setup",
   );
+
+  const band = readText(path.join(claudeHome(), ".ponytail-band"))?.trim();
+  if (band !== "off" || !(opts.homeVarSet ?? userHomeVarSet)())
+    lines.push(
+      "⚠ painel do ponytail ligado: rode hx setup e reinicie o VS Code. O Task board desliga em /plugin → ponytail → Task board (o hx não mexe na config do plugin)",
+    );
 
   const root = opts.projectRoot ?? resolveProject(process.cwd())?.root ?? null;
   if ((root ?? process.cwd()).includes(" "))

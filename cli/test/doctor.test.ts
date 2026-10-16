@@ -120,6 +120,30 @@ describe("runDoctor", () => {
     }
   });
 
+  it("warns when the ponytail band flag is not off", () => {
+    const homeVarSet = () => true;
+    fs.writeFileSync(path.join(claude, ".ponytail-band"), "on");
+    const w = line(runDoctor({ projectRoot: proj, homeVarSet }).lines, "painel do ponytail");
+    expect(w).toMatch(/^⚠ painel do ponytail ligado: rode hx setup e reinicie o VS Code/);
+    expect(w).toContain("/plugin → ponytail → Task board");
+    fs.rmSync(path.join(claude, ".ponytail-band"));
+    expect(line(runDoctor({ projectRoot: proj, homeVarSet }).lines, "ponytail ligado")).toMatch(
+      /^⚠/,
+    );
+  });
+
+  it("says nothing about the ponytail band when it is off", () => {
+    fs.writeFileSync(path.join(claude, ".ponytail-band"), "off");
+    const r = runDoctor({ projectRoot: proj, homeVarSet: () => true });
+    expect(line(r.lines, "ponytail ligado")).toBe("");
+  });
+
+  it("warns when the user HOME is missing in the registry", () => {
+    fs.writeFileSync(path.join(claude, ".ponytail-band"), "off");
+    const r = runDoctor({ projectRoot: proj, homeVarSet: () => false });
+    expect(line(r.lines, "ponytail ligado")).toMatch(/^⚠/);
+  });
+
   it("only warns about plugins outside a project", () => {
     const outside = tempDir("hx outside");
     const prev = process.cwd();
@@ -205,6 +229,7 @@ describe("hx setup", () => {
         HARNESS_HOME: env.home,
         CLAUDE_CONFIG_DIR: claude,
         HARNESS_CLAUDE_BIN: process.env.HARNESS_CLAUDE_BIN as string,
+        HARNESS_NO_PATH: "1",
       },
     });
     expect(r.code).toBe(0);
@@ -220,6 +245,7 @@ describe("hx setup", () => {
         HARNESS_HOME: env.home,
         CLAUDE_CONFIG_DIR: claude,
         HARNESS_CLAUDE_BIN: process.env.HARNESS_CLAUDE_BIN as string,
+        HARNESS_NO_PATH: "1",
         HARNESS_STABLE_DIR: stable,
       },
     });
@@ -252,6 +278,7 @@ describe("hx setup", () => {
         HARNESS_HOME: env.home,
         CLAUDE_CONFIG_DIR: claude,
         HARNESS_CLAUDE_BIN: process.env.HARNESS_CLAUDE_BIN as string,
+        HARNESS_NO_PATH: "1",
       },
     });
     expect(r.code, r.stderr).toBe(0);
