@@ -129,6 +129,14 @@ describe("parseStream / pool", () => {
       { model: "sonnet", input: 3, output: 0, cache_write: 0, cache_read: 0, usd: 0.5 },
     ]);
   });
+  it("answer keeps text written before tool calls, not only the final message", () => {
+    const out = [
+      '{"type":"assistant","message":{"content":[{"type":"text","text":"plan"},{"type":"tool_use","name":"Write","input":{}}]}}',
+      '{"type":"assistant","message":{"content":[{"type":"text","text":"done"}]}}',
+      '{"type":"result","result":"done","session_id":"abc"}',
+    ].join("\n");
+    expect(parseStream(out)).toMatchObject({ text: "done", answer: "plan\n\ndone" });
+  });
   it("never runs more than the limit at once", async () => {
     let now = 0;
     let max = 0;

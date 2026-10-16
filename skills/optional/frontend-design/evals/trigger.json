@@ -28,10 +28,6 @@
     "should_trigger": true
   },
   {
-    "query": "reescreve os textos dos botões e mensagens de erro da tela de checkout, e ajusta o layout pra ficar mais claro",
-    "should_trigger": true
-  },
-  {
     "query": "o botão de salvar está desalinhado 2px no Firefox, corrige o CSS",
     "should_trigger": false
   },
@@ -55,7 +51,10 @@
     "query": "add aria-labels to the icon buttons in Toolbar.tsx, accessibility audit flagged them",
     "should_trigger": false
   },
-  { "query": "escreve o PRD da nova tela de relatórios", "should_trigger": false },
+  {
+    "query": "escreve o PRD da nova tela de relatórios",
+    "should_trigger": false
+  },
   {
     "query": "configura o Tailwind no projeto Vite, só a instalação e o config",
     "should_trigger": false

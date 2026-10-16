@@ -7,8 +7,8 @@
       "expected_output": "Plano de design (paleta 4–6 hex, tipografia, layout, princípios) revisado contra o brief antes do código, e uma página que foge dos defaults listados.",
       "files": [],
       "expectations": [
-        "Antes do código, apresenta um plano com paleta de 4 a 6 cores nomeadas em hex, tipografia, conceito de layout e princípios",
-        "Revisa o plano contra o brief e diz o que mudou e por quê antes de construir",
+        "A resposta mostra um plano visual com paleta de 4 a 6 cores nomeadas em hex, tipografia, conceito de layout e princípios (antes ou depois do código)",
+        "A resposta diz o que mudou no plano depois de revisá-lo contra o brief, e por quê",
         "A página não usa os clichês listados (fundo creme ~#F4F1EA com acento terracota, kit de cards SaaS, eyebrow em CAIXA ALTA acima de cada título, '→' em botões)",
         "Usa conteúdo real do assunto (restauro de bicicletas, Curitiba) e CTA em voz ativa",
         "É responsiva, tem foco visível de teclado e respeita prefers-reduced-motion"
@@ -16,14 +16,16 @@
     },
     {
       "id": 2,
-      "prompt": "Redesenha a tela vazia e a mensagem de erro do nosso app de controle de gastos: hoje aparece 'Ops! Algo deu errado :(' e uma tela branca quando não há lançamentos.",
+      "prompt": "Redesenha a tela vazia e a mensagem de erro do nosso app de controle de gastos (src/Expenses.jsx): hoje aparece 'Ops! Algo deu errado :(' e uma tela branca quando não há lançamentos. O erro mais comum é falta de conexão. Altere o arquivo.",
       "expected_output": "Copy e visual de estado vazio e erro que orientam a ação, sem desculpas vagas.",
-      "files": [],
+      "files": [
+        "files/src/Expenses.jsx"
+      ],
       "expectations": [
         "A mensagem de erro diz o que aconteceu e como resolver, sem pedir desculpas nem ser vaga",
         "O estado vazio convida a uma ação clara (ex.: 'Adicionar lançamento') com verbo ativo",
         "Usa linguagem do usuário, não termos de sistema",
-        "Mantém consistência de nome entre o botão e a confirmação"
+        "O botão de ação e a mensagem de confirmação (SAVED_MESSAGE) usam o mesmo nome para a coisa criada (ex.: 'Adicionar lançamento' e 'Lançamento adicionado')"
       ]
     },
     {

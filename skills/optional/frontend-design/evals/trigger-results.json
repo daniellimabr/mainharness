@@ -1,155 +1,122 @@
 {
-  "skill_name": "frontend-design",
-  "description": "Guidance for distinctive, intentional visual design when building new UI or reshaping an existing one. Helps with aesthetic direction, typography, and making choices that don't read as templated defaults.",
+  "date": "2026-10-16T18:19:17.295Z",
   "results": [
-    {
-      "query": "redesenha a tela de onboarding do app, tá muito genérica, escolhe tipografia e paleta melhores",
-      "should_trigger": true,
-      "trigger_rate": 1.0,
-      "triggers": 1,
-      "runs": 1,
-      "pass": true,
-      "info": ["{\"skill\": \"frontend-design-skill-04ca061b"]
-    },
     {
       "query": "cria uma landing page pra minha cafeteria em Floripa, quero algo com personalidade e não com cara de template",
       "should_trigger": true,
-      "trigger_rate": 0.0,
-      "triggers": 0,
-      "runs": 1,
-      "pass": false,
-      "info": ["Artifact"]
+      "triggered": true,
+      "skills": [
+        "frontend-design"
+      ],
+      "passed": true
+    },
+    {
+      "query": "redesenha a tela de onboarding do app, tá muito genérica, escolhe tipografia e paleta melhores",
+      "should_trigger": true,
+      "triggered": false,
+      "skills": [],
+      "passed": false
     },
     {
       "query": "build a portfolio site for a ceramic artist — single page, bold typography, make it feel handmade",
       "should_trigger": true,
-      "trigger_rate": 1.0,
-      "triggers": 1,
-      "runs": 1,
-      "pass": true,
-      "info": ["{\"skill\": \"frontend-design-skill-40177c00"]
-    },
-    {
-      "query": "quero uma direção visual nova pro dashboard interno de sprints: cores, fontes e layout, depois implementa em React",
-      "should_trigger": true,
-      "trigger_rate": 1.0,
-      "triggers": 1,
-      "runs": 1,
-      "pass": true,
-      "info": ["{\"skill\": \"frontend-design-skill-49c98b8c"]
+      "triggered": true,
+      "skills": [
+        "frontend-design"
+      ],
+      "passed": true
     },
     {
       "query": "faz o visual da página de preços do Main Harness Cloud, três planos, quero que fuja do padrão SaaS de cards",
       "should_trigger": true,
-      "trigger_rate": 0.0,
-      "triggers": 0,
-      "runs": 1,
-      "pass": false,
-      "info": ["Artifact"]
+      "triggered": true,
+      "skills": [
+        "frontend-design"
+      ],
+      "passed": true
+    },
+    {
+      "query": "quero uma direção visual nova pro dashboard interno de sprints: cores, fontes e layout, depois implementa em React",
+      "should_trigger": true,
+      "triggered": true,
+      "skills": [
+        "frontend-design"
+      ],
+      "passed": true
     },
     {
       "query": "a home do nosso site parece feita por IA (fundo creme, serifa, laranja). me ajuda a dar uma identidade própria",
       "should_trigger": true,
-      "trigger_rate": 1.0,
-      "triggers": 1,
-      "runs": 1,
-      "pass": true,
-      "info": ["{\"skill\": \"frontend-design-skill-5ffb97e9"]
-    },
-    {
-      "query": "reescreve os textos dos botões e mensagens de erro da tela de checkout, e ajusta o layout pra ficar mais claro",
-      "should_trigger": true,
-      "trigger_rate": 0.0,
-      "triggers": 0,
-      "runs": 1,
-      "pass": false,
-      "info": ["Glob"]
+      "triggered": true,
+      "skills": [
+        "frontend-design"
+      ],
+      "passed": true
     },
     {
       "query": "design a sign-up page for a kids' coding club app, ages 8-11, and code it in HTML/CSS",
       "should_trigger": true,
-      "trigger_rate": 1.0,
-      "triggers": 1,
-      "runs": 1,
-      "pass": true,
-      "info": ["{\"skill\": \"frontend-design-skill-2b01f764"]
+      "triggered": true,
+      "skills": [
+        "frontend-design"
+      ],
+      "passed": true
     },
     {
       "query": "o botão de salvar está desalinhado 2px no Firefox, corrige o CSS",
       "should_trigger": false,
-      "trigger_rate": 0.0,
-      "triggers": 0,
-      "runs": 1,
-      "pass": true,
-      "info": ["Grep"]
+      "triggered": false,
+      "skills": [],
+      "passed": true
     },
     {
       "query": "testa no navegador se o formulário de contato envia certinho em localhost:5173",
       "should_trigger": false,
-      "trigger_rate": 0.0,
-      "triggers": 0,
-      "runs": 1,
-      "pass": true,
-      "info": ["PowerShell"]
+      "triggered": false,
+      "skills": [],
+      "passed": true
     },
     {
       "query": "desenha um diagrama da arquitetura do frontend: rotas, stores e chamadas à API",
       "should_trigger": false,
-      "trigger_rate": 0.0,
-      "triggers": 0,
-      "runs": 1,
-      "pass": true,
-      "info": ["PowerShell"]
+      "triggered": false,
+      "skills": [],
+      "passed": true
     },
     {
       "query": "faz um gráfico de pizza com a distribuição de gastos por categoria",
       "should_trigger": false,
-      "trigger_rate": 0.0,
-      "triggers": 0,
-      "runs": 1,
-      "pass": true,
-      "info": ["Glob"]
+      "triggered": false,
+      "skills": [],
+      "passed": true
     },
     {
       "query": "converte esse componente de class component pra hooks, sem mudar nada visual",
       "should_trigger": false,
-      "trigger_rate": 0.0,
-      "triggers": 0,
-      "runs": 1,
-      "pass": true,
-      "info": ["Grep"]
+      "triggered": false,
+      "skills": [],
+      "passed": true
     },
     {
       "query": "add aria-labels to the icon buttons in Toolbar.tsx, accessibility audit flagged them",
       "should_trigger": false,
-      "trigger_rate": 0.0,
-      "triggers": 0,
-      "runs": 1,
-      "pass": true,
-      "info": ["Glob"]
+      "triggered": false,
+      "skills": [],
+      "passed": true
     },
     {
       "query": "escreve o PRD da nova tela de relatórios",
       "should_trigger": false,
-      "trigger_rate": 0.0,
-      "triggers": 0,
-      "runs": 1,
-      "pass": true,
-      "info": ["mcp__claude_ai_Claude_Docs__batch"]
+      "triggered": false,
+      "skills": [],
+      "passed": true
     },
     {
       "query": "configura o Tailwind no projeto Vite, só a instalação e o config",
       "should_trigger": false,
-      "trigger_rate": 0.0,
-      "triggers": 0,
-      "runs": 1,
-      "pass": true,
-      "info": ["PowerShell"]
+      "triggered": false,
+      "skills": [],
+      "passed": true
     }
-  ],
-  "summary": {
-    "total": 16,
-    "passed": 13,
-    "failed": 3
-  }
+  ]
 }

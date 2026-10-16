@@ -29,7 +29,10 @@ interface Usage {
 }
 
 export interface Session {
+  /** Final message (the judge's JSON reply). */
   text: string;
+  /** Every assistant text in order: what a graded run showed, including a plan written before tool calls. */
+  answer: string;
   skills: string[];
   sessionId: string;
   usage: Usage[];
@@ -37,7 +40,9 @@ export interface Session {
 
 interface StreamLine {
   type?: string;
-  message?: { content?: { type?: string; name?: string; input?: { skill?: unknown } }[] };
+  message?: {
+    content?: { type?: string; name?: string; text?: string; input?: { skill?: unknown } }[];
+  };
   result?: string;
   session_id?: string;
   total_cost_usd?: number;
@@ -61,7 +66,8 @@ interface StreamLine {
 
 /** Parses `--output-format stream-json` output: Skill tool calls, final answer, usage per model. */
 export function parseStream(out: string): Session {
-  const s: Session = { text: "", skills: [], sessionId: "", usage: [] };
+  const s: Session = { text: "", answer: "", skills: [], sessionId: "", usage: [] };
+  const texts: string[] = [];
   for (const line of out.split("\n")) {
     let o: StreamLine;
     try {
@@ -70,11 +76,14 @@ export function parseStream(out: string): Session {
       continue;
     }
     if (o.type === "assistant")
-      for (const c of o.message?.content ?? [])
+      for (const c of o.message?.content ?? []) {
+        if (c.type === "text" && c.text) texts.push(c.text);
         if (c.type === "tool_use" && c.name === "Skill" && typeof c.input?.skill === "string")
           s.skills.push(c.input.skill);
+      }
     if (o.type !== "result") continue;
     s.text = o.result ?? "";
+    s.answer = texts.length ? texts.join("\n\n") : s.text;
     s.sessionId = o.session_id ?? "";
     const mu = Object.entries(o.modelUsage ?? {});
     const u = o.usage ?? {};
@@ -297,7 +306,7 @@ export async function evalSkill(
           // Edits stay in the sandbox; Bash only for hx (isolated HARNESS_HOME), as skills call it.
           const perms = ["--permission-mode", "acceptEdits", "--allowedTools", '"Bash(hx:*)"'];
           const s = await claude(r.c.prompt, sb, perms, ctx);
-          return { ...r, answer: s.text, files: outputs(sb) };
+          return { ...r, answer: s.answer, skills: s.skills, files: outputs(sb) };
         },
         r.c.files,
         evalsDir,
@@ -342,6 +351,7 @@ export async function evalSkill(
         baseline: !r.withSkill,
         passed: v?.passed === true,
         failed: v ? (v.failed ?? []) : ["sem veredito do juiz"],
+        skills: r.skills,
         answer: r.answer.slice(0, 2000),
       };
     });

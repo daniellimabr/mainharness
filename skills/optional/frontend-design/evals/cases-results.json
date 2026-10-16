@@ -1,0 +1,64 @@
+{
+  "date": "2026-10-16T18:19:17.295Z",
+  "runs": [
+    {
+      "id": "1",
+      "baseline": false,
+      "passed": true,
+      "failed": [],
+      "skills": [
+        "frontend-design"
+      ],
+      "answer": "Criei o `index.html` em `C:\\Users\\daniel.ismerio\\AppData\\Local\\Temp\\hx-eval-ZaxpZ6\\index.html`. É um arquivo só, com o CSS inline e as fontes carregadas do Google Fonts. Não abri a página no navegador nem tirei screenshot, então o layout e a animação da roda ainda não foram vistos.\n\n## Plano visual\n- **Direção:** uma oficina de bairro com a ficha de serviço pendurada no guidão: cartão de papelão furado, filete dourado de pintura de quadro e esmalte verde-inglês, tudo com cara de coisa feita à mão e carimbada.\n- **Tipografia:** Big Shoulders Display 800/900, condensada de placa industrial, para títulos e preços. Spectral, serifada de leitura, para o texto corrido, com entrelinha de 1.65.\n- **Cor:**\n  - Verde-inglês `#1F3A2C` para os fundos escuros.\n  - Papelão `#D8D4BF` como fundo de página.\n  - Papel de ficha `#EFEBD8` para as etiquetas e a tabela de preços.\n  - Dourado de filete `#D9A62E` para detalhes e destaques.\n  - Zarcão `#B23A26`, o vermelho do primer, para carimbos e foco de teclado.\n  - Graxa `#22201C` para o texto e o bloco de contato.\n- **Layout:** tudo alinhado à esquerda, sem blocos centralizados. A roda de raios cruzados em SVG sai cortada pela borda direita do herói e dá uma volta lenta ao carregar, que é o único movimento automático da página. Os serviços aparecem como tabela de preços com pontilhado de ligação. O processo é numerado porque é uma sequência real. As bicicletas \"na bancada\" viram etiquetas de papel com furo, cada uma levemente inclinada.\n- **Revisão:** troquei a ideia inicial de creme com terracota por papelão frio, verde-esmalte e dourado. Cortei os rótulos em caixa-alta acima dos títulos e usei numeração só no processo. As etiquetas têm inclinação e largura diferentes, para não virarem cartões idênticos.\n\n## O que tem na página\nO herói leva o nome e a roda, e logo depois vêm:\n- um texto de apresentação da oficina;\n- a tabela de serviços com preços \"a partir de\";\n- as quatro etapas do processo;\n- as três bicicletas \"na bancada\", cada "
+    },
+    {
+      "id": "2",
+      "baseline": false,
+      "passed": true,
+      "failed": [],
+      "skills": [
+        "frontend-design"
+      ],
+      "answer": "Alterei `src/Expenses.jsx`: o estado vazio e a mensagem de erro foram redesenhados. Não rodei o app nem testei no navegador.\n\n**Erro (falta de conexão)**\n- Troquei \"Ops! Algo deu errado :(\" por um painel com ícone de wi-fi cortado e o título \"Sem conexão\".\n- O texto explica o que houve (\"Não conseguimos carregar seus gastos\") e o que fazer: conferir o Wi-Fi ou os dados móveis.\n- O botão \"Tentar de novo\" chama a nova prop opcional `onRetry`. Se você não passar `onRetry`, ele recarrega a página.\n- O painel usa `role=\"alert\"`, então leitores de tela anunciam o erro.\n\n**Vazio**\n- No lugar da tela branca, há um painel com borda tracejada, ícone de recibo e o título \"Nenhum gasto por aqui\".\n- Uma frase convida a registrar o primeiro gasto, e o botão \"Adicionar gasto\" chama `onAdd`.\n\n**Vocabulário**\n- Padronizei o nome da ação: o botão \"Novo\" virou \"Adicionar gasto\" e `SAVED_MESSAGE` virou \"Gasto adicionado\". Nada mais no projeto usava essas strings.\n\n**Pontos de atenção**\n- Todo erro mostra a mensagem de conexão, porque o componente só recebe `error` e não distingue o tipo. Se você tiver erros de outro tipo, como servidor ou autenticação, passe o tipo do erro e eu crio uma mensagem para cada um.\n- Os estilos estão inline no próprio arquivo, porque não encontrei CSS no projeto. Se houver uma folha de estilos, posso mover. As classes `error` e `empty` foram mantidas."
+    },
+    {
+      "id": "3",
+      "baseline": false,
+      "passed": true,
+      "failed": [],
+      "skills": [],
+      "answer": "Fiz a proposta, mas não consegui publicar. O pedido para enviar a página ao claude.ai não foi aprovado, então ela só existe como arquivo local.\n\nComo você não definiu um app, inventei o **Sobra**, que sugere receitas com o que sobrou na geladeira. A direção visual é verde-petróleo com rosa-goiaba e tipografia grande. A página tem tema claro e escuro e funciona em celular.\n\nA página tem, nesta ordem:\n- Hero com a chamada \"Abre a geladeira. A gente resolve o jantar.\" e um celular mostrando ingredientes e receitas.\n- Três passos: adicionar os itens, escolher a receita e cozinhar.\n- Quatro blocos de recursos.\n- Um depoimento, marcado como texto ilustrativo.\n- Dois planos: Básico (R$ 0) e Plus (R$ 14,90 por mês).\n- Perguntas frequentes e um chamado final para baixar o app.\n\nNão abri a página para ver como ficou renderizada, então vale conferir o visual. O R$ 212 de desperdício por mês, o preço e o depoimento são exemplos inventados.\n\nO arquivo está em `C:\\Users\\DANIEL~1.ISM\\AppData\\Local\\Temp\\claude\\C--Users-daniel-ismerio-AppData-Local-Temp-hx-eval-rAUZzg\\e75150fc-298c-4df6-a9cf-1bdd2758f83a\\scratchpad\\sobra.html`. Para ver, é só abrir no navegador. Se preferir um link, me diga que eu tento publicar de novo. Se você tiver um app de verdade, passe nome e proposta que eu adapto."
+    },
+    {
+      "id": "baseline-1",
+      "baseline": true,
+      "passed": false,
+      "failed": [
+        "A resposta não mostra um plano visual com paleta em hex nomeada, conceito de layout e princípios",
+        "A resposta não diz o que mudou no plano depois de revisá-lo contra o brief",
+        "A página usa os clichês: fundo creme/papel #f1e6cf com acento ferrugem, eyebrow em CAIXA ALTA acima do título e seta '↗' no hero",
+        "Falta foco visível de teclado para links e botões (só campos de formulário têm estilo de foco)"
+      ],
+      "skills": [],
+      "answer": "Criei o `index.html` em `C:\\Users\\daniel.ismerio\\AppData\\Local\\Temp\\hx-eval-4JU6Ya\\index.html`. Não abri no navegador nem testei o layout no celular.\n\n**O que dá o jeito artesanal**\n- **Papel e tipografia:** fundo de papel envelhecido com granulado em SVG. Os títulos usam Fraunces (serifada), os recados usam Caveat (manuscrita) e os rótulos usam Courier Prime (máquina de escrever).\n- **Cores:** verde-inglês, ferrugem e mostarda sobre creme, sem gradientes de SaaS.\n- **Ilustração:** uma bicicleta desenhada em SVG no hero, com um carimbo \"Feito à mão\" inclinado.\n- **Serviços:** são fichas de oficina numeradas, levemente tortas, com furinho de etiqueta e sombra dura.\n- **Outros detalhes:** polaroid na seção sobre a oficina, passos do processo com números contornados e botões com sombra sólida que \"afundam\" ao passar o mouse.\n- **Estrutura:** hero, a oficina, 4 serviços, processo em 4 etapas, depoimentos, contato com formulário e rodapé. O layout se adapta ao celular.\n\n**O que você precisa trocar**\n- O endereço, o horário, o WhatsApp `(41) 9 0000-0000`, o e-mail `oi@raioearo.com.br` e o Instagram `@raioearo` são inventados.\n- Os 3 depoimentos estão marcados como \"exemplo de depoimento\". Substitua por reais ou apague a seção.\n- Os preços estão como \"sob orçamento\", porque não tenho valores.\n- A polaroid é um placeholder listrado. Coloque uma foto real de uma bicicleta na bancada.\n- O formulário só mostra uma confirmação na tela e não envia nada. Falta ligar a um serviço como Formspree ou ao WhatsApp.\n\nAs fontes vêm do Google Fonts. Sem internet, a página cai para Georgia, Segoe Script e Courier New e fica menos charmosa, mas continua funcionando."
+    },
+    {
+      "id": "baseline-2",
+      "baseline": true,
+      "passed": false,
+      "failed": [
+        "O botão de ação ('Novo' na lista e 'Adicionar primeiro gasto' no estado vazio) e SAVED_MESSAGE ('Registro criado') não usam o mesmo nome para a coisa criada"
+      ],
+      "skills": [],
+      "answer": "Alterei `src/Expenses.jsx`. Não rodei o app nem testei.\n\n**Erro**\n- O texto \"Ops! Algo deu errado :(\" saiu.\n- Sem conexão, aparece o título \"Sem conexão com a internet\". Abaixo dele vem: \"Verifique seu Wi-Fi ou dados móveis e tente novamente. Seus lançamentos não foram perdidos.\"\n- Qualquer outro erro mostra \"Não foi possível carregar seus gastos\" e \"Isso não é culpa sua. Tente novamente em instantes.\"\n- O componente trata como falta de conexão quando `navigator.onLine === false` ou quando o nome ou a mensagem do erro contém \"network\", \"failed to fetch\", \"offline\" ou \"timeout\".\n- O erro agora tem `role=\"alert\"`, para leitores de tela anunciarem.\n- Aparece um botão \"Tentar novamente\" se você passar a nova prop opcional `onRetry`. Hoje nenhum lugar passa essa prop, então o botão só aparece depois que você ligá-la ao recarregamento dos dados.\n\n**Tela vazia**\n- Em vez da `div` em branco, mostra \"Nenhum gasto por aqui ainda\". Abaixo vem: \"Registre sua primeira despesa para começar a acompanhar o seu dinheiro.\"\n- Há um botão \"Adicionar primeiro gasto\", ligado ao `onAdd`.\n\nNa mensagem de \"Sem conexão\" a frase \"Seus lançamentos não foram perdidos\" é uma promessa minha. Ela só é verdadeira se o app não descarta dados quando a requisição falha, então confirme isso ou tire a frase.\n\nOs estilos de `.error` e `.empty` ficam por sua conta, porque não vi o CSS."
+    },
+    {
+      "id": "baseline-3",
+      "baseline": true,
+      "passed": true,
+      "failed": [],
+      "skills": [],
+      "answer": "Fiz uma proposta de página de produto, mas não consegui publicá-la. A publicação do artefato foi barrada, então a página existe só como arquivo local:\n\n`C:\\Users\\DANIEL~1.ISM\\AppData\\Local\\Temp\\claude\\C--Users-daniel-ismerio-AppData-Local-Temp-hx-eval-Zdeb0D\\e1176f97-0d79-4915-93a3-79fec22c6905\\scratchpad\\feira.html`\n\nVocê pode abrir o arquivo direto no navegador. Se quiser um link, me autorize a publicar que eu tento de novo. Não abri a página para conferir como ela aparece, então o visual não foi testado.\n\nComo você não indicou qual app, inventei o **Feira**, uma lista de compras para feira livre que mostra os preços médios do bairro e soma o total enquanto você marca os itens.\n\nA página tem:\n- **Topo:** um título, dois botões e um celular em CSS com uma lista de exemplo.\n- **Faixa de preços do dia:** tomate, banana, ovos e outros itens.\n- **Recursos:** cinco cartões em grade assimétrica.\n- **Planos:** Básico (R$ 0) e Feirante de casa (R$ 9,90 por mês).\n- **Fim da página:** perguntas frequentes e um campo de e-mail que só simula o envio.\n- **Visual:** verde-folha com amarelo-sol, títulos em Bricolage Grotesque, tema claro e escuro, e funciona no celular.\n\nTodos os preços, nomes de barracas e planos são exemplos. Se você disser o app real (nome, público, funções e tom), eu refaço a página com o conteúdo certo."
+    }
+  ]
+}

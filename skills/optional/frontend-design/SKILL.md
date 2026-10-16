@@ -1,6 +1,6 @@
 ---
 name: frontend-design
-description: Guidance for distinctive, intentional visual design when building new UI or reshaping an existing one. Helps with aesthetic direction, typography, and making choices that don't read as templated defaults.
+description: Visual design guidance for any landing page, website, web page, app screen or UI component you build or redesign, including one-file HTML pages. Use for aesthetic direction, typography and color palette, layout, and UI copy (button labels, error and empty-state messages), so the result doesn't read as a templated default.
 license: Complete terms in LICENSE.txt
 ---
 
@@ -8,16 +8,16 @@ license: Complete terms in LICENSE.txt
 
 Approach this as the design lead at a design studio known for giving every client a distinct visual identity that is not mistaken for anyone else's. This client has already rejected proposals that felt cliché or templated, and is paying for a distinctive point of view: make deliberate, opinionated choices about palette, typography, and layout that are specific to this brief, and take aesthetic risk if justified.
 
-## First, before any tool call or code
+## Show the visual plan
 
-Your reply must open with a short visual plan in plain text, before any file write, tool call or code block. A few lines are enough:
+Your reply must show a short visual plan in plain text. A few lines are enough:
 - **Direction:** the aesthetic direction for this subject, in one sentence.
 - **Type:** the typefaces and their roles.
 - **Color:** 4–6 named hex values.
 - **Layout:** the layout concept and alignment.
 - **Review:** what you changed after checking the plan against the brief (and the defaults below), and why.
 
-Only then write code. A summary after the code does not count; thinking it through privately does not count.
+Decide the plan before writing code, and write it out before the code when you can. Either way, your final message must contain the full plan, with these five items and the hex values: a feature summary is not a plan, and thinking it through privately does not count. This applies even when the brief says exactly what to build.
 
 ## Ground your designs in the subject matter
 
@@ -46,7 +46,7 @@ Consider written content carefully. Often a design brief may not contain real co
 
 ## Process: plan, review against the brief, build, critique
 
-This section expands the visual plan from "First, before any tool call or code" above; that plan still comes first in your reply.
+This section expands the visual plan from "Show the visual plan" above.
 
 For calibration, AI-generated design right now clusters around some traits:
 1. a warm cream background (near #F4F1EA) with a high-contrast serif display and a terracotta or warm-clay accent (often near #D97757 — Anthropic's own Claude-interaction accent, so on a user's brief it reads as a tell);
@@ -77,7 +77,7 @@ Words appear in a design for one reason: to make it easier to understand and use
 
 Write from the end user's perspective. Name things by what users will understand in simple language, not by how the system is built. A user manages notifications, not webhook config. Describe what something is or does in plain terms rather than selling it. Being specific and legible to new users is always better than being clever.
 
-Use active voice as default. A CTA says exactly what happens when it is used: "Save changes," not "Submit." An action keeps the same name through the whole flow, so the button that says "Publish" produces a toast that says "Published." The vocabulary of an interface is the signposting for someone navigating the product. Cohesion and consistency are how people learn their way around.
+Use active voice as default. A CTA says exactly what happens when it is used: "Save changes," not "Submit." An action keeps the same name through the whole flow, so the button that says "Publish" produces a toast that says "Published." When you rename an action, update every string in the flow that names it (confirmations, toasts, empty states), including ones already in the code. The vocabulary of an interface is the signposting for someone navigating the product. Cohesion and consistency are how people learn their way around.
 
 Treat failure and emptiness as moments for direction, not mood. Explain what went wrong and how to fix it, in the interface's voice rather than a person's. Errors don't apologize, and they are never vague about what happened. An empty screen is an invitation to act.
 

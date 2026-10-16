@@ -3851,7 +3851,7 @@ var init_skills3 = __esm({
 
 // cli/src/eval/run.ts
 function parseStream(out) {
-  const s2 = { text: "", skills: [], sessionId: "", usage: [] };
+  const s2 = { text: "", answer: "", skills: [], sessionId: "", usage: [] };
   const texts = [];
   for (const line2 of out.split("\n")) {
     let o;
@@ -3867,7 +3867,8 @@ function parseStream(out) {
           s2.skills.push(c.input.skill);
       }
     if (o.type !== "result") continue;
-    s2.text = texts.length ? texts.join("\n\n") : o.result ?? "";
+    s2.text = o.result ?? "";
+    s2.answer = texts.length ? texts.join("\n\n") : s2.text;
     s2.sessionId = o.session_id ?? "";
     const mu = Object.entries(o.modelUsage ?? {});
     const u = o.usage ?? {};
@@ -4033,7 +4034,7 @@ async function evalSkill(repo, skill, scope, ctx) {
         async (sb) => {
           const perms = ["--permission-mode", "acceptEdits", "--allowedTools", '"Bash(hx:*)"'];
           const s2 = await claude(r.c.prompt, sb, perms, ctx);
-          return { ...r, answer: s2.text, skills: s2.skills, files: outputs(sb) };
+          return { ...r, answer: s2.answer, skills: s2.skills, files: outputs(sb) };
         },
         r.c.files,
         evalsDir
