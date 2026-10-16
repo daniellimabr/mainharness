@@ -8,6 +8,8 @@ argument-hint: "<título da decisão>"
 
 Um ADR guarda **por que** algo foi decidido, para ninguém reabrir a discussão sem motivo. Um ADR por decisão.
 
+**ADR existente é imutável.** Pedido para "atualizar", "corrigir" ou "mudar" a decisão de um ADR (ou ADR desatualizado) = **ADR novo que o substitui** (veja "Substituir uma decisão"). No antigo, só o status muda.
+
 ## Quando criar
 
 - Escolha entre alternativas reais com custo de voltar atrás (biblioteca, formato de dados, estrutura de pastas, estratégia de teste ou de release).
@@ -38,6 +40,7 @@ Português do Brasil, frases curtas, sem jargão desnecessário. Um ADR cabe em 
 ## Antes de terminar
 
 - [ ] Número sequencial, sem buraco nem repetição.
+- [ ] Mudou uma decisão antiga? ADR novo; no antigo, só `substituído por NNNN`.
 - [ ] Toda afirmação de "documentação" tem fonte.
 - [ ] Pelo menos duas alternativas.
 - [ ] Status e data preenchidos.

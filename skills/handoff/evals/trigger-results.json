@@ -1,5 +1,5 @@
 {
-  "date": "2026-10-16T04:04:27.287Z",
+  "date": "2026-10-16T10:31:45.429Z",
   "results": [
     {
       "query": "o hook avisou que passamos de 230K, grava o handoff agora",
@@ -13,11 +13,9 @@
     {
       "query": "delega a T04 para um clone e passa o contexto necessário para ele",
       "should_trigger": true,
-      "triggered": true,
-      "skills": [
-        "handoff"
-      ],
-      "passed": true
+      "triggered": false,
+      "skills": [],
+      "passed": false
     },
     {
       "query": "vou trocar de chat, deixa um bilhete com o estado atual e os próximos passos",
