@@ -1,9 +1,10 @@
 // Project setup steps of /attach: templates, default lint, .claude/settings.json and plugins.
-import { spawnSync } from "node:child_process";
 import * as fs from "node:fs";
 import * as path from "node:path";
 import { readJson, writeJson } from "../core/fsx";
 import { pluginRoot } from "../core/paths";
+import { runTool } from "../core/proc";
+import { ESLINT_CONFIG } from "../lint";
 import { hasOtherLanguage } from "./classify";
 
 export const PLUGINS = [
@@ -40,30 +41,15 @@ export function createIfMissing(file: string, content: string): boolean {
   return true;
 }
 
-/** Runs a fixed command line through the platform shell (npm/claude are .cmd shims on Windows). */
-function runFixed(cwd: string, cmd: string, args: string[]) {
-  if (cmd.endsWith(".js"))
-    return spawnSync(process.execPath, [cmd, ...args], { cwd, encoding: "utf8" });
-  if (process.platform === "win32")
-    return spawnSync(
-      process.env.ComSpec || "cmd.exe",
-      ["/d", "/s", "/c", [cmd, ...args].join(" ")],
-      {
-        cwd,
-        encoding: "utf8",
-        windowsHide: true,
-      },
-    );
-  return spawnSync(cmd, args, { cwd, encoding: "utf8" });
-}
-
-const ESLINT_CONFIGS = /^(eslint\.config\.(js|mjs|cjs|ts|mts|cts)|\.eslintrc(\..+)?)$/;
+const INSTALL_MS = 10 * 60_000;
+const PLUGIN_MS = 2 * 60_000;
 
 /** Installs the default lint (section 9). Returns a short message for the summary. */
 export function setupLint(root: string, install: boolean): string {
   const pkgFile = path.join(root, "package.json");
   const pkg = readJson<Record<string, unknown> | null>(pkgFile, null);
-  if (fs.readdirSync(root).some((f) => ESLINT_CONFIGS.test(f)) || pkg?.eslintConfig)
+  const hasEslint = (f: string) => ESLINT_CONFIG.test(f) || f.startsWith(".eslintrc");
+  if (fs.readdirSync(root).some(hasEslint) || pkg?.eslintConfig)
     return "lint: o repo já tem ESLint; mantido.";
   if (!pkg && hasOtherLanguage(root))
     return "lint: projeto de outra linguagem; o lint padrão não se aplica.";
@@ -87,8 +73,7 @@ export function setupLint(root: string, install: boolean): string {
   ] as const)
     createIfMissing(path.join(root, dest), fs.readFileSync(templatePath(`lint/${src}`), "utf8"));
   if (!install) return "lint: ESLint + Prettier configurados (npm install pulado).";
-  const r = runFixed(root, "npm", ["install"]);
-  return r.status === 0
+  return runTool("npm", ["install"], INSTALL_MS, root).ok
     ? "lint: ESLint + Prettier instalados."
     : "lint: configurado, mas o npm install falhou; rode npm install no repo.";
 }
@@ -113,11 +98,9 @@ export function mergeSettings(root: string, contextLimit: number): void {
 
 /** Installs the plugins at project scope via the claude CLI; falls back to enabledPlugins. */
 export function installPlugins(root: string): string {
-  const bin = process.env.HARNESS_CLAUDE_BIN || "claude";
-  const failed = PLUGINS.filter((id) => {
-    const r = runFixed(root, bin, ["plugin", "install", id, "--scope", "project"]);
-    return r.status !== 0;
-  });
+  const failed = PLUGINS.filter(
+    (id) => !runTool("claude", ["plugin", "install", id, "--scope", "project"], PLUGIN_MS, root).ok,
+  );
   if (!failed.length) return "plugins: instalados no projeto.";
   const file = path.join(root, ".claude", "settings.json");
   const s = readJson<Record<string, unknown>>(file, {});
@@ -130,11 +113,10 @@ export function installPlugins(root: string): string {
 
 /** After a release: Claude Code caches plugins per version, so each attached project needs an update. */
 export function updatePlugins(roots: string[]): string {
-  const bin = process.env.HARNESS_CLAUDE_BIN || "claude";
   const live = roots.filter((r) => fs.existsSync(r));
   const perProject = live.map((r) =>
     PLUGINS.filter(
-      (id) => runFixed(r, bin, ["plugin", "update", id, "--scope", "project"]).status !== 0,
+      (id) => !runTool("claude", ["plugin", "update", id, "--scope", "project"], PLUGIN_MS, r).ok,
     ).map((id) => `${r} (${id})`),
   );
   const ok = perProject.filter((f) => !f.length).length;

@@ -3,7 +3,8 @@ import * as fs from "node:fs";
 import { createRequire } from "node:module";
 import * as path from "node:path";
 
-const ESLINT_CONFIGS = ["js", "mjs", "cjs", "ts", "mts", "cts"].map((e) => `eslint.config.${e}`);
+/** ESLint flat config file names (eslint.config.{js,mjs,cjs,ts,mts,cts}). */
+export const ESLINT_CONFIG = /^eslint\.config\.[cm]?[jt]s$/;
 const MAX_LINES = 20;
 
 interface Prettier {
@@ -56,7 +57,7 @@ async function format(req: NodeJS.Require, root: string, file: string): Promise<
 }
 
 async function lint(req: NodeJS.Require, root: string, file: string): Promise<string[]> {
-  if (!ESLINT_CONFIGS.some((c) => fs.existsSync(path.join(root, c)))) return [];
+  if (!fs.readdirSync(root).some((f) => ESLINT_CONFIG.test(f))) return [];
   const mod = load<{ ESLint: ESLintCtor }>(req, "eslint");
   if (!mod) return [];
   const eslint = new mod.ESLint({ cwd: root, fix: true });

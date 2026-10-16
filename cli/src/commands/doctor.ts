@@ -1,10 +1,11 @@
 // hx doctor: checks the machine and the current project for what the harness needs.
-import { spawnSync, type SpawnSyncReturns } from "node:child_process";
+import { spawnSync } from "node:child_process";
 import * as fs from "node:fs";
 import * as os from "node:os";
 import * as path from "node:path";
 import { PLUGINS } from "../attach/setup";
 import { readJson, samePathKey } from "../core/fsx";
+import { runTool } from "../core/proc";
 import { claudeHome, home, pluginRoot } from "../core/paths";
 import { resolveProject } from "../core/projects";
 import { hxOnPath } from "../core/shim";
@@ -22,44 +23,6 @@ const SKILLS = [
   "archify",
 ];
 const THIRD_PARTY = PLUGINS.filter((id) => !id.startsWith("main-harness@"));
-
-/** Finds an executable on PATH (Windows: tries PATHEXT). `claude` honors HARNESS_CLAUDE_BIN. */
-function which(cmd: string): string | null {
-  if (cmd === "claude" && process.env.HARNESS_CLAUDE_BIN) return process.env.HARNESS_CLAUDE_BIN;
-  const win = process.platform === "win32";
-  const exts = win ? (process.env.PATHEXT || ".COM;.EXE;.BAT;.CMD").split(";") : [""];
-  for (const dir of (process.env.PATH || "").split(path.delimiter)) {
-    if (!dir) continue;
-    for (const ext of exts) {
-      const f = path.join(dir, cmd + ext.toLowerCase());
-      if (fs.existsSync(f) && fs.statSync(f).isFile()) return f;
-    }
-  }
-  return null;
-}
-
-/** Runs a tool without a shell string; .cmd/.bat shims go through cmd.exe with quoted args. */
-export function runTool(
-  cmd: string,
-  args: string[],
-  timeout = TIMEOUT,
-): { ok: boolean; out: string } {
-  const bin = which(cmd);
-  if (!bin) return { ok: false, out: "" };
-  const o = { encoding: "utf8" as const, timeout, windowsHide: true };
-  let r: SpawnSyncReturns<string>;
-  if (/\.(c|m)?js$/i.test(bin)) r = spawnSync(process.execPath, [bin, ...args], o);
-  else if (/\.(cmd|bat)$/i.test(bin)) {
-    const all = [bin, ...args];
-    if (all.some((a) => /["%^&|<>!\r\n]/.test(a))) return { ok: false, out: "" };
-    const line = `"${all.map((a) => `"${a}"`).join(" ")}"`;
-    r = spawnSync(process.env.ComSpec || "cmd.exe", ["/d", "/s", "/c", line], {
-      ...o,
-      windowsVerbatimArguments: true,
-    });
-  } else r = spawnSync(bin, args, o);
-  return { ok: !r.error && r.status === 0, out: `${r.stdout ?? ""}${r.stderr ?? ""}`.trim() };
-}
 
 function pythonVersion(): string | null {
   const tries: [string, string[]][] = [

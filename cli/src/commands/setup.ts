@@ -6,7 +6,7 @@ import { ensureConfig, loadConfig } from "../core/config";
 import { readJson } from "../core/fsx";
 import { claudeHome, home, pluginRoot } from "../core/paths";
 import { addToUserPath, shimDir, writeShims } from "../core/shim";
-import { runTool } from "./doctor";
+import { runTool } from "../core/proc";
 
 const PLACEHOLDER = "C:/harness-stable";
 

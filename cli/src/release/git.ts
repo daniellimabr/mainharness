@@ -1,8 +1,15 @@
 // Thin git wrapper (array args, so paths with spaces are safe).
 import { spawnSync } from "node:child_process";
 
+/** Raw run, for callers that need the exit status. No timeout unless given (hooks can be slow). */
+export const gitRun = (cwd: string, args: string[], timeout?: number) =>
+  spawnSync("git", args, { cwd, encoding: "utf8", windowsHide: true, timeout });
+
+export const isGitRepo = (cwd: string) =>
+  gitRun(cwd, ["rev-parse", "--is-inside-work-tree"]).stdout?.trim() === "true";
+
 export function git(cwd: string, args: string[], allowFail = false): string {
-  const r = spawnSync("git", args, { cwd, encoding: "utf8" });
+  const r = gitRun(cwd, args);
   if (r.status !== 0 && !allowFail) {
     throw new Error(`git ${args.join(" ")}: ${(r.stderr || r.stdout || "").trim()}`);
   }

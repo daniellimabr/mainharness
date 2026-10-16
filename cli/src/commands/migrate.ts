@@ -1,5 +1,4 @@
 // hx migrate: brings a project's harness files to the installed harness version (up or down).
-import { spawnSync } from "node:child_process";
 import * as fs from "node:fs";
 import * as path from "node:path";
 import { parseArgs } from "../core/args";
@@ -9,6 +8,7 @@ import { readHarnessJson, resolveProject, writeHarnessJson } from "../core/proje
 import { compareVersions, harnessVersion } from "../core/version";
 import { emit } from "../events/emit";
 import { MIGRATIONS, type Migration } from "../migrations";
+import { gitRun, isGitRepo } from "../release/git";
 
 export interface MigrateResult {
   from: string;
@@ -21,13 +21,6 @@ export interface MigrateOptions {
   commit?: boolean;
   migrations?: Migration[];
   dryRun?: boolean;
-}
-
-const git = (root: string, args: string[]) =>
-  spawnSync("git", ["-C", root, ...args], { encoding: "utf8", timeout: 15000 });
-
-function isGitRepo(root: string): boolean {
-  return git(root, ["rev-parse", "--is-inside-work-tree"]).stdout?.trim() === "true";
 }
 
 function writePlan(root: string, m: Migration, from: string, to: string, down: boolean): string {
@@ -135,10 +128,13 @@ export function migrateProject(root: string, opts: MigrateOptions = {}): Migrate
   if ((opts.commit ?? isGitRepo(root)) && touched.size) {
     const files = [...touched]
       .map((f) => path.relative(root, f))
-      .filter((f) => fs.existsSync(path.join(root, f)) || git(root, ["ls-files", "--", f]).stdout);
-    const add = git(root, ["add", "-A", "--", ...files]);
+      .filter(
+        (f) => fs.existsSync(path.join(root, f)) || gitRun(root, ["ls-files", "--", f]).stdout,
+      );
+    const add = gitRun(root, ["add", "-A", "--", ...files]);
     const msg = `chore(harness): migrate to v${result.pending ? result.applied.at(-1) : to}`;
-    const commit = add.status === 0 ? git(root, ["commit", "-q", "-m", msg, "--", ...files]) : add;
+    const commit =
+      add.status === 0 ? gitRun(root, ["commit", "-q", "-m", msg, "--", ...files]) : add;
     if (commit.status !== 0) logError("migrate commit", commit.stderr || commit.stdout);
   }
   return result;

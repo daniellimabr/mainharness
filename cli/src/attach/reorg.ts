@@ -1,17 +1,10 @@
 // Previous-harness reorganization: git backup, written plan, and the approved move to docs/legacy-harness.
-import { spawnSync } from "node:child_process";
 import * as fs from "node:fs";
 import * as path from "node:path";
+import { gitRun } from "../release/git";
 
 export const PLAN_FILE = "docs/harness-reorg-plan.md";
 export const LEGACY_DIR = "docs/legacy-harness";
-
-const git = (cwd: string, ...args: string[]) =>
-  spawnSync("git", args, { cwd, encoding: "utf8", windowsHide: true });
-
-export function isGitRepo(root: string): boolean {
-  return git(root, "rev-parse", "--is-inside-work-tree").stdout?.trim() === "true";
-}
 
 function stamp(d = new Date()): string {
   const p = (n: number) => String(n).padStart(2, "0");
@@ -23,16 +16,16 @@ export function gitBackup(root: string): { tag: string; branch: string } {
   const s = stamp();
   const tag = `harness-backup-${s}`;
   const branch = `harness-backup/${s}`;
-  if (git(root, "rev-parse", "--verify", "HEAD").status !== 0) {
-    git(root, "add", "-A");
-    const c = git(root, "commit", "-q", "-m", "chore: snapshot before harness attach");
+  if (gitRun(root, ["rev-parse", "--verify", "HEAD"]).status !== 0) {
+    gitRun(root, ["add", "-A"]);
+    const c = gitRun(root, ["commit", "-q", "-m", "chore: snapshot before harness attach"]);
     if (c.status !== 0) throw new Error(`git commit falhou: ${c.stderr.trim()}`);
   }
   for (const args of [
     ["tag", tag],
     ["branch", branch],
   ]) {
-    const r = git(root, ...args);
+    const r = gitRun(root, args);
     if (r.status !== 0 && !/already exists/.test(r.stderr))
       throw new Error(`git ${args[0]} falhou: ${r.stderr.trim()}`);
   }
@@ -76,7 +69,7 @@ export function moveToLegacy(root: string, harness: string[], useGit: boolean): 
     const to = path.join(root, LEGACY_DIR, rel);
     if (!fs.existsSync(from)) continue;
     fs.mkdirSync(path.dirname(to), { recursive: true });
-    if (useGit) git(root, "mv", "-k", rel, `${LEGACY_DIR}/${rel}`);
+    if (useGit) gitRun(root, ["mv", "-k", rel, `${LEGACY_DIR}/${rel}`]);
     // Untracked leftovers (or no git): plain copy + remove.
     if (fs.existsSync(from)) {
       fs.cpSync(from, to, { recursive: true });

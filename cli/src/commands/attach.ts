@@ -2,7 +2,8 @@
 import * as fs from "node:fs";
 import * as path from "node:path";
 import { classify, hasPreviousHarness } from "../attach/classify";
-import { gitBackup, isGitRepo, moveToLegacy, writePlan } from "../attach/reorg";
+import { gitBackup, moveToLegacy, writePlan } from "../attach/reorg";
+import { isGitRepo } from "../release/git";
 import { enableSkill, isWebProject, listCatalog } from "../attach/skills";
 import { createIfMissing, installPlugins, mergeSettings, render, setupLint } from "../attach/setup";
 import { parseArgs } from "../core/args";
