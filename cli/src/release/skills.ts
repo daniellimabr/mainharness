@@ -4,7 +4,7 @@ import { createHash } from "node:crypto";
 import * as fs from "node:fs";
 import * as path from "node:path";
 import { readJson, writeJson } from "../core/fsx";
-import { git } from "./git";
+import { git, versionTags } from "./git";
 
 export interface SkillResults {
   skill: string;
@@ -74,7 +74,42 @@ export interface SkillGate {
   reason: string;
 }
 
-export function checkSkills(repo: string, skills: string[]): SkillGate[] {
+export interface EvalScope {
+  trigger: boolean;
+  evals: boolean;
+  isNew: boolean;
+}
+
+const lf = (s: string) => s.replace(/\r\n/g, "\n");
+const frontmatter = (s: string) => /^---\n[\s\S]*?\n---\n?/.exec(s)?.[0] ?? "";
+
+/**
+ * What a skill change since `sinceTag` (working tree) requires: description (frontmatter) changed
+ * -> trigger; body or any other file outside evals/ changed -> cases; new skill -> both + baseline.
+ */
+export function evalScope(repo: string, skill: string, sinceTag: string | null): EvalScope {
+  const md = `${skill}/SKILL.md`;
+  if (!sinceTag || !git(repo, ["ls-tree", "--name-only", sinceTag, "--", md], true))
+    return { trigger: true, evals: true, isNew: true };
+  const cur = lf(fs.readFileSync(path.join(repo, md), "utf8"));
+  const prev = lf(git(repo, ["show", `${sinceTag}:${md}`], true));
+  const others = git(repo, ["diff", "--name-only", sinceTag, "--", skill], true)
+    .split("\n")
+    .some((f) => f && f !== md && !f.startsWith(`${skill}/evals/`));
+  const body = (s: string) => s.slice(frontmatter(s).length).trim();
+  return {
+    trigger: frontmatter(cur).trim() !== frontmatter(prev).trim(),
+    evals: others || body(cur) !== body(prev),
+    isNew: false,
+  };
+}
+
+/** Gate: results.json passed, stamped with the current hash, holding the block the scope demands. */
+export function checkSkills(
+  repo: string,
+  skills: string[],
+  sinceTag = versionTags(repo).pop() ?? null,
+): SkillGate[] {
   return skills.map((skill) => {
     const dir = path.join(repo, skill);
     const res = readJson<SkillResults | null>(path.join(dir, "evals", "results.json"), null);
@@ -82,6 +117,11 @@ export function checkSkills(repo: string, skills: string[]): SkillGate[] {
     if (!res.passed) return { skill, ok: false, reason: "evals não passaram" };
     if (res.skillSha256 !== skillHash(dir))
       return { skill, ok: false, reason: "skill mudou depois dos evals" };
+    const need = evalScope(repo, skill, sinceTag);
+    if (need.trigger && !res.trigger)
+      return { skill, ok: false, reason: "falta o eval de acionamento (descrição mudou)" };
+    if (need.evals && !res.evals)
+      return { skill, ok: false, reason: "faltam os casos de eval (corpo mudou)" };
     return { skill, ok: true, reason: "ok" };
   });
 }

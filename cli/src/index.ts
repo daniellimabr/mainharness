@@ -16,6 +16,7 @@ const COMMANDS: Record<string, () => Promise<{ run: Run }>> = {
   attach: () => import("./commands/attach"),
   migrate: () => import("./commands/migrate"),
   skills: () => import("./commands/skills"),
+  eval: () => import("./commands/eval"),
   doctor: () => import("./commands/doctor"),
   setup: () => import("./commands/setup"),
   release: () => import("./commands/release"),
@@ -43,6 +44,7 @@ const HELP = `hx <command> [args]
   attach [dir]                conecta um repo ao harness
   migrate                     aplica migrações do harness no projeto
   skills on|off <nome>        liga/desliga skill opcional
+  eval <skill>|--changed      roda os evals da skill (Sonnet) e grava results.json
   doctor                      confere o ambiente
   setup                       instalação da máquina (uma vez)
   release patch|minor|major   publica versão do harness

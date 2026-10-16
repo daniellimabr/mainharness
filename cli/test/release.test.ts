@@ -26,7 +26,14 @@ function stampOk(skill: string): void {
   const dir = path.join(repo, skill);
   write(
     `${skill}/evals/results.json`,
-    JSON.stringify({ skill, skillSha256: skillHash(dir), date: "2026-10-15", passed: true }),
+    JSON.stringify({
+      skill,
+      skillSha256: skillHash(dir),
+      date: "2026-10-15",
+      passed: true,
+      trigger: { passed: 8, total: 8 },
+      evals: { passed: 3, total: 3 },
+    }),
   );
 }
 
@@ -115,10 +122,14 @@ describe("hx release / rollback", () => {
     const r2 = runHx(["release", "patch"], { cwd: repo, env });
     expect(r2.code).toBe(0);
     expect(git(stable, ["describe", "--tags", "--exact-match", "HEAD"])).toBe("v0.1.1");
-    expect(fs.readFileSync(log, "utf8").trim()).toBe(
-      `${proj} plugin update main-harness@harness-stable --scope project`,
+    expect(fs.readFileSync(log, "utf8").trim().split(/\r?\n/)).toEqual(
+      [
+        "main-harness@harness-stable",
+        "ponytail@ponytail",
+        "security-guidance@claude-plugins-official",
+      ].map((id) => `${proj} plugin update ${id} --scope project`),
     );
-    expect(r2.stdout).toContain("plugin atualizado em 1 projeto(s)");
+    expect(r2.stdout).toContain("plugins atualizados em 1 projeto(s)");
     expect(
       fs.readFileSync(path.join(repo, "CHANGELOG.md"), "utf8").indexOf("[0.1.1]"),
     ).toBeLessThan(fs.readFileSync(path.join(repo, "CHANGELOG.md"), "utf8").indexOf("[0.1.0]"));
