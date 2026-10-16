@@ -266,6 +266,9 @@ describe("sprint commands (real bundle, project with spaces)", () => {
     const c = hx("sprint", "close", "S01", "--at", "2026-10-15T04:00:00Z");
     expect(c.stderr).toBe("");
     expect(c.code).toBe(0);
+    expect(c.stdout.split("\n")[0]).toBe(
+      "Sprint S01 fechada: 3/3 tarefas em 1 h 45 min (aguardou teste por 10 min)",
+    );
     expect(c.stdout).toContain("### Indicadores — S01");
     expect(c.stdout).toContain("| Reprovações do Reviewer | 1 |");
     // sequential with gaps: wall clock (02:05 → 03:50) is longer than the sum
@@ -312,6 +315,8 @@ describe("sprint commands (real bundle, project with spaces)", () => {
       "| Tempo de relógio (previsto · corrido) | 1 h 50 min · 1 h 30 min |",
     );
     expect(r.stdout).toContain("| Soma das tarefas (planejada · real) | 1 h 50 min · 2 h 30 min |");
+    const c = hx("sprint", "close", "S01", "--at", "2026-10-15T03:30:40Z");
+    expect(c.stdout.split("\n")[0]).toBe("Sprint S01 fechada: 3/3 tarefas em 1 h 30 min");
   });
 
   it("close refuses pending tasks unless --force", () => {

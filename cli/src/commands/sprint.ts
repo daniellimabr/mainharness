@@ -142,8 +142,15 @@ function close(ctx: CommandContext, p: Parsed, id: string, force: boolean): numb
       delete s.sprintOpenedAt;
     }
   });
+  const lastDone = Math.max(
+    ...readEvents((e) => e.project === ctx.id && e.sprint === id && e.type === "task.done").map(
+      (e) => Date.parse(e.ts),
+    ),
+  );
+  const wait = (Date.parse(at) - lastDone) / 60000; // Infinity when no task is done: no wait shown
+  const waited = wait >= 1 && Number.isFinite(wait) ? ` (aguardou teste por ${fmtMin(wait)})` : "";
   console.log(
-    `Sprint ${id} fechada: ${done}/${plan.tasks.length} tarefas em ${fmtMin(duration_s / 60)}.\n\n${renderMetrics(id, plan, m)}`,
+    `Sprint ${id} fechada: ${done}/${plan.tasks.length} tarefas em ${fmtMin(m.wall_min)}${waited}\n\n${renderMetrics(id, plan, m)}`,
   );
   return 0;
 }
