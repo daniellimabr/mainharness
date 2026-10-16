@@ -2,7 +2,7 @@
 import * as fs from "node:fs";
 import * as os from "node:os";
 import * as path from "node:path";
-import { loadConfig } from "../core/config";
+import { DEFAULT_CONFIG, loadConfig } from "../core/config";
 import { isInside, samePathKey } from "../core/fsx";
 import { resolveProject } from "../core/projects";
 import { jsonOut, type HookInput, type HookOutcome } from "./runner";
@@ -418,8 +418,15 @@ export function preBash(input: HookInput): HookOutcome {
   const command = input.tool_input?.command;
   if (typeof command !== "string" || !command.trim()) return {};
   const cwd = input.cwd || process.cwd();
-  const root = resolveProject(cwd)?.root ?? cwd;
-  const v = classifyCommand(command, cwd, root, loadConfig().stableDir);
+  let root = cwd;
+  let stable = DEFAULT_CONFIG.stableDir;
+  try {
+    root = resolveProject(cwd)?.root ?? cwd;
+    stable = loadConfig().stableDir;
+  } catch {
+    // invalid HARNESS_HOME: fall back to defaults and keep guarding (never fail open)
+  }
+  const v = classifyCommand(command, cwd, root, stable);
   if (!v) return {};
   return jsonOut({
     hookSpecificOutput: {

@@ -36,7 +36,15 @@ var __toESM = (mod, isNodeMode, target) => (target = mod != null ? __create(__ge
 
 // cli/src/core/paths.ts
 function harnessHome() {
-  return process.env.HARNESS_HOME || path.join(os.homedir(), ".harness");
+  const v = process.env.HARNESS_HOME;
+  if (!v) return path.join(os.homedir(), ".harness");
+  const r = path.resolve(v);
+  const winRooted = process.platform !== "win32" || /^([a-z]:[\\/]|\\\\|\/\/)/i.test(v);
+  if (!path.isAbsolute(v) || !winRooted || r === path.parse(r).root)
+    throw new Error(
+      `HARNESS_HOME inv\xE1lido: '${v}' (use um caminho absoluto que n\xE3o seja a raiz do disco, ou deixe vazio para ~/.harness)`
+    );
+  return v;
 }
 function pluginRoot() {
   if (process.env.CLAUDE_PLUGIN_ROOT) return path.resolve(process.env.CLAUDE_PLUGIN_ROOT);
@@ -424,6 +432,7 @@ var init_schema = __esm({
         tasks_done: n(),
         planned_min: n(),
         actual_min: n(),
+        wall_min: n(opt),
         tokens_input: n(),
         tokens_output: n(),
         tokens_cache_write: n(),
@@ -1403,8 +1412,14 @@ function preBash(input) {
   const command = input.tool_input?.command;
   if (typeof command !== "string" || !command.trim()) return {};
   const cwd = input.cwd || process.cwd();
-  const root = resolveProject(cwd)?.root ?? cwd;
-  const v = classifyCommand(command, cwd, root, loadConfig().stableDir);
+  let root = cwd;
+  let stable = DEFAULT_CONFIG.stableDir;
+  try {
+    root = resolveProject(cwd)?.root ?? cwd;
+    stable = loadConfig().stableDir;
+  } catch {
+  }
+  const v = classifyCommand(command, cwd, root, stable);
   if (!v) return {};
   return jsonOut({
     hookSpecificOutput: {
@@ -1918,6 +1933,7 @@ function computeMetrics(project, sprintId2, plan) {
     tasks_done: plan.tasks.filter((t) => t.id in durations).length,
     planned_min: plan.tasks.reduce((a, t) => a + t.planned_min, 0),
     actual_min: r1(Object.values(durations).reduce((a, s2) => a + s2, 0) / 60),
+    wall_min: 0,
     tokens_input: 0,
     tokens_output: 0,
     tokens_cache_write: 0,
@@ -1952,6 +1968,12 @@ function computeMetrics(project, sprintId2, plan) {
   m.usd = r4(m.usd);
   for (const rec of [m.usd_by_agent, m.usd_by_task])
     for (const [k, v] of Object.entries(rec)) rec[k] = r4(v);
+  const ts = (type) => evs.filter((e) => e.type === type).map((e) => Date.parse(e.ts)).sort((a, b2) => a - b2);
+  const starts = ts("task.start");
+  const ends = ts("task.done");
+  const first = starts[0] ?? ends[0];
+  const last = ends.at(-1);
+  if (first !== void 0 && last !== void 0) m.wall_min = r1((last - first) / 6e4);
   return m;
 }
 function renderMetrics(sprintId2, plan, m) {
@@ -1968,10 +1990,11 @@ function renderMetrics(sprintId2, plan, m) {
     "| Tarefa | Planejado | Real | Diferen\xE7a | Custo |",
     "|---|---|---|---|---|",
     ...rows,
-    `| **Total** | ${fmtMin(m.planned_min)} | ${fmtMin(m.actual_min)} | | ${usd2(m.usd)} |`,
+    `| **Total** | ${fmtMin(m.planned_min)} | ${fmtMin(m.actual_min)} (soma) | | ${usd2(m.usd)} |`,
     "",
     "| Indicador | Valor |",
     "|---|---|",
+    `| Tempo (planejado \xB7 soma \xB7 corrido) | ${fmtMin(m.planned_min)} \xB7 ${fmtMin(m.actual_min)} \xB7 ${fmtMin(m.wall_min)} |`,
     `| Tarefas feitas | ${m.tasks_done}/${m.tasks_total} |`,
     `| Tokens (entrada / sa\xEDda / escrita em cache / leitura de cache) | ${tok(m.tokens_input)} / ${tok(m.tokens_output)} / ${tok(m.tokens_cache_write)} / ${tok(m.tokens_cache_read)} |`,
     `| Custo total | ${usd2(m.usd)} |`,
@@ -3269,6 +3292,10 @@ function runDoctor(opts = {}) {
     "marketplace harness-stable n\xE3o registrado: rode hx setup"
   );
   const root = opts.projectRoot ?? resolveProject(process.cwd())?.root ?? null;
+  if ((root ?? process.cwd()).includes(" "))
+    lines.push(
+      '\u26A0 pasta do projeto com espa\xE7o: o Bash do Claude Code imprime "claude-XXXX-cwd: No such file or directory" e "Exit code 1" (\xE9 do Claude Code; leia a sa\xEDda real). N\xE3o fa\xE7a cd no in\xEDcio (o Bash j\xE1 abre no projeto); se precisar, cd "C:/Pasta Com Espa\xE7o"; prefira o PowerShell quando o Bash n\xE3o for necess\xE1rio'
+    );
   for (const id of THIRD_PARTY)
     check(
       pluginAvailable(id),

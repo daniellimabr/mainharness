@@ -217,6 +217,15 @@ describe("hook pre-bash (bundle)", () => {
     expect(ok).toMatchObject({ code: 0, stdout: "" });
   });
 
+  it("keeps guarding when HARNESS_HOME is invalid", () => {
+    const r = runHx(["hook", "pre-bash"], {
+      cwd: proj,
+      env: { HARNESS_HOME: "rel" },
+      stdin: { tool_name: "Bash", tool_input: { command: "rm -rf ../outside-dir" }, cwd: proj },
+    });
+    expect(r.stdout).toContain('"deny"');
+  });
+
   it("never breaks on garbage input", () => {
     expect(runHx(["hook", "pre-bash"], { cwd: proj, stdin: "{not json" }).code).toBe(0);
   });

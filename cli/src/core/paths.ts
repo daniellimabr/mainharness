@@ -3,9 +3,18 @@ import * as fs from "node:fs";
 import * as os from "node:os";
 import * as path from "node:path";
 
-/** %USERPROFILE%\.harness, overridable with HARNESS_HOME (tests). */
+/** %USERPROFILE%\.harness, overridable with HARNESS_HOME (tests): absolute and not a drive root. */
 export function harnessHome(): string {
-  return process.env.HARNESS_HOME || path.join(os.homedir(), ".harness");
+  const v = process.env.HARNESS_HOME;
+  if (!v) return path.join(os.homedir(), ".harness");
+  const r = path.resolve(v);
+  // On Windows "\x" is absolute but drive-relative; require a drive letter or UNC.
+  const winRooted = process.platform !== "win32" || /^([a-z]:[\\/]|\\\\|\/\/)/i.test(v);
+  if (!path.isAbsolute(v) || !winRooted || r === path.parse(r).root)
+    throw new Error(
+      `HARNESS_HOME inválido: '${v}' (use um caminho absoluto que não seja a raiz do disco, ou deixe vazio para ~/.harness)`,
+    );
+  return v;
 }
 
 export const home = {
