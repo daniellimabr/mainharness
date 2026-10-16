@@ -1,0 +1,31 @@
+{
+  "date": "2026-10-16T04:03:00.347Z",
+  "runs": [
+    {
+      "id": "1",
+      "baseline": false,
+      "passed": true,
+      "failed": [],
+      "answer": "Criei o ADR `docs/adr/0008-cache-de-consumo-sqlite.md` com status **proposto**.\n\n**Resumo:**\n1. Decisão: o cache de consumo sai de um JSON por sessão e passa para um banco SQLite. Isso troca só a parte \"Leitura incremental\" do ADR 0007. O adaptador de transcripts e o evento `usage` ficam como estão.\n2. Alternativas: manter o JSON, ou não ter cache e reler tudo. Ambas foram descartadas, com os motivos no ADR.\n3. Risco e sinal de reversão: o banco é só cache, então perdê-lo custa uma releitura dos transcripts. Reverter se a dependência SQLite não rodar no Windows suportado.\n\n**Pontos para você conferir:**\n- **Caminho e esquema:** inventei o caminho `usage.db` e o esquema (byte lido por transcript, `message.id` como chave primária). Ajuste se vocês decidiram outra coisa.\n- **Itens \"não verificado\":** a biblioteca SQLite, o comportamento com escrita concorrente e o suporte no runtime do `cli`. Marquei como \"não verificado\" na seção de documentação em vez de afirmar sem fonte.\n- **Versão do harness:** não rodei `hx version`, então esse campo também está \"não verificado\". Se quiser, me passe a versão.\n- **Template e `index.md`:** o template do skill não existe nesta pasta, então segui as seções do skill e o estilo do 0007. Não existe `index.md` aqui. Pelo skill, a linha nova do índice vem do hook, então não mexi nisso.\n\nEstá ok para marcar como `aceito`?"
+    },
+    {
+      "id": "2",
+      "baseline": false,
+      "passed": true,
+      "failed": [],
+      "answer": "Criei o ADR em `docs/adr/0001-vitest-executor-de-testes.md`, com status **proposto**. Não consegui verificar o que a documentação oficial diz, e a seção que cobre isso está marcada como \"não verificado\".\n\n**Resumo para o seu ok:**\n1. **Decisão:** usar o Vitest como executor de testes, porque o Tech Lead preferiu por ser rápido.\n2. **Alternativas:** Jest e não escolher agora. Os prós e contras delas também estão marcados como não verificados.\n3. **Risco aceito:** a decisão não tem medição de velocidade nem checagem da documentação.\n\n**O que ficou de fora:**\n- **Documentação oficial:** o acesso à web foi negado nesta sessão (WebFetch e WebSearch). Deixei pendente conferir o guia \"Why Vitest\" e a página \"Comparisons\" em vitest.dev.\n- **Versão do `hx`:** o campo Harness diz \"não verificado\", porque o comando `hx version` foi bloqueado.\n- **Modelo do ADR:** o `templates/adr.md` não existe aqui, então segui as seções descritas na skill.\n- **Projeto vazio:** não há `package.json` nem testes, então não havia código para usar como evidência.\n\nSe você liberar o acesso à web, eu preencho a seção da documentação com fonte e data. Se o ADR estiver bom, me diga e eu mudo o status para `aceito`. Não editei o `index.md`, porque a skill diz que o hook cuida dele."
+    },
+    {
+      "id": "3",
+      "baseline": false,
+      "passed": false,
+      "failed": [
+        "Cria um arquivo novo com o próximo número sequencial em vez de reescrever o conteúdo do 0003",
+        "O ADR novo cita o 0003 no Contexto",
+        "No 0003, a única alteração é o status 'substituído por NNNN'",
+        "Mantém numeração sem reutilizar números"
+      ],
+      "answer": "Li o ADR 0003 e a skill `adr` e procurei no repositório algo sobre o wrapper. Não achei nada: não há código, `hooks.json` nem menção a ele nos outros ADRs. Parei antes de editar, porque preencheria a decisão com fatos inventados.\n\nPela skill `adr`, o 0003 não deve ser reescrito. O caminho é criar o **ADR 0008** e marcar o 0003 como `substituído por 0008`. Preciso destas informações para escrevê-lo:\n\n1. **O que é o wrapper?** Por exemplo, um `.exe`, um script `.cmd`/`.js`, ou outro subcomando do `hx`. Qual o caminho dele?\n2. **Como ficam o `command` e os `args` dos hooks?** Preciso do formato novo para substituir o `{\"command\":\"node\",\"args\":[...]}` do 0003.\n3. **Por que mudou?** Por exemplo, caminhos com espaço, tempo de resposta ou o try/catch global. Isso entra no contexto e nas alternativas, em que a forma exec direta é a descartada.\n4. **As regras antigas continuam valendo?** Isso inclui o try/catch com exit 0, o exit 2 em `pre-bash` e `post-edit`, a meta de menos de 300 ms e a regra de \"só Node, sem `.sh`/`.ps1`\".\n\nSe preferir, aponte o arquivo do wrapper ou o `hooks.json` novo e eu deduzo os fatos de lá."
+    }
+  ]
+}

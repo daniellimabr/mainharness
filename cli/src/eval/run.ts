@@ -132,7 +132,8 @@ async function claude(prompt: string, cwd: string, extra: string[], ctx: EvalCon
   // Fixed flags only on the command line; shell lets HX_CLAUDE_BIN / claude.cmd work on Windows.
   const bin = process.env.HX_CLAUDE_BIN || "claude";
   const args = ["-p", "--model", "sonnet", "--output-format", "stream-json", "--verbose"];
-  const env = { ...process.env };
+  // hx calls made by the session write to a throwaway home, never the real ~/.harness.
+  const env: NodeJS.ProcessEnv = { ...process.env, HARNESS_HOME: path.join(cwd, ".hx-home") };
   delete env.CLAUDECODE;
   const s = await new Promise<Session>((resolve, reject) => {
     const child = spawn([bin, ...args, "--setting-sources", "project", ...extra].join(" "), {
@@ -176,10 +177,28 @@ async function claude(prompt: string, cwd: string, extra: string[], ctx: EvalCon
   return s;
 }
 
-/** Temp folder with the skill (minus evals/) at .claude/skills/<name>; null = baseline. */
-async function inSandbox<R>(skillDir: string | null, fn: (dir: string) => Promise<R>): Promise<R> {
-  const dir = fs.mkdtempSync(path.join(os.tmpdir(), "hx-eval-"));
+/**
+ * Temp folder with the skill (minus evals/) at .claude/skills/<name>; null = baseline. `files` are
+ * fixtures under evals/files/, copied to the same relative path in the sandbox root.
+ */
+async function inSandbox<R>(
+  skillDir: string | null,
+  fn: (dir: string) => Promise<R>,
+  files: string[] = [],
+  evalsDir = "",
+): Promise<R> {
+  // Long path: Claude Code asks for approval on 8.3 paths (DANIEL~1), and -p cannot approve.
+  const dir = fs.mkdtempSync(path.join(fs.realpathSync.native(os.tmpdir()), "hx-eval-"));
   try {
+    for (const f of files) {
+      // First segment is the fixture set (files/, files-approved/, ...); the rest is sandbox-relative.
+      const [set = "", ...parts] = f.split(/[\\/]/);
+      const rel = path.join(...parts);
+      if (!set.startsWith("files") || !parts.length || rel.startsWith("..") || path.isAbsolute(rel))
+        throw new Error(`fixture fora de files*/: ${f}`);
+      fs.mkdirSync(path.dirname(path.join(dir, rel)), { recursive: true });
+      fs.copyFileSync(path.join(evalsDir, f), path.join(dir, rel));
+    }
     if (skillDir)
       fs.cpSync(skillDir, path.join(dir, ".claude", "skills", path.basename(skillDir)), {
         recursive: true,
@@ -215,6 +234,8 @@ interface EvalCase {
   prompt: string;
   expected_output?: string;
   expectations: string[];
+  /** Fixtures relative to evals/, in a files* set (files/docs/adr/0003-x.md → docs/adr/0003-x.md). */
+  files?: string[];
 }
 interface Verdict {
   id: string;
@@ -255,7 +276,7 @@ export async function evalSkill(
       inSandbox(dir, async (sb) => {
         const s = await claude(q.query, sb, ["--max-turns", "2"], ctx);
         const triggered = s.skills.includes(name);
-        return { ...q, triggered, passed: triggered === q.should_trigger };
+        return { ...q, triggered, skills: s.skills, passed: triggered === q.should_trigger };
       }),
     );
     writeJson(path.join(evalsDir, "trigger-results.json"), { date, results });
@@ -270,10 +291,17 @@ export async function evalSkill(
       ...(scope.isNew ? cases.map((c) => ({ id: `baseline-${c.id}`, c, withSkill: false })) : []),
     ];
     const done = await pool(runs, PARALLEL, (r) =>
-      inSandbox(r.withSkill ? dir : null, async (sb) => {
-        const s = await claude(r.c.prompt, sb, ["--permission-mode", "acceptEdits"], ctx);
-        return { ...r, answer: s.text, files: outputs(sb) };
-      }),
+      inSandbox(
+        r.withSkill ? dir : null,
+        async (sb) => {
+          // Edits stay in the sandbox; Bash only for hx (isolated HARNESS_HOME), as skills call it.
+          const perms = ["--permission-mode", "acceptEdits", "--allowedTools", '"Bash(hx:*)"'];
+          const s = await claude(r.c.prompt, sb, perms, ctx);
+          return { ...r, answer: s.text, files: outputs(sb) };
+        },
+        r.c.files,
+        evalsDir,
+      ),
     );
     // One judge session grades every run (cheaper than one judge per case, independent of the run).
     const judge = await inSandbox(null, (sb) =>

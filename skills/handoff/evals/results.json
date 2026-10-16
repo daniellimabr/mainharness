@@ -1,15 +1,14 @@
 {
   "skill": "handoff",
   "skillSha256": "af4da9fc22f3c8cd3615b8d5e8ded17b92eca42330565a4a711f3cfc8bb295ec",
-  "date": "2026-10-15T16:15:03.856Z",
-  "passed": true,
+  "date": "2026-10-16T04:05:45.295Z",
+  "passed": false,
   "trigger": {
-    "passed": 16,
-    "total": 16
+    "passed": 8,
+    "total": 8
   },
   "evals": {
-    "passed": 3,
+    "passed": 1,
     "total": 3
-  },
-  "notes": "acionamento 2 rodadas/consulta; description sem mudança"
+  }
 }

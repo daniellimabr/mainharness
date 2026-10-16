@@ -1,251 +1,69 @@
 {
-  "skill_name": "handoff",
-  "runner": "claude -p, sandbox with repo skills in .claude/skills",
+  "date": "2026-10-16T04:04:27.287Z",
   "results": [
-    {
-      "query": "escreve o handoff, o contexto está quase cheio",
-      "should_trigger": true,
-      "triggers": 2,
-      "runs": 2,
-      "pass": true,
-      "calls": [
-        [
-          "Skill:handoff"
-        ],
-        [
-          "Skill:handoff"
-        ]
-      ]
-    },
     {
       "query": "o hook avisou que passamos de 230K, grava o handoff agora",
       "should_trigger": true,
-      "triggers": 2,
-      "runs": 2,
-      "pass": true,
-      "calls": [
-        [
-          "Skill:handoff"
-        ],
-        [
-          "Skill:handoff"
-        ]
-      ]
+      "triggered": true,
+      "skills": [
+        "handoff"
+      ],
+      "passed": true
     },
     {
       "query": "delega a T04 para um clone e passa o contexto necessário para ele",
       "should_trigger": true,
-      "triggers": 2,
-      "runs": 2,
-      "pass": true,
-      "calls": [
-        [
-          "Skill:handoff"
-        ],
-        [
-          "Skill:handoff"
-        ]
-      ]
+      "triggered": true,
+      "skills": [
+        "handoff"
+      ],
+      "passed": true
     },
     {
       "query": "vou trocar de chat, deixa um bilhete com o estado atual e os próximos passos",
       "should_trigger": true,
-      "triggers": 2,
-      "runs": 2,
-      "pass": true,
-      "calls": [
-        [
-          "Skill:handoff"
-        ],
-        [
-          "Skill:handoff"
-        ]
-      ]
-    },
-    {
-      "query": "antes de compactar, registra onde paramos",
-      "should_trigger": true,
-      "triggers": 2,
-      "runs": 2,
-      "pass": true,
-      "calls": [
-        [
-          "Skill:handoff"
-        ],
-        [
-          "Skill:handoff"
-        ]
-      ]
-    },
-    {
-      "query": "prepara o briefing para o subagente que vai implementar o parser",
-      "should_trigger": true,
-      "triggers": 2,
-      "runs": 2,
-      "pass": true,
-      "calls": [
-        [
-          "Skill:handoff"
-        ],
-        [
-          "Skill:handoff"
-        ]
-      ]
+      "triggered": true,
+      "skills": [
+        "handoff"
+      ],
+      "passed": true
     },
     {
       "query": "faz um resumo de passagem de bastão para quem continuar essa tarefa",
       "should_trigger": true,
-      "triggers": 1,
-      "runs": 2,
-      "pass": true,
-      "calls": [
-        [
-          "Skill:handoff"
-        ],
-        [
-          "PowerShell"
-        ]
-      ]
-    },
-    {
-      "query": "hx handoff — grava o estado da sprint para o /continue",
-      "should_trigger": true,
-      "triggers": 2,
-      "runs": 2,
-      "pass": true,
-      "calls": [
-        [
-          "Skill:handoff"
-        ],
-        [
-          "Skill:handoff"
-        ]
-      ]
+      "triggered": true,
+      "skills": [
+        "handoff"
+      ],
+      "passed": true
     },
     {
       "query": "mostra o último handoff",
       "should_trigger": false,
-      "triggers": 0,
-      "runs": 2,
-      "pass": true,
-      "calls": [
-        [
-          "PowerShell"
-        ],
-        [
-          "PowerShell"
-        ]
-      ]
+      "triggered": false,
+      "skills": [],
+      "passed": true
     },
     {
       "query": "resume essa conversa em três linhas para mim",
       "should_trigger": false,
-      "triggers": 0,
-      "runs": 2,
-      "pass": true,
-      "calls": [
-        [
-          "(no tool)"
-        ],
-        [
-          "(no tool)"
-        ]
-      ]
-    },
-    {
-      "query": "escreve o Release Report da sprint",
-      "should_trigger": false,
-      "triggers": 0,
-      "runs": 2,
-      "pass": true,
-      "calls": [
-        [
-          "Skill:release-report"
-        ],
-        [
-          "Skill:release-report"
-        ]
-      ]
+      "triggered": false,
+      "skills": [],
+      "passed": true
     },
     {
       "query": "documenta a decisão de arquitetura como ADR",
       "should_trigger": false,
-      "triggers": 0,
-      "runs": 2,
-      "pass": true,
-      "calls": [
-        [
-          "Skill:adr"
-        ],
-        [
-          "Skill:adr"
-        ]
-      ]
-    },
-    {
-      "query": "escreve o README do projeto",
-      "should_trigger": false,
-      "triggers": 0,
-      "runs": 2,
-      "pass": true,
-      "calls": [
-        [
-          "PowerShell"
-        ],
-        [
-          "PowerShell"
-        ]
-      ]
-    },
-    {
-      "query": "marca a tarefa T02 como feita",
-      "should_trigger": false,
-      "triggers": 0,
-      "runs": 2,
-      "pass": true,
-      "calls": [
-        [
-          "PowerShell"
-        ],
-        [
-          "Grep"
-        ]
-      ]
-    },
-    {
-      "query": "cria um clone do repositório numa pasta nova",
-      "should_trigger": false,
-      "triggers": 0,
-      "runs": 2,
-      "pass": true,
-      "calls": [
-        [
-          "PowerShell"
-        ],
-        [
-          "PowerShell"
-        ]
-      ]
+      "triggered": false,
+      "skills": [],
+      "passed": true
     },
     {
       "query": "escreve um e-mail de passagem de turno para a equipe de suporte",
       "should_trigger": false,
-      "triggers": 0,
-      "runs": 2,
-      "pass": true,
-      "calls": [
-        [
-          "PowerShell"
-        ],
-        [
-          "Glob"
-        ]
-      ]
+      "triggered": false,
+      "skills": [],
+      "passed": true
     }
-  ],
-  "summary": {
-    "total": 16,
-    "passed": 16
-  },
-  "errors": []
+  ]
 }

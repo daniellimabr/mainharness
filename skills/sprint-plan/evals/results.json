@@ -1,7 +1,7 @@
 {
   "skill": "sprint-plan",
-  "skillSha256": "ad2601b0a816ab997e3d182a31e7ae787b4900bbdf8ead829655d4ba70688781",
-  "date": "2026-10-15T16:14:59.939Z",
+  "skillSha256": "64e2e430b27625737ee29d5d8ef33aff7b50693ead50c5662a226a3834d3f8eb",
+  "date": "2026-10-16T04:22:48.122Z",
   "passed": true,
   "trigger": {
     "passed": 14,
@@ -10,6 +10,5 @@
   "evals": {
     "passed": 3,
     "total": 3
-  },
-  "notes": "2 falhas: 'organiza em tarefas com estimativa' e 'olha o inbox e o backlog' abrem PowerShell antes da skill; fixture evals/files/S01-plan.md nos casos 2 e 3"
+  }
 }

@@ -1,251 +1,69 @@
 {
-  "skill_name": "adr",
-  "runner": "claude -p, sandbox with repo skills in .claude/skills",
+  "date": "2026-10-16T04:03:00.347Z",
   "results": [
     {
       "query": "registra um ADR sobre a escolha do banco de dados",
       "should_trigger": true,
-      "triggers": 2,
-      "runs": 2,
-      "pass": true,
-      "calls": [
-        [
-          "Skill:adr"
-        ],
-        [
-          "Skill:adr"
-        ]
-      ]
-    },
-    {
-      "query": "vamos documentar por que escolhemos esbuild em vez de tsc para o bundle",
-      "should_trigger": true,
-      "triggers": 2,
-      "runs": 2,
-      "pass": true,
-      "calls": [
-        [
-          "Skill:adr"
-        ],
-        [
-          "Skill:adr"
-        ]
-      ]
+      "triggered": true,
+      "skills": [
+        "adr"
+      ],
+      "passed": true
     },
     {
       "query": "decidimos usar fila em memória em vez de Redis, anota essa decisão de arquitetura",
       "should_trigger": true,
-      "triggers": 2,
-      "runs": 2,
-      "pass": true,
-      "calls": [
-        [
-          "Skill:adr"
-        ],
-        [
-          "Skill:adr"
-        ]
-      ]
-    },
-    {
-      "query": "cria o ADR 0008 sobre a estratégia de cache",
-      "should_trigger": true,
-      "triggers": 2,
-      "runs": 2,
-      "pass": true,
-      "calls": [
-        [
-          "Skill:adr"
-        ],
-        [
-          "Skill:adr"
-        ]
-      ]
+      "triggered": true,
+      "skills": [
+        "adr"
+      ],
+      "passed": true
     },
     {
       "query": "preciso de um registro de decisão técnica: monorepo ou repos separados?",
       "should_trigger": true,
-      "triggers": 2,
-      "runs": 2,
-      "pass": true,
-      "calls": [
-        [
-          "Skill:adr"
-        ],
-        [
-          "Skill:adr"
-        ]
-      ]
-    },
-    {
-      "query": "o ADR 0003 mudou, escreve um novo que substitua ele",
-      "should_trigger": true,
-      "triggers": 2,
-      "runs": 2,
-      "pass": true,
-      "calls": [
-        [
-          "Skill:adr"
-        ],
-        [
-          "Skill:adr"
-        ]
-      ]
+      "triggered": true,
+      "skills": [
+        "adr"
+      ],
+      "passed": true
     },
     {
       "query": "documenta a decisão de usar JSONL para os eventos, com as alternativas que descartamos",
       "should_trigger": true,
-      "triggers": 2,
-      "runs": 2,
-      "pass": true,
-      "calls": [
-        [
-          "Skill:adr"
-        ],
-        [
-          "Skill:adr"
-        ]
-      ]
-    },
-    {
-      "query": "faz um architecture decision record sobre autenticação por token",
-      "should_trigger": true,
-      "triggers": 2,
-      "runs": 2,
-      "pass": true,
-      "calls": [
-        [
-          "Skill:adr"
-        ],
-        [
-          "Skill:adr"
-        ]
-      ]
+      "triggered": true,
+      "skills": [
+        "adr"
+      ],
+      "passed": true
     },
     {
       "query": "escreve o PRD da funcionalidade de exportar relatório",
       "should_trigger": false,
-      "triggers": 0,
-      "runs": 2,
-      "pass": true,
-      "calls": [
-        [
-          "Skill:prd"
-        ],
-        [
-          "Skill:prd"
-        ]
-      ]
-    },
-    {
-      "query": "atualiza o README com as instruções de instalação",
-      "should_trigger": false,
-      "triggers": 0,
-      "runs": 2,
-      "pass": true,
-      "calls": [
-        [
-          "Glob"
-        ],
-        [
-          "Glob"
-        ]
-      ]
-    },
-    {
-      "query": "monta o sprint plan da próxima sprint",
-      "should_trigger": false,
-      "triggers": 0,
-      "runs": 2,
-      "pass": true,
-      "calls": [
-        [
-          "Skill:sprint-plan"
-        ],
-        [
-          "Skill:sprint-plan"
-        ]
-      ]
+      "triggered": false,
+      "skills": [],
+      "passed": true
     },
     {
       "query": "desenha um diagrama da arquitetura atual do sistema",
       "should_trigger": false,
-      "triggers": 0,
-      "runs": 2,
-      "pass": true,
-      "calls": [
-        [
-          "PowerShell"
-        ],
-        [
-          "PowerShell"
-        ]
-      ]
+      "triggered": false,
+      "skills": [],
+      "passed": true
     },
     {
       "query": "explica o que o ADR 0006 decidiu sobre o limite de 250K",
       "should_trigger": false,
-      "triggers": 0,
-      "runs": 2,
-      "pass": true,
-      "calls": [
-        [
-          "Glob"
-        ],
-        [
-          "Glob"
-        ]
-      ]
-    },
-    {
-      "query": "escreve o Release Report da S02",
-      "should_trigger": false,
-      "triggers": 0,
-      "runs": 2,
-      "pass": true,
-      "calls": [
-        [
-          "Skill:release-report"
-        ],
-        [
-          "Skill:release-report"
-        ]
-      ]
+      "triggered": false,
+      "skills": [],
+      "passed": true
     },
     {
       "query": "qual biblioteca de datas é melhor para este projeto? compara as opções",
       "should_trigger": false,
-      "triggers": 0,
-      "runs": 2,
-      "pass": true,
-      "calls": [
-        [
-          "PowerShell"
-        ],
-        [
-          "PowerShell"
-        ]
-      ]
-    },
-    {
-      "query": "adiciona um comentário no código explicando por que usamos esse algoritmo",
-      "should_trigger": false,
-      "triggers": 0,
-      "runs": 2,
-      "pass": true,
-      "calls": [
-        [
-          "PowerShell"
-        ],
-        [
-          "PowerShell"
-        ]
-      ]
+      "triggered": false,
+      "skills": [],
+      "passed": true
     }
-  ],
-  "summary": {
-    "total": 16,
-    "passed": 16
-  },
-  "errors": []
+  ]
 }

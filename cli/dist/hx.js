@@ -3700,7 +3700,7 @@ async function pool(items, limit, fn) {
 async function claude(prompt, cwd, extra, ctx) {
   const bin = process.env.HX_CLAUDE_BIN || "claude";
   const args = ["-p", "--model", "sonnet", "--output-format", "stream-json", "--verbose"];
-  const env = { ...process.env };
+  const env = { ...process.env, HARNESS_HOME: path30.join(cwd, ".hx-home") };
   delete env.CLAUDECODE;
   const s2 = await new Promise((resolve13, reject) => {
     const child = (0, import_node_child_process7.spawn)([bin, ...args, "--setting-sources", "project", ...extra].join(" "), {
@@ -3746,9 +3746,10 @@ async function inSandbox(skillDir, fn, files = [], evalsDir = "") {
   const dir = fs30.mkdtempSync(path30.join(fs30.realpathSync.native(os4.tmpdir()), "hx-eval-"));
   try {
     for (const f of files) {
-      const rel = path30.relative("files", f);
-      if (rel.startsWith("..") || path30.isAbsolute(rel))
-        throw new Error(`fixture fora de files/: ${f}`);
+      const [set = "", ...parts2] = f.split(/[\\/]/);
+      const rel = path30.join(...parts2);
+      if (!set.startsWith("files") || !parts2.length || rel.startsWith("..") || path30.isAbsolute(rel))
+        throw new Error(`fixture fora de files*/: ${f}`);
       fs30.mkdirSync(path30.dirname(path30.join(dir, rel)), { recursive: true });
       fs30.copyFileSync(path30.join(evalsDir, f), path30.join(dir, rel));
     }
@@ -3818,7 +3819,8 @@ async function evalSkill(repo, skill, scope, ctx) {
       (r) => inSandbox(
         r.withSkill ? dir : null,
         async (sb) => {
-          const s2 = await claude(r.c.prompt, sb, ["--permission-mode", "acceptEdits"], ctx);
+          const perms = ["--permission-mode", "acceptEdits", "--allowedTools", '"Bash(hx:*)"'];
+          const s2 = await claude(r.c.prompt, sb, perms, ctx);
           return { ...r, answer: s2.text, files: outputs(sb) };
         },
         r.c.files,

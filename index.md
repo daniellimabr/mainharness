@@ -44,6 +44,7 @@ Uma linha por arquivo: caminho e propósito. Mantido pelo hook `post-edit`.
 - `cli/src/core/fsx.ts` — Small filesystem helpers: safe JSON reads and atomic writes.
 - `cli/src/core/log.ts` — Error log for hooks and commands: ~/.harness/logs/hx-YYYY-MM-DD.log. Never throws.
 - `cli/src/core/paths.ts` — Locations used by hx: the local data folder (~/.harness) and the plugin root.
+- `cli/src/core/proc.ts` — Runs external tools without a shell string: PATH lookup (PATHEXT on Windows), .cmd shims quoted.
 - `cli/src/core/projects.ts` — Connected projects: ~/.harness/projects.json and <project>/.claude/harness.json.
 - `cli/src/core/shim.ts` — hx on the PATH of every shell: launchers in ~/.harness/bin pointing at the stable bundle,
 - `cli/src/core/state.ts` — Per-project runtime state: ~/.harness/state/<project>.json (active sprint, session, task times).
@@ -117,6 +118,7 @@ Uma linha por arquivo: caminho e propósito. Mantido pelo hook `post-edit`.
 - `settings.json` — configuração do plugin: agente principal = tech-lead
 - `skills-user/attach/SKILL.md` — Conecta o repo aberto ao Main Harness
 - `skills/adr/SKILL.md` — Registra uma decisão de arquitetura como ADR em docs/adr/NNNN-slug.md, com contexto, o que a documentação diz, altern...
+- `skills/adr/evals/evals.json` — (sem descrição)
 - `skills/archify/SKILL.md` — Create validated architecture, workflow, sequence, data-flow, lifecycle/state, entity-relationship, class/interface, ...
 - `skills/archify/SOURCE.md` — Origem
 - `skills/handoff/SKILL.md` — Escreve um handoff curto (máx. ~40 linhas): objetivo, estado atual, arquivos que pode tocar, decisões, critério de pr...
@@ -128,6 +130,11 @@ Uma linha por arquivo: caminho e propósito. Mantido pelo hook `post-edit`.
 - `skills/release-report/SKILL.md` — Fecha a sprint e escreve o Release Report docs/sprints/SNN-release.md com indicadores (tempo planejado x real, tokens...
 - `skills/security-review/SKILL.md` — Revisão de segurança POR TAREFA da sprint do Main Harness, só para o Reviewer (chamada como main-harness:security-rev...
 - `skills/sprint-plan/SKILL.md` — Monta o sprint plan docs/sprints/SNN-plan.md a partir da conversa com Daniel: escopo, fora de escopo, critérios de ac...
+- `skills/sprint-plan/evals/evals.json` — (sem descrição)
+- `skills/sprint-plan/evals/files-new/docs/backlog.md` — Backlog — Pedidos
+- `skills/sprint-plan/evals/files-new/package.json` — (sem descrição)
+- `skills/sprint-plan/evals/files-new/src/api/orders.ts` — (sem descrição)
+- `skills/sprint-plan/evals/files-new/src/web/OrdersPage.tsx` — (sem descrição)
 - `skills/tdd-workflow/LICENSE` — licença MIT do ECC
 - `skills/tdd-workflow/SKILL.md` — Desenvolvimento guiado por testes nas tarefas da sprint: escrever o teste que falha primeiro, ver falhar (RED), imple...
 - `skills/tdd-workflow/SOURCE.md` — Origem

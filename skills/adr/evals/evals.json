@@ -11,6 +11,15 @@
         "Lista pelo menos duas alternativas, com prós e contras",
         "Tem Status e Data (AAAA-MM-DD) no cabeçalho",
         "Não edita nenhum ADR existente nem o index.md"
+      ],
+      "files": [
+        "files/docs/adr/0001-plugin-e-marketplace.md",
+        "files/docs/adr/0002-agente-da-sessao-principal.md",
+        "files/docs/adr/0003-hooks-no-windows.md",
+        "files/docs/adr/0004-hx-no-path-e-permissoes.md",
+        "files/docs/adr/0005-skills-opcionais-por-projeto.md",
+        "files/docs/adr/0006-continuacao-aos-250k.md",
+        "files/docs/adr/0007-consumo-via-transcripts.md"
       ]
     },
     {
@@ -33,6 +42,15 @@
         "O ADR novo cita o 0003 no Contexto",
         "No 0003, a única alteração é o status 'substituído por NNNN'",
         "Mantém numeração sem reutilizar números"
+      ],
+      "files": [
+        "files/docs/adr/0001-plugin-e-marketplace.md",
+        "files/docs/adr/0002-agente-da-sessao-principal.md",
+        "files/docs/adr/0003-hooks-no-windows.md",
+        "files/docs/adr/0004-hx-no-path-e-permissoes.md",
+        "files/docs/adr/0005-skills-opcionais-por-projeto.md",
+        "files/docs/adr/0006-continuacao-aos-250k.md",
+        "files/docs/adr/0007-consumo-via-transcripts.md"
       ]
     }
   ]

@@ -37,7 +37,7 @@ let p = ""; process.stdin.on("data", d => p += d).on("end", () => {
   }
   const judge = p.includes("grading skill eval runs");
   if (!judge && process.argv.includes("acceptEdits")) fs.writeFileSync("out.md", "# ADR\\nDecisão: X");
-  out.push({ type: "result", result: judge ? process.env.FAKE_JUDGE : "ok", session_id: "s-" + process.pid,
+  out.push({ type: "result", result: judge ? process.env.FAKE_JUDGE : "ok fixture=" + fs.existsSync("docs/adr/0003-x.md") + " hx=" + process.argv.includes("Bash(hx:*)") + " home=" + (process.env.HARNESS_HOME || "").startsWith(process.cwd()), session_id: "s-" + process.pid,
     total_cost_usd: 0.01, usage: { input_tokens: 10, output_tokens: 5 },
     modelUsage: { "claude-sonnet-4-5": { inputTokens: 10, outputTokens: 5, cacheReadInputTokens: 2, cacheCreationInputTokens: 1, costUSD: 0.01 } } });
   process.stdout.write(out.map(o => JSON.stringify(o)).join("\\n") + "\\n");
@@ -206,6 +206,25 @@ describe("evalSkill (fake claude)", () => {
     // 1 trigger + 1 case + 1 baseline + 1 judge
     expect(readEventsIn(iso.home).filter((e) => e.type === "usage")).toHaveLength(4);
     expect(checkSkills(repo, ["skills/prd"])[0]?.ok).toBe(true);
+  });
+
+  it("copies case fixtures from evals/files/ to the sandbox root; long temp path", async () => {
+    write("skills/adr/SKILL.md", MD("old", "body 3"));
+    write("skills/adr/evals/files-v2/docs/adr/0003-x.md", "# ADR 0003");
+    write(
+      "skills/adr/evals/evals.json",
+      JSON.stringify({
+        skill_name: "adr",
+        evals: [
+          { id: 1, prompt: "p", expectations: ["y"], files: ["files-v2/docs/adr/0003-x.md"] },
+        ],
+      }),
+    );
+    process.env.FAKE_JUDGE = JSON.stringify({ results: [{ id: "1", passed: true }] });
+    await evalSkill(repo, "skills/adr", evalScope(repo, "skills/adr", "v0.1.0"), ctx);
+    const cases = fs.readFileSync(path.join(repo, "skills/adr/evals/cases-results.json"), "utf8");
+    expect(cases).toContain("ok fixture=true hx=true home=true");
+    expect(cases).not.toMatch(/~1/);
   });
 
   it("missing judge verdict fails the case", async () => {
