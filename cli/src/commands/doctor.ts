@@ -178,6 +178,10 @@ export function runDoctor(opts: { projectRoot?: string } = {}): { ok: boolean; l
   );
 
   const root = opts.projectRoot ?? resolveProject(process.cwd())?.root ?? null;
+  if ((root ?? process.cwd()).includes(" "))
+    lines.push(
+      '⚠ pasta do projeto com espaço: o Bash do Claude Code imprime "claude-XXXX-cwd: No such file or directory" e "Exit code 1" (é do Claude Code; leia a saída real). Não faça cd no início (o Bash já abre no projeto); se precisar, cd "C:/Pasta Com Espaço"; prefira o PowerShell quando o Bash não for necessário',
+    );
   for (const id of THIRD_PARTY)
     check(
       pluginAvailable(id),

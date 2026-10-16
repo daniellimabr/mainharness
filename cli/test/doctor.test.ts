@@ -1,4 +1,5 @@
 import * as fs from "node:fs";
+import * as os from "node:os";
 import * as path from "node:path";
 import { afterEach, beforeEach, describe, expect, it } from "vitest";
 import { PLUGINS as SETUP_PLUGINS, updatePlugins } from "../src/attach/setup";
@@ -67,7 +68,7 @@ describe("runDoctor", () => {
     expect(line(r.lines, "harness-stable")).toMatch(/^✗/);
     expect(line(r.lines, "config.json")).toMatch(/^✗/);
     expect(line(r.lines, "Node")).toMatch(/^✓/);
-    expect(line(r.lines, "espaço")).toMatch(/^✓/);
+    expect(line(r.lines, "caminhos com espaço")).toMatch(/^✓/);
     expect(r.lines.at(-1)).toMatch(/problema/);
   });
 
@@ -99,6 +100,24 @@ describe("runDoctor", () => {
     const r = runDoctor({ projectRoot: proj });
     expect(line(r.lines, "ENABLE_STOP_REVIEW")).toMatch(/^✗/);
     expect(line(r.lines, "ativos no projeto")).toMatch(/^✓/);
+  });
+
+  it("warns when the project path has a space", () => {
+    const r = runDoctor({ projectRoot: proj });
+    const w = line(r.lines, "No such file or directory");
+    expect(w).toMatch(/^⚠ .*espaço/);
+    expect(w).toContain("PowerShell");
+    expect(w).toContain('cd "');
+  });
+
+  it("says nothing about spaces when the project path has none", () => {
+    const plain = fs.mkdtempSync(path.join(os.tmpdir(), "hxplain"));
+    try {
+      const r = runDoctor({ projectRoot: plain });
+      expect(line(r.lines, "No such file or directory")).toBe("");
+    } finally {
+      rm(plain);
+    }
   });
 
   it("only warns about plugins outside a project", () => {
