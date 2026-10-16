@@ -32,8 +32,15 @@ export function run(args: string[]): number {
   const st = updateState(ctx.id, (s) => {
     s.tasks[id] = times;
   });
-  updateExecution(ctx.root, sprint, plan.tasks, (t) =>
-    t.id === id ? taskLine(t, times) : (plan.execution[t.id]?.line ?? taskLine(t, st.tasks[t.id])),
+  updateExecution(
+    ctx.root,
+    sprint,
+    plan.tasks,
+    (t) =>
+      t.id === id
+        ? taskLine(t, times)
+        : (plan.execution[t.id]?.line ?? taskLine(t, st.tasks[t.id])),
+    st.tasks,
   );
   const ev = { project: ctx.id, session: ctx.session, sprint, task: id, agent: ctx.agent, ts: at };
   if (sub === "start") emit({ ...ev, type: "task.start", data: { planned_min: task.planned_min } });

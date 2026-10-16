@@ -62,10 +62,11 @@ export function updateExecution(
   sprintId: string,
   tasks: PlanTask[],
   lineFor: (t: PlanTask) => string,
+  times: Record<string, TaskTimes>,
 ): void {
   const file = releasePath(projectRoot, sprintId);
   const text = fs.existsSync(file) ? fs.readFileSync(file, "utf8") : releaseStub(sprintId);
-  writePlan(file, text, writeExecution(text, tasks, lineFor));
+  writePlan(file, text, writeExecution(text, tasks, lineFor, times));
 }
 
 /** Path relative to the project, with forward slashes (for events). */
@@ -111,12 +112,13 @@ function section(text: string, heading: RegExp): { start: number; end: number } 
   return { start: m.index, end: next ? m.index + m[0].length + next.index : text.length };
 }
 
+/** Table cells; "\|" is a literal pipe inside a cell. */
 const cells = (row: string) =>
   row
     .trim()
-    .replace(/^\||\|$/g, "")
-    .split("|")
-    .map((c) => c.trim());
+    .replace(/^\||(?<!\\)\|$/g, "")
+    .split(/(?<!\\)\|/)
+    .map((c) => c.trim().replace(/\\\|/g, "|"));
 
 export function parsePlan(text: string): Plan {
   const t = lf(text);
@@ -124,11 +126,16 @@ export function parsePlan(text: string): Plan {
   const tasks: PlanTask[] = [];
   const tsec = section(t, /^## Tarefas[^\n]*$/m);
   if (tsec) {
+    let estCol = 4; // template: Id | Tarefa | Agente | Arquivos | Estimativa
     for (const row of t.slice(tsec.start, tsec.end).split("\n")) {
       if (!row.trim().startsWith("|")) continue;
-      const [id = "", title = "", agent = "", files = "", est = ""] = cells(row);
+      const c = cells(row);
+      const [id = "", title = "", agent = "", files = ""] = c;
+      const head = c.findIndex((h) => /^(estimativa|planejado)$/i.test(h));
+      if (/^id$/i.test(id) && head > 0) estCol = head;
       if (!/^T\d+/i.test(id)) continue; // header and separator rows
-      tasks.push({ id: id.toUpperCase(), title, agent, files, planned_min: parseEstimate(est) });
+      const planned_min = parseEstimate(c[estCol] ?? "");
+      tasks.push({ id: id.toUpperCase(), title, agent, files, planned_min });
     }
   }
   let approval: Approval | null = null;
@@ -195,8 +202,29 @@ export function taskLine(t: PlanTask, times?: TaskTimes): string {
   return row(TODO);
 }
 
-function execTable(lines: string[]): string {
-  return `${EXEC_NOTE}\n\n${EXEC_HEADER}\n${lines.join("\n")}`;
+const TOTAL = "**Total**";
+const dateHM = (iso: string) => localDateTime(iso).slice(0, 16);
+
+/** Sprint total row: planned sum, first start, last end and wall-clock duration once all are done. */
+export function totalLine(tasks: PlanTask[], times: Record<string, TaskTimes>): string {
+  const ts = tasks.map((t) => times[t.id] ?? {});
+  const starts = ts.flatMap((x) => x.start ?? x.end ?? []).sort();
+  const done = ts.every((x) => x.end);
+  const start = starts[0] ?? "";
+  const end = done
+    ? (ts
+        .map((x) => x.end ?? "")
+        .sort()
+        .at(-1) ?? "")
+    : "";
+  const status = done ? DONE : start ? DOING : TODO;
+  const dur = end ? fmtMin((Date.parse(end) - Date.parse(start)) / 60000) : "";
+  const planned = fmtMin(tasks.reduce((s, t) => s + t.planned_min, 0));
+  return `| ${status} | ${TOTAL} | ${tasks.length} tarefas |  | ${planned} | ${start && dateHM(start)} | ${end && dateHM(end)} | ${dur} |`;
+}
+
+function execTable(lines: string[], total: string): string {
+  return `${EXEC_NOTE}\n\n${EXEC_HEADER}\n${lines.join("\n")}\n${total}`;
 }
 
 /** Creates or updates "## Execução" (after the approval section, outside the hash). */
@@ -204,9 +232,10 @@ export function writeExecution(
   text: string,
   tasks: PlanTask[],
   lineFor: (t: PlanTask) => string,
+  times: Record<string, TaskTimes> = {},
 ): string {
   const t = lf(text);
-  const block = `${EXEC_HEADING}\n\n${execTable(tasks.map(lineFor))}\n\n`;
+  const block = `${EXEC_HEADING}\n\n${execTable(tasks.map(lineFor), totalLine(tasks, times))}\n\n`;
   const sec = section(t, /^## Execução[^\n]*$/m);
   const out = sec
     ? t.slice(0, sec.start) + block + t.slice(sec.end)
@@ -230,7 +259,14 @@ export function renderTaskList(projectRoot: string, sprintId: string): string {
     return line?.startsWith("|") ? line : taskLine(t);
   });
   const done = plan.tasks.filter((t) => plan.execution[t.id]?.done).length;
-  return `Sprint ${sprintId} — ${done}/${plan.tasks.length} feitas\n\n${execTable(lines)}`;
+  const rel = releasePath(projectRoot, sprintId);
+  const stored = fs.existsSync(rel)
+    ? lf(fs.readFileSync(rel, "utf8"))
+        .split("\n")
+        .find((l) => l.includes(`| ${TOTAL} |`))
+    : undefined;
+  const total = stored ?? totalLine(plan.tasks, {});
+  return `Sprint ${sprintId} — ${done}/${plan.tasks.length} feitas\n\n${execTable(lines, total)}`;
 }
 
 export interface SprintMetrics {

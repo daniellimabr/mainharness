@@ -98,6 +98,7 @@ function open(ctx: CommandContext, p: Parsed, id: string): number {
     id,
     plan.tasks,
     (t) => plan.execution[t.id]?.line ?? taskLine(t, st.tasks[t.id]),
+    st.tasks,
   );
   emit({ ...base(ctx, id), type: "sprint.open", ts: at, data: { tasks: plan.tasks.length } });
   console.log(renderTaskList(ctx.root, id));

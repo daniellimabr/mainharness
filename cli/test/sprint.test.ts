@@ -11,6 +11,7 @@ import {
   renderTaskList,
   writeExecution,
   taskLine,
+  totalLine,
 } from "../src/sprint/index";
 import { fakeProject, isolateHome, readEventsIn, REPO_ROOT, rm, runHx } from "./helpers";
 
@@ -35,6 +36,31 @@ describe("plan parsing", () => {
     expect(fmtMin(90)).toBe("1 h 30 min");
     expect(fmtMin(60)).toBe("1 h");
     expect(fmtMin(5)).toBe("5 min");
+  });
+
+  it("finds the estimate column by header and keeps escaped pipes in titles", () => {
+    const plan = parsePlan(
+      "## Tarefas\n\n| Id | Tarefa | Agente | Arquivos | Depende de | Planejado |\n|---|---|---|---|---|---|\n" +
+        "| T01 | `a\\|b` | tech-lead | `x` | — | 30 min |\n",
+    );
+    expect(plan.tasks[0]).toMatchObject({ title: "`a|b`", agent: "tech-lead", planned_min: 30 });
+  });
+
+  it("total row: planned sum, first start, last end and wall-clock duration once all are done", () => {
+    const tasks = parsePlan(TEMPLATE).tasks;
+    expect(totalLine(tasks, {})).toBe("| ⬜ | **Total** | 3 tarefas |  | 1 h 50 min |  |  |  |");
+    const t1 = { start: "2026-10-15T02:05:00Z", end: "2026-10-15T02:25:00Z", duration_s: 1200 };
+    expect(totalLine(tasks, { T01: t1 })).toBe(
+      "| 🔄 | **Total** | 3 tarefas |  | 1 h 50 min | 2026-10-14 23:05 |  |  |",
+    );
+    const all = {
+      T01: t1,
+      T02: t1,
+      T03: { start: "2026-10-15T02:10:00Z", end: "2026-10-15T04:00:00Z" },
+    };
+    expect(totalLine(tasks, all)).toBe(
+      "| ✅ | **Total** | 3 tarefas |  | 1 h 50 min | 2026-10-14 23:05 | 2026-10-15 01:00 | 1 h 55 min |",
+    );
   });
 
   it("template plan has placeholder approval and 3 tasks", () => {
@@ -113,6 +139,7 @@ describe("sprint commands (real bundle, project with spaces)", () => {
     expect(o.code).toBe(0);
     expect(o.stdout).toContain("Sprint S01 — 0/3 feitas");
     expect(o.stdout).toContain("| ⬜ | T01 | Descrição curta | tech-lead | 20 min |");
+    expect(o.stdout).toContain("| ⬜ | **Total** | 3 tarefas |  | 1 h 50 min |");
 
     const s = hx("task", "start", "t01", "--at", "2026-10-15T02:05:00Z");
     expect(s.code).toBe(0);
@@ -127,7 +154,9 @@ describe("sprint commands (real bundle, project with spaces)", () => {
     expect(release).toContain(
       "| ✅ | T01 | Descrição curta | tech-lead | 20 min | 23:05 | 23:25 | 20 min |",
     );
+    expect(release).toContain("| 🔄 | **Total** | 3 tarefas |  | 1 h 50 min | 2026-10-14 23:05 |");
     expect(renderTaskList(dir, "S01")).toContain("1/3 feitas");
+    expect(renderTaskList(dir, "S01")).toContain("| 🔄 | **Total** |");
 
     // marking tasks does not invalidate the approval
     expect(hx("sprint", "open", "S01").code).toBe(0);

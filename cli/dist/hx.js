@@ -1756,10 +1756,10 @@ function readExecution(projectRoot, sprintId2) {
   const file2 = releasePath(projectRoot, sprintId2);
   return fs15.existsSync(file2) ? parsePlan(fs15.readFileSync(file2, "utf8")).execution : {};
 }
-function updateExecution(projectRoot, sprintId2, tasks, lineFor) {
+function updateExecution(projectRoot, sprintId2, tasks, lineFor, times) {
   const file2 = releasePath(projectRoot, sprintId2);
   const text = fs15.existsSync(file2) ? fs15.readFileSync(file2, "utf8") : releaseStub(sprintId2);
-  writePlan2(file2, text, writeExecution(text, tasks, lineFor));
+  writePlan2(file2, text, writeExecution(text, tasks, lineFor, times));
 }
 function planRel(sprintId2) {
   return `docs/sprints/${sprintId2}-plan.md`;
@@ -1796,11 +1796,16 @@ function parsePlan(text) {
   const tasks = [];
   const tsec = section(t, /^## Tarefas[^\n]*$/m);
   if (tsec) {
+    let estCol = 4;
     for (const row of t.slice(tsec.start, tsec.end).split("\n")) {
       if (!row.trim().startsWith("|")) continue;
-      const [id = "", title2 = "", agent = "", files = "", est = ""] = cells(row);
+      const c = cells(row);
+      const [id = "", title2 = "", agent = "", files = ""] = c;
+      const head = c.findIndex((h) => /^(estimativa|planejado)$/i.test(h));
+      if (/^id$/i.test(id) && head > 0) estCol = head;
       if (!/^T\d+/i.test(id)) continue;
-      tasks.push({ id: id.toUpperCase(), title: title2, agent, files, planned_min: parseEstimate(est) });
+      const planned_min = parseEstimate(c[estCol] ?? "");
+      tasks.push({ id: id.toUpperCase(), title: title2, agent, files, planned_min });
     }
   }
   let approval = null;
@@ -1852,17 +1857,29 @@ function taskLine(t, times) {
   if (times?.start) return row(DOING, localHM(times.start));
   return row(TODO);
 }
-function execTable(lines) {
+function totalLine(tasks, times) {
+  const ts = tasks.map((t) => times[t.id] ?? {});
+  const starts = ts.flatMap((x) => x.start ?? x.end ?? []).sort();
+  const done = ts.every((x) => x.end);
+  const start = starts[0] ?? "";
+  const end = done ? ts.map((x) => x.end ?? "").sort().at(-1) ?? "" : "";
+  const status = done ? DONE : start ? DOING : TODO;
+  const dur = end ? fmtMin((Date.parse(end) - Date.parse(start)) / 6e4) : "";
+  const planned = fmtMin(tasks.reduce((s2, t) => s2 + t.planned_min, 0));
+  return `| ${status} | ${TOTAL} | ${tasks.length} tarefas |  | ${planned} | ${start && dateHM(start)} | ${end && dateHM(end)} | ${dur} |`;
+}
+function execTable(lines, total) {
   return `${EXEC_NOTE}
 
 ${EXEC_HEADER}
-${lines.join("\n")}`;
+${lines.join("\n")}
+${total}`;
 }
-function writeExecution(text, tasks, lineFor) {
+function writeExecution(text, tasks, lineFor, times = {}) {
   const t = lf(text);
   const block = `${EXEC_HEADING}
 
-${execTable(tasks.map(lineFor))}
+${execTable(tasks.map(lineFor), totalLine(tasks, times))}
 
 `;
   const sec = section(t, /^## Execução[^\n]*$/m);
@@ -1882,9 +1899,12 @@ function renderTaskList(projectRoot, sprintId2) {
     return line2?.startsWith("|") ? line2 : taskLine(t);
   });
   const done = plan.tasks.filter((t) => plan.execution[t.id]?.done).length;
+  const rel = releasePath(projectRoot, sprintId2);
+  const stored = fs15.existsSync(rel) ? lf(fs15.readFileSync(rel, "utf8")).split("\n").find((l) => l.includes(`| ${TOTAL} |`)) : void 0;
+  const total = stored ?? totalLine(plan.tasks, {});
   return `Sprint ${sprintId2} \u2014 ${done}/${plan.tasks.length} feitas
 
-${execTable(lines)}`;
+${execTable(lines, total)}`;
 }
 function computeMetrics(project, sprintId2, plan) {
   const evs = readEvents((e) => e.project === project && e.sprint === sprintId2);
@@ -1962,7 +1982,7 @@ function renderMetrics(sprintId2, plan, m) {
     `| Handoffs | ${m.handoffs} |`
   ].join("\n");
 }
-var import_node_crypto2, fs15, path16, APPROVAL_RE, EXEC_HEADING, lf, cells, DONE, DOING, TODO, EXEC_HEADER, EXEC_NOTE, r1, r4, num, usd2, tok;
+var import_node_crypto2, fs15, path16, APPROVAL_RE, EXEC_HEADING, lf, cells, DONE, DOING, TODO, EXEC_HEADER, EXEC_NOTE, TOTAL, dateHM, r1, r4, num, usd2, tok;
 var init_sprint = __esm({
   "cli/src/sprint/index.ts"() {
     "use strict";
@@ -1974,12 +1994,14 @@ var init_sprint = __esm({
     APPROVAL_RE = /^## Aprovação/m;
     EXEC_HEADING = "## Execu\xE7\xE3o";
     lf = (text) => text.replace(/\r\n/g, "\n");
-    cells = (row) => row.trim().replace(/^\||\|$/g, "").split("|").map((c) => c.trim());
+    cells = (row) => row.trim().replace(/^\||(?<!\\)\|$/g, "").split(/(?<!\\)\|/).map((c) => c.trim().replace(/\\\|/g, "|"));
     DONE = "\u2705";
     DOING = "\u{1F504}";
     TODO = "\u2B1C";
     EXEC_HEADER = "| Status | Id | Tarefa | Agente | Planejado | In\xEDcio | Fim | Dura\xE7\xE3o |\n|---|---|---|---|---|---|---|---|";
     EXEC_NOTE = "Hor\xE1rios de Bras\xEDlia (UTC\u22123). \u2705 feita \xB7 \u{1F504} em andamento \xB7 \u2B1C a fazer.";
+    TOTAL = "**Total**";
+    dateHM = (iso) => localDateTime(iso).slice(0, 16);
     r1 = (x) => Math.round(x * 10) / 10;
     r4 = (x) => Math.round(x * 1e4) / 1e4;
     num = (v) => typeof v === "number" && Number.isFinite(v) ? v : 0;
@@ -2206,7 +2228,8 @@ function run3(args) {
     ctx.root,
     sprint,
     plan.tasks,
-    (t) => t.id === id ? taskLine(t, times) : plan.execution[t.id]?.line ?? taskLine(t, st.tasks[t.id])
+    (t) => t.id === id ? taskLine(t, times) : plan.execution[t.id]?.line ?? taskLine(t, st.tasks[t.id]),
+    st.tasks
   );
   const ev = { project: ctx.id, session: ctx.session, sprint, task: id, agent: ctx.agent, ts: at };
   if (sub === "start") emit({ ...ev, type: "task.start", data: { planned_min: task.planned_min } });
@@ -2306,7 +2329,8 @@ function open(ctx, p, id) {
     ctx.root,
     id,
     plan.tasks,
-    (t) => plan.execution[t.id]?.line ?? taskLine(t, st.tasks[t.id])
+    (t) => plan.execution[t.id]?.line ?? taskLine(t, st.tasks[t.id]),
+    st.tasks
   );
   emit({ ...base(ctx, id), type: "sprint.open", ts: at, data: { tasks: plan.tasks.length } });
   console.log(renderTaskList(ctx.root, id));
