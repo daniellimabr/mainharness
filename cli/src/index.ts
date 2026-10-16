@@ -34,6 +34,7 @@ const HELP = `hx <command> [args]
 
   hook <name>                 hooks do Claude Code (stdin JSON)
   task start|done <id>        marca tarefa do sprint ativo
+  task phase <id> <fase>      fase da tarefa em andamento (testes, código, revisão, commit)
   sprint open|close|approve|feedback|status <id>
   review pass|fail <task>     resultado da revisão
   handoff [--show|--consume]  grava (stdin)/mostra o handoff

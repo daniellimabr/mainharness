@@ -7,6 +7,8 @@ export interface TaskTimes {
   start?: string;
   end?: string;
   duration_s?: number;
+  /** Current phase while in progress (hx task phase). */
+  phase?: string;
 }
 
 export interface ProjectState {

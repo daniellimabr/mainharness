@@ -142,6 +142,27 @@ describe("sprint commands (real bundle, project with spaces)", () => {
     expect(hx("sprint", "approve", "S01").code).toBe(1);
   });
 
+  it("task phase shows on the 🔄 row only, rejects bad input and is cleared by done", () => {
+    hx("sprint", "approve", "S01");
+    hx("sprint", "open", "S01");
+    expect(hx("task", "phase", "T01", "revisão").stderr).toContain("não está em andamento");
+    hx("task", "start", "T01", "--at", "2026-10-15T02:05:00Z");
+    const bad = hx("task", "phase", "T01", "deploy");
+    expect(bad.code).toBe(1);
+    expect(bad.stderr).toContain("testes, código, revisão, commit");
+    const ph = hx("task", "phase", "t01", "revisão");
+    expect(ph.code).toBe(0);
+    expect(ph.stdout).toContain("| 🔄 revisão | T01 | Descrição curta |");
+    expect(ph.stdout).toContain("| ⬜ | T02 |");
+    expect(renderTaskList(dir, "S01")).toContain("| 🔄 revisão | T01 |");
+    const d = hx("task", "done", "T01", "--at", "2026-10-15T02:25:00Z");
+    expect(d.stdout).toContain(
+      "| ✅ | T01 | Descrição curta | tech-lead | 20 min | 23:05 | 23:25 |",
+    );
+    expect(d.stdout).toContain("1/3 feitas");
+    expect(hx("task", "phase", "T01", "commit").code).toBe(1);
+  });
+
   it("open, task start/done update the execution list and emit durations; close computes metrics", () => {
     hx("sprint", "approve", "S01", "--at", "2026-10-15T01:00:00Z");
     const o = hx("sprint", "open", "S01", "--at", "2026-10-15T02:00:00Z");

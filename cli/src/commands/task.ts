@@ -1,4 +1,4 @@
-// hx task start|done <id>: task times in state and in the "## Execução" table of SNN-release.md, plus events.
+// hx task start|done <id> and hx task phase <id> <fase>: task times and phase in state and in the "## Execução" table of SNN-release.md, plus events.
 import { flagStr, parseArgs } from "../core/args";
 import { commandContext } from "../core/context";
 import { readState, updateState, type TaskTimes } from "../core/state";
@@ -6,11 +6,13 @@ import { emit } from "../events/emit";
 import { atFlag, loadPlan } from "../sprint/cmd";
 import { renderTaskList, taskLine, updateExecution } from "../sprint/index";
 
+const PHASES = ["testes", "código", "revisão", "commit"];
+
 export function run(args: string[]): number {
   const p = parseArgs(args);
   const [sub, raw] = p._;
-  if ((sub !== "start" && sub !== "done") || !raw) {
-    console.error("uso: hx task start|done <id>");
+  if ((sub !== "start" && sub !== "done" && sub !== "phase") || !raw) {
+    console.error("uso: hx task start|done <id> | hx task phase <id> <fase>");
     return 1;
   }
   const ctx = commandContext(process.cwd(), flagStr(p, "agent"));
@@ -24,7 +26,13 @@ export function run(args: string[]): number {
 
   const prev = readState(ctx.id).tasks[id];
   let times: TaskTimes = { start: at };
-  if (sub === "done") {
+  if (sub === "phase") {
+    const phase = p._[2] ?? "";
+    if (!PHASES.includes(phase))
+      throw new Error(`fase inválida '${phase}' (use: ${PHASES.join(", ")})`);
+    if (!prev?.start || prev.end) throw new Error(`tarefa ${id} não está em andamento`);
+    times = { ...prev, phase };
+  } else if (sub === "done") {
     const start = prev?.start ?? at;
     const duration_s = Math.max(0, Math.round((Date.parse(at) - Date.parse(start)) / 1000));
     times = { start, end: at, duration_s };
@@ -43,6 +51,10 @@ export function run(args: string[]): number {
     st.tasks,
   );
   const ev = { project: ctx.id, session: ctx.session, sprint, task: id, agent: ctx.agent, ts: at };
+  if (sub === "phase") {
+    console.log(renderTaskList(ctx.root, sprint));
+    return 0;
+  }
   if (sub === "start") emit({ ...ev, type: "task.start", data: { planned_min: task.planned_min } });
   else
     emit({

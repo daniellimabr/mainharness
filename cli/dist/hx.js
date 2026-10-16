@@ -1840,7 +1840,7 @@ function parsePlan(text) {
   const esec = section(t, /^## Execução[^\n]*$/m);
   if (esec) {
     for (const line2 of t.slice(esec.start, esec.end).split("\n")) {
-      const row = /^\|\s*(\S+)\s*\|\s*(T\d+)\s*\|/.exec(line2);
+      const row = /^\|\s*(\S+)[^|]*\|\s*(T\d+)\s*\|/.exec(line2);
       if (row?.[2]) execution[row[2].toUpperCase()] = { done: row[1] === DONE, line: line2 };
       const legacy = /^- \[([ xX])\] (T\d+)\b/.exec(line2);
       if (legacy?.[2]) execution[legacy[2].toUpperCase()] = { done: legacy[1] !== " ", line: line2 };
@@ -1869,7 +1869,8 @@ function taskLine(t, times) {
     const start = times.start ?? times.end;
     return row(DONE, localHM(start), localHM(times.end), fmtMin((times.duration_s ?? 0) / 60));
   }
-  if (times?.start) return row(DOING, localHM(times.start));
+  if (times?.start)
+    return row(times.phase ? `${DOING} ${times.phase}` : DOING, localHM(times.start));
   return row(TODO);
 }
 function totalLine(tasks, times) {
@@ -2225,8 +2226,8 @@ __export(task_exports, {
 function run3(args) {
   const p = parseArgs(args);
   const [sub, raw] = p._;
-  if (sub !== "start" && sub !== "done" || !raw) {
-    console.error("uso: hx task start|done <id>");
+  if (sub !== "start" && sub !== "done" && sub !== "phase" || !raw) {
+    console.error("uso: hx task start|done <id> | hx task phase <id> <fase>");
     return 1;
   }
   const ctx = commandContext(process.cwd(), flagStr(p, "agent"));
@@ -2239,7 +2240,13 @@ function run3(args) {
   const at = atFlag(p);
   const prev = readState(ctx.id).tasks[id];
   let times = { start: at };
-  if (sub === "done") {
+  if (sub === "phase") {
+    const phase = p._[2] ?? "";
+    if (!PHASES.includes(phase))
+      throw new Error(`fase inv\xE1lida '${phase}' (use: ${PHASES.join(", ")})`);
+    if (!prev?.start || prev.end) throw new Error(`tarefa ${id} n\xE3o est\xE1 em andamento`);
+    times = { ...prev, phase };
+  } else if (sub === "done") {
     const start = prev?.start ?? at;
     const duration_s = Math.max(0, Math.round((Date.parse(at) - Date.parse(start)) / 1e3));
     times = { start, end: at, duration_s };
@@ -2255,6 +2262,10 @@ function run3(args) {
     st.tasks
   );
   const ev = { project: ctx.id, session: ctx.session, sprint, task: id, agent: ctx.agent, ts: at };
+  if (sub === "phase") {
+    console.log(renderTaskList(ctx.root, sprint));
+    return 0;
+  }
   if (sub === "start") emit({ ...ev, type: "task.start", data: { planned_min: task.planned_min } });
   else
     emit({
@@ -2267,6 +2278,7 @@ function run3(args) {
   console.log(renderTaskList(ctx.root, sprint));
   return 0;
 }
+var PHASES;
 var init_task = __esm({
   "cli/src/commands/task.ts"() {
     "use strict";
@@ -2276,6 +2288,7 @@ var init_task = __esm({
     init_emit();
     init_cmd();
     init_sprint();
+    PHASES = ["testes", "c\xF3digo", "revis\xE3o", "commit"];
   }
 });
 
@@ -4310,6 +4323,7 @@ var HELP = `hx <command> [args]
 
   hook <name>                 hooks do Claude Code (stdin JSON)
   task start|done <id>        marca tarefa do sprint ativo
+  task phase <id> <fase>      fase da tarefa em andamento (testes, c\xF3digo, revis\xE3o, commit)
   sprint open|close|approve|feedback|status <id>
   review pass|fail <task>     resultado da revis\xE3o
   handoff [--show|--consume]  grava (stdin)/mostra o handoff

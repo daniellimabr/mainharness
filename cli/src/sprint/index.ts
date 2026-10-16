@@ -156,7 +156,7 @@ export function parsePlan(text: string): Plan {
   const esec = section(t, /^## Execução[^\n]*$/m);
   if (esec) {
     for (const line of t.slice(esec.start, esec.end).split("\n")) {
-      const row = /^\|\s*(\S+)\s*\|\s*(T\d+)\s*\|/.exec(line);
+      const row = /^\|\s*(\S+)[^|]*\|\s*(T\d+)\s*\|/.exec(line);
       if (row?.[2]) execution[row[2].toUpperCase()] = { done: row[1] === DONE, line };
       const legacy = /^- \[([ xX])\] (T\d+)\b/.exec(line);
       if (legacy?.[2]) execution[legacy[2].toUpperCase()] = { done: legacy[1] !== " ", line };
@@ -198,7 +198,8 @@ export function taskLine(t: PlanTask, times?: TaskTimes): string {
     const start = times.start ?? times.end;
     return row(DONE, localHM(start), localHM(times.end), fmtMin((times.duration_s ?? 0) / 60));
   }
-  if (times?.start) return row(DOING, localHM(times.start));
+  if (times?.start)
+    return row(times.phase ? `${DOING} ${times.phase}` : DOING, localHM(times.start));
   return row(TODO);
 }
 
