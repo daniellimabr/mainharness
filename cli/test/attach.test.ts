@@ -75,8 +75,10 @@ describe("hx attach", () => {
 
     const hj = readJ(path.join(dir, ".claude", "harness.json"));
     expect(hj).toMatchObject({ project: "my-web-app", name: "My Web App", web: true });
-    // frontend-design is out of the catalog until its evals pass (backlog B007)
-    expect([...(hj.optionalSkills as string[])].sort()).toEqual(["webapp-testing"]);
+    expect([...(hj.optionalSkills as string[])].sort()).toEqual([
+      "frontend-design",
+      "webapp-testing",
+    ]);
 
     // not a git repo before: attach creates it on main, ignores node_modules, first commit
     expect(fs.readFileSync(path.join(dir, ".gitignore"), "utf8")).toMatch(/^node_modules\/$/m);
@@ -136,7 +138,9 @@ describe("hx attach", () => {
     const off = runHx(["skills", "off", "webapp-testing"], { cwd: dir, env });
     expect(off.code).toBe(0);
     expect(fs.existsSync(path.join(dir, ".claude", "skills", "webapp-testing"))).toBe(false);
-    expect(readJ(path.join(dir, ".claude", "harness.json")).optionalSkills).toEqual([]);
+    expect(readJ(path.join(dir, ".claude", "harness.json")).optionalSkills).toEqual([
+      "frontend-design",
+    ]);
     const list = runHx(["skills"], { cwd: dir, env });
     expect(list.stdout).toMatch(/webapp-testing.*desligada/);
     expect(runHx(["skills", "on", "webapp-testing"], { cwd: dir, env }).code).toBe(0);

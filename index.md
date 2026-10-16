@@ -87,6 +87,8 @@ Uma linha por arquivo: caminho e propósito. Mantido pelo hook `post-edit`.
 - `cli/test/review-security-recheck.test.ts` — Re-review of T13 fixes (commit 0aeaf25): remaining bypasses and false positives in pre-bash.
 - `cli/test/review-security.test.ts` — testes de segurança do pre-bash (achados do Reviewer)
 - `cli/test/review-security-recheck.test.ts` — testes de segurança do pre-bash (segunda revisão)
+- `cli/test/run.test.ts` — (sem descrição)
+- `cli/test/setup.test.ts` — (sem descrição)
 - `cli/test/sprint.test.ts` — testes de sprint
 - `cli/test/usage.test.ts` — testes de usage
 - `cli/tsconfig.json` — TypeScript estrito do CLI
@@ -113,6 +115,7 @@ Uma linha por arquivo: caminho e propósito. Mantido pelo hook `post-edit`.
 - `docs/sprints/S01-release.md` — S01 — Release Report
 - `docs/sprints/S02-plan.md` — S02 — Sprint mais clara e mais segura (v0.3.0)
 - `docs/sprints/S02-release.md` — S02 — Release Report: Sprint mais clara e mais segura (v0.3.0)
+- `docs/sprints/S03-plan.md` — S03 — Arrumação antes do Dashboard (v0.4.0)
 - `eslint.config.js` — ESLint flat config
 - `hooks/hooks.json` — hooks do plugin (forma exec chamando o hx)
 - `package-lock.json` — versões travadas das dependências de desenvolvimento
@@ -124,8 +127,8 @@ Uma linha por arquivo: caminho e propósito. Mantido pelo hook `post-edit`.
 - `skills/archify/SKILL.md` — Create validated architecture, workflow, sequence, data-flow, lifecycle/state, entity-relationship, class/interface, ...
 - `skills/archify/SOURCE.md` — Origem
 - `skills/handoff/SKILL.md` — Escreve um handoff curto (máx. ~40 linhas): objetivo, estado atual, arquivos que pode tocar, decisões, critério de pr...
-- `skills-pending/frontend-design/SKILL.md` — Guidance for distinctive, intentional visual design when building new UI or reshaping an existing one. Helps with aes...
-- `skills-pending/frontend-design/SOURCE.md` — Origem
+- `skills/optional/frontend-design/SKILL.md` — Guidance for distinctive, intentional visual design when building new UI or reshaping an existing one. Helps with aes...
+- `skills/optional/frontend-design/SOURCE.md` — Origem
 - `skills/optional/webapp-testing/SKILL.md` — Toolkit for interacting with and testing local web applications using Playwright. Supports verifying frontend functio...
 - `skills/optional/webapp-testing/SOURCE.md` — Origem
 - `skills/prd/SKILL.md` — Escreve o PRD (documento de requisitos de produto) de uma funcionalidade em docs/prd/NNNN-slug.md: problema, usuários...
