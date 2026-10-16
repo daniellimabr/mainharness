@@ -2,6 +2,32 @@
 
 Versões do Main Harness (versionamento semântico; `0.y.z` até a 1.0).
 
+## [0.4.0] - 2026-10-16
+
+### Novidades
+
+- feat(setup): turn ponytail band off and set user HOME on Windows; doctor warns (S03/T01, B020)
+- feat(skills): frontend-design back in optional catalog; visual plan before code (S03/T05, B007)
+- feat(sprint): close shows task wall time and wait apart (S03/T02, B021)
+
+### Correções
+
+- fix(eval): judge sees all run text and records loaded skills; frontend-design evals pass (S03/T07)
+- fix(run): uppercase drive letter in child cwd so vitest loads once (S03/T03, B019)
+
+### Outros
+
+- docs: S03 task list snapshot
+- docs: S03 sprint plan (approved)
+- docs: backlog S03 items done; B030 validate request cycle with the Dashboard (S03/T08)
+- docs: backlog items from claude-code-setup audit (S03/T06, B002)
+- docs: native task list only when the tool exists (S03/T04, B022)
+- chore(inbox): move 4 requests to backlog
+- chore(index): new inbox requests
+- docs(sprint): S02 release report and 4 harness requests
+- chore(sprint): S02 execution list with T09 done and planned wall clock
+- chore(harness): migrate to v0.3.0
+
 ## [0.3.0] - 2026-10-16
 
 ### Novidades
