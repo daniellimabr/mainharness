@@ -36,14 +36,28 @@ Horários de Brasília (UTC−3). ✅ feita · 🔄 em andamento · ⬜ a fazer.
 
 ## Observações por tarefa
 
-- **T01 a T04 e T07:** rodaram em paralelo, em clones, das 00:41 às 00:55. Por isso a soma das durações (1 h 58 min) é bem maior que o tempo corrido da sprint (45 min).
-- **T05:** o commit levou junto, por engano, a mudança de pasta das fixtures da `sprint-plan`, que era da T08. Não causou dano; está registrado na mensagem da T08.
-- **T06 (B008):** fechada só com documentação. Nenhuma correção de código era possível pelo `hx.cmd`, porque o PowerShell 5.1 fixa a codificação ao abrir.
-- **T08:** a única que passou do planejado (+8 min). Foi reprovada 2 vezes:
-  - na primeira, o runner não deixava o caso rodar `hx` e faltavam fixtures;
-  - na segunda, a skill parava para fazer perguntas em vez de escrever o plano.
-  No limite de 2 reprovações, o Tech Lead decidiu pôr as decisões dentro dos prompts dos casos. Com isso, a `sprint-plan` passou 3/3.
-- **Incidente:** um comando do Tech Lead rodou com uma variável vazia e criou `C:\.claude`, `C:\.hh` e `C:\docs`. Isso quebrou 3 testes. Daniel apagou as pastas, e o pedido de proteção está abaixo.
+Só o que a tabela acima não conta.
+
+- **T01 a T04 e T07: cinco tarefas ao mesmo tempo.**
+  - O que eram: o novo comando de testes de skill (T01), o corte das perguntas de teste de 16 para 8 (T02), a troca do Reviewer para o modelo mais barato (T03), a atualização dos plugins em todos os projetos (T04) e a documentação das decisões (T07).
+  - O que aconteceu: cinco cópias do Tech Lead trabalharam ao mesmo tempo, cada uma em arquivos diferentes, e terminaram juntas em 14 minutos.
+  - Por isso, somando o tempo de cada tarefa, dá 1 h 58 min, mas no relógio a sprint durou só 45 min.
+- **T05: limpeza de código repetido.**
+  - O que era: havia trechos iguais copiados em vários arquivos, e ficou uma cópia só de cada.
+  - O que aconteceu: o salvamento (commit) desta tarefa levou junto, por engano, uns arquivos de exemplo que eram da T08. Não estragou nada, só ficou no lugar errado do histórico.
+- **T06: acentos trocados no PowerShell.**
+  - O que era: corrigir os "?" no lugar de acentos na saída do `hx`.
+  - O que aconteceu: descobri que a saída normal já sai certa. Os acentos só quebram quando a saída passa de um comando para outro, e isso é uma limitação do próprio PowerShell antigo, que o `hx` não consegue mudar.
+  - Fechei a tarefa explicando o problema e o contorno, sem mudar código.
+- **T08: prova real dos testes de skill.**
+  - O que era: rodar de verdade o comando novo da T01, medir tempo e custo, e confirmar que a skill de sprint plan funciona.
+  - O que aconteceu: foi a única que passou do previsto (28 min contra 20) e foi reprovada duas vezes pelo Reviewer:
+    - **1ª reprovação:** o ambiente de teste não deixava a skill usar o `hx` e não tinha os arquivos de exemplo de que ela precisava.
+    - **2ª reprovação:** os pedidos de teste eram vagos, então a skill, com razão, parava para fazer perguntas em vez de escrever o plano.
+  - Resolvi pondo as respostas dentro dos próprios pedidos de teste. Aí os 3 testes passaram.
+- **Incidente: pastas criadas na raiz do C:.**
+  - Um comando meu rodou com um caminho vazio e criou três pastas na raiz do disco. Elas quebraram 3 testes até você apagar.
+  - Pedi uma proteção no `hx` para isso não se repetir (ver Melhorias).
 
 ## Indicadores
 
