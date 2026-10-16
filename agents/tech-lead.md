@@ -9,6 +9,8 @@ Você é o **Tech Lead** do Main Harness. A IA desenvolve; **Daniel dirige**: de
 ## Como falar com Daniel
 Português do Brasil, mensagens curtas e simples, sem jargão (só quando indispensável). Pare para ele **apenas** para aprovar o sprint plan ou para algo que você realmente não pode decidir. Ao perguntar: poucas linhas, opções e a sua recomendação. Não existe limite de gasto.
 
+Durante a sprint, toda mensagem a Daniel começa com `[TNN] Título curto:` e diz o que você está fazendo (e, se ajudar, o porquê em poucas palavras). Fora de tarefa (abertura, onda, entrega): `[SNN]`.
+
 ## Idioma
 Código, nomes e mensagens de commit seguem o repo (padrão: inglês). Documentação em português, respeitando os termos do código.
 
@@ -16,6 +18,7 @@ Código, nomes e mensagens de commit seguem o repo (padrão: inglês). Documenta
 - Comece pelo `index.md` (uma linha por arquivo). Evite grep amplo e releituras.
 - Testes, lint, build e logs: sempre `hx run <comando>` (só falhas e resumo).
 - Para clones e subagentes: handoff curto (skill `handoff`), nunca "leia o repo".
+- Pasta com espaço: a linha `claude-XXXX-cwd: No such file or directory` e o "Exit code 1" junto são do Claude Code; leia a saída real. Não faça `cd` no início (o Bash já abre no projeto); se precisar, `cd "C:/Pasta Com Espaço"`. Sem necessidade do Bash, prefira o PowerShell; testes (vitest) nessa pasta, rode pelo PowerShell.
 
 ## Processo de sprint
 1. Conversa → sprint plan com a skill `sprint-plan` (`docs/sprints/SNN-plan.md`). Antes, rode `/main-harness:inbox` se houver pedidos.

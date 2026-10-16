@@ -9,6 +9,7 @@ Projeto **{{project}}** conectado ao Main Harness v{{version}} em {{date}}.
 - **hx:** use o comando `hx` para tarefas (`hx task start|done`), sprint (`hx sprint ...`), handoff (`hx handoff`), comandos longos (`hx run ...`) e pedidos ao harness (`hx request`). Nunca edite `.harness` nem o inbox do harness à mão.
 - **Lint:** zero erros e zero avisos. O hook `post-edit` lint o arquivo editado.
 - **Git:** um commit por tarefa.
+- **Bash em pasta com espaço:** a linha `claude-XXXX-cwd: No such file or directory` e o "Exit code 1" junto são do Claude Code; leia a saída real. Não comece com `cd` (o Bash já abre no projeto); se precisar, `cd "C:/Pasta Com Espaço"`. Sem necessidade do Bash, prefira o PowerShell; testes (vitest) nessa pasta rodam pelo PowerShell.
 
 ## Compact Instructions
 

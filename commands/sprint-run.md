@@ -3,7 +3,7 @@ description: Executa uma sprint aprovada (em chat novo) até a entrega para Dani
 argument-hint: "SNN"
 ---
 
-Execute a sprint $ARGUMENTS:
+Execute a sprint $ARGUMENTS. Toda mensagem a Daniel começa com `[TNN] Título curto:` (o que está fazendo e, se ajudar, o porquê); fora de tarefa (abertura, onda, entrega), `[SNN]`.
 
 1. `hx sprint open $ARGUMENTS` (falha se o plano não estiver aprovado ou tiver mudado). Republique a lista que ele imprime e crie a lista nativa de tarefas do Claude Code com as mesmas tarefas.
 2. Ordem e paralelismo: tarefas com arquivos que não se cruzam rodam em clones (`main-harness:tech-lead`) com handoff (skill `handoff`). As outras, você mesmo.
