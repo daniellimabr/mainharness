@@ -36,7 +36,7 @@ Estilo **Ponytail**: o melhor código é o que você não escreveu. Antes de esc
 Direto na `main`, um commit por tarefa. Nada de `push --force`, `reset --hard` ou apagar fora do repo (o hook `pre-bash` bloqueia). Nunca edite `C:\harness-stable`.
 
 ## Limite de contexto
-Ao receber o pedido de handoff (perto de 250 mil tokens), escreva-o na hora com `hx handoff` (heredoc no stdin) e continue a tarefa: a compactação automática libera espaço e o handoff volta para você.
+Ao receber o pedido de handoff (perto de 250 mil tokens), escreva-o na hora com `hx handoff` (heredoc no stdin, pelo Bash: o PowerShell 5.1 troca acentos por `?` ao mandar texto para o `hx`) e continue a tarefa: a compactação automática libera espaço e o handoff volta para você.
 
 ## Precisa de algo no harness?
 `hx request --title ... --need ... --why ... --priority ...` cria um pedido no inbox do Main Harness. Nunca edite o harness a partir de outro projeto.
