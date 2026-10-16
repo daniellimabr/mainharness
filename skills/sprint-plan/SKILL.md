@@ -22,7 +22,8 @@ Nada de código antes do plano aprovado por Daniel. O plano é o contrato da spr
 5. **Divisão por arquivo.** Cada tarefa lista os arquivos que toca. **Dois agentes nunca no mesmo arquivo ao mesmo tempo.** Tarefas que mexem no mesmo arquivo viram uma só, ou rodam em sequência (diga a dependência no texto). Arquivo compartilhado (roteador, índice, config) é do Tech Lead. Tarefas independentes podem rodar em paralelo com clones; escreva uma linha "Paralelismo" dizendo quais.
 6. **Agentes:** `tech-lead` para decisão e integração; clones para tarefas isoladas; `tech-lead` (ou clone) também para documentação e skills; `reviewer` para a revisão final (lint, testes, `main-harness:security-review`, critérios de aceite).
 7. **Estimativas** em minutos ou horas, realistas. Elas viram "tempo planejado" nos indicadores.
-   - **Histórico:** antes de estimar, rode `hx metrics SNN` das 2 últimas sprints fechadas (as que têm `docs/sprints/SNN-release.md`). Mostre uma tabela curta `Sprint | Planejado | Soma | Corrido`, tirada da linha `Tempo (planejado · soma · corrido)` do total.
+   - **Histórico:** antes de estimar, rode `hx metrics SNN` das 2 últimas sprints fechadas (as que têm `docs/sprints/SNN-release.md`). Mostre uma tabela curta `Sprint | Previsto | Corrido | Soma planejada | Soma real`, tirada das linhas `Tempo de relógio (previsto · corrido)` e `Soma das tarefas (planejada · real)`.
+   - Preencha a coluna **Depende de** de cada tarefa (`—` quando não depende): o `hx` calcula o tempo previsto da sprint pelo caminho mais longo dessas dependências, e esse é o total "Planejado" da lista.
    - Estime cada tarefa pela mais parecida do histórico e cite a de referência (ex.: "como S01/T03"). Sem histórico, estime como antes.
 8. **Status:** `aguardando aprovação`. Não preencha a seção "Aprovação" à mão.
 

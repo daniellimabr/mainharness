@@ -8,6 +8,7 @@ import {
   parseEstimate,
   parsePlan,
   planHash,
+  plannedWall,
   renderTaskList,
   writeExecution,
   taskLine,
@@ -61,6 +62,24 @@ describe("plan parsing", () => {
     expect(totalLine(tasks, all)).toBe(
       "| ✅ | **Total** | 3 tarefas |  | 1 h 50 min | 2026-10-14 23:05 | 2026-10-15 01:00 | 1 h 55 min |",
     );
+  });
+
+  it("planned wall clock follows 'Depende de' (critical path); no column means sequential", () => {
+    const head =
+      "## Tarefas\n\n| Id | Tarefa | Agente | Arquivos | Depende de | Planejado |\n|---|---|---|---|---|---|\n";
+    const row = (id: string, dep: string, est: string) =>
+      `| ${id} | x | a | f | ${dep} | ${est} |\n`;
+    const tasks = parsePlan(
+      head +
+        row("T01", "—", "15 min") +
+        row("T02", "—", "20 min") +
+        row("T03", "T01, T02", "25 min") +
+        row("T04", "T01–T03", "10 min"),
+    ).tasks;
+    expect(tasks[3]?.deps).toEqual(["T01", "T02", "T03"]);
+    expect(plannedWall(tasks)).toBe(55);
+    expect(totalLine(tasks, {})).toBe("| ⬜ | **Total** | 4 tarefas |  | 55 min |  |  |  |");
+    expect(plannedWall(parsePlan(TEMPLATE).tasks)).toBe(110);
   });
 
   it("template plan has placeholder approval and 3 tasks", () => {
@@ -252,8 +271,9 @@ describe("sprint commands (real bundle, project with spaces)", () => {
     // sequential with gaps: wall clock (02:05 → 03:50) is longer than the sum
     expect(c.stdout).toContain("| **Total** | 1 h 50 min | 1 h 35 min (soma) | | US$ 2.25 |");
     expect(c.stdout).toContain(
-      "| Tempo (planejado · soma · corrido) | 1 h 50 min · 1 h 35 min · 1 h 45 min |",
+      "| Tempo de relógio (previsto · corrido) | 1 h 50 min · 1 h 45 min |",
     );
+    expect(c.stdout).toContain("| Soma das tarefas (planejada · real) | 1 h 50 min · 1 h 35 min |");
     const close = events().find((e) => e.type === "sprint.close");
     expect(close?.data).toEqual({ tasks_done: 3, tasks_total: 3, duration_s: 7200 });
     const m = events().find((e) => e.type === "sprint.metrics");
@@ -261,6 +281,7 @@ describe("sprint commands (real bundle, project with spaces)", () => {
       tasks_total: 3,
       tasks_done: 3,
       planned_min: 110,
+      planned_wall_min: 110,
       actual_min: 95,
       tokens_input: 300,
       tokens_output: 150,
@@ -288,8 +309,9 @@ describe("sprint commands (real bundle, project with spaces)", () => {
     const r = hx("metrics", "S01", "--emit");
     expect(r.code).toBe(0);
     expect(r.stdout).toContain(
-      "| Tempo (planejado · soma · corrido) | 1 h 50 min · 2 h 30 min · 1 h 30 min |",
+      "| Tempo de relógio (previsto · corrido) | 1 h 50 min · 1 h 30 min |",
     );
+    expect(r.stdout).toContain("| Soma das tarefas (planejada · real) | 1 h 50 min · 2 h 30 min |");
   });
 
   it("close refuses pending tasks unless --force", () => {

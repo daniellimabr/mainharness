@@ -13,6 +13,8 @@ export interface PlanTask {
   agent: string;
   files: string;
   planned_min: number;
+  /** Ids from "Depende de"; undefined when the plan has no such column. */
+  deps?: string[];
 }
 
 export interface Approval {
@@ -120,6 +122,40 @@ const cells = (row: string) =>
     .split(/(?<!\\)\|/)
     .map((c) => c.trim().replace(/\\\|/g, "|"));
 
+/** "T03, T04" -> [T03, T04]; "T01–T03" -> [T01, T02, T03]; "—" -> []. */
+function parseDeps(cell: string): string[] {
+  const out: string[] = [];
+  const id = (n: number, w: number) => `T${String(n).padStart(w, "0")}`;
+  for (const m of cell.matchAll(/T(\d+)(?:\s*[–-]\s*T?(\d+))?/gi)) {
+    const a = Number(m[1]);
+    const b = m[2] ? Math.min(Number(m[2]), a + 99) : a; // cap absurd ranges
+    for (let n = a; n <= b; n++) out.push(id(n, m[1]?.length ?? 2));
+  }
+  return out;
+}
+
+/** Expected wall clock: longest dependency chain; without a "Depende de" column, the plain sum. */
+export function plannedWall(tasks: PlanTask[]): number {
+  if (tasks.some((t) => !t.deps)) return tasks.reduce((a, t) => a + t.planned_min, 0);
+  const byId = new Map(tasks.map((t) => [t.id, t]));
+  const memo = new Map<string, number>();
+  const finish = (t: PlanTask, seen: Set<string>): number => {
+    const known = memo.get(t.id);
+    if (known !== undefined) return known;
+    if (seen.has(t.id)) return 0; // cycle in the plan: stop counting
+    seen.add(t.id);
+    let start = 0;
+    for (const d of t.deps ?? []) {
+      const dt = byId.get(d);
+      if (dt && dt !== t) start = Math.max(start, finish(dt, seen));
+    }
+    const end = start + t.planned_min;
+    memo.set(t.id, end);
+    return end;
+  };
+  return Math.max(0, ...tasks.map((t) => finish(t, new Set())));
+}
+
 export function parsePlan(text: string): Plan {
   const t = lf(text);
   const title = /^# (.+)$/m.exec(t)?.[1]?.trim() ?? "";
@@ -127,15 +163,21 @@ export function parsePlan(text: string): Plan {
   const tsec = section(t, /^## Tarefas[^\n]*$/m);
   if (tsec) {
     let estCol = 4; // template: Id | Tarefa | Agente | Arquivos | Estimativa
+    let depCol = -1;
     for (const row of t.slice(tsec.start, tsec.end).split("\n")) {
       if (!row.trim().startsWith("|")) continue;
       const c = cells(row);
       const [id = "", title = "", agent = "", files = ""] = c;
-      const head = c.findIndex((h) => /^(estimativa|planejado)$/i.test(h));
-      if (/^id$/i.test(id) && head > 0) estCol = head;
+      if (/^id$/i.test(id)) {
+        const head = c.findIndex((h) => /^(estimativa|planejado)$/i.test(h));
+        if (head > 0) estCol = head;
+        depCol = c.findIndex((h) => /^depende de$/i.test(h));
+      }
       if (!/^T\d+/i.test(id)) continue; // header and separator rows
       const planned_min = parseEstimate(c[estCol] ?? "");
-      tasks.push({ id: id.toUpperCase(), title, agent, files, planned_min });
+      const task: PlanTask = { id: id.toUpperCase(), title, agent, files, planned_min };
+      if (depCol > 0) task.deps = parseDeps(c[depCol] ?? "");
+      tasks.push(task);
     }
   }
   let approval: Approval | null = null;
@@ -220,7 +262,7 @@ export function totalLine(tasks: PlanTask[], times: Record<string, TaskTimes>): 
     : "";
   const status = done ? DONE : start ? DOING : TODO;
   const dur = end ? fmtMin((Date.parse(end) - Date.parse(start)) / 60000) : "";
-  const planned = fmtMin(tasks.reduce((s, t) => s + t.planned_min, 0));
+  const planned = fmtMin(plannedWall(tasks));
   return `| ${status} | ${TOTAL} | ${tasks.length} tarefas |  | ${planned} | ${start && dateHM(start)} | ${end && dateHM(end)} | ${dur} |`;
 }
 
@@ -274,6 +316,8 @@ export interface SprintMetrics {
   tasks_total: number;
   tasks_done: number;
   planned_min: number;
+  /** Expected wall clock from the plan's dependencies (plannedWall). */
+  planned_wall_min: number;
   actual_min: number;
   /** Wall clock: first task.start to last task.done. */
   wall_min: number;
@@ -307,6 +351,7 @@ export function computeMetrics(project: string, sprintId: string, plan: Plan): S
     tasks_total: plan.tasks.length,
     tasks_done: plan.tasks.filter((t) => t.id in durations).length,
     planned_min: plan.tasks.reduce((a, t) => a + t.planned_min, 0),
+    planned_wall_min: plannedWall(plan.tasks),
     actual_min: r1(Object.values(durations).reduce((a, s) => a + s, 0) / 60),
     wall_min: 0,
     tokens_input: 0,
@@ -384,7 +429,8 @@ export function renderMetrics(sprintId: string, plan: Plan, m: SprintMetrics): s
     "",
     "| Indicador | Valor |",
     "|---|---|",
-    `| Tempo (planejado · soma · corrido) | ${fmtMin(m.planned_min)} · ${fmtMin(m.actual_min)} · ${fmtMin(m.wall_min)} |`,
+    `| Tempo de relógio (previsto · corrido) | ${fmtMin(m.planned_wall_min)} · ${fmtMin(m.wall_min)} |`,
+    `| Soma das tarefas (planejada · real) | ${fmtMin(m.planned_min)} · ${fmtMin(m.actual_min)} |`,
     `| Tarefas feitas | ${m.tasks_done}/${m.tasks_total} |`,
     `| Tokens (entrada / saída / escrita em cache / leitura de cache) | ${tok(m.tokens_input)} / ${tok(m.tokens_output)} / ${tok(m.tokens_cache_write)} / ${tok(m.tokens_cache_read)} |`,
     `| Custo total | ${usd(m.usd)} |`,

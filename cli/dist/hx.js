@@ -433,6 +433,7 @@ var init_schema = __esm({
         planned_min: n(),
         actual_min: n(),
         wall_min: n(opt),
+        planned_wall_min: n(opt),
         tokens_input: n(),
         tokens_output: n(),
         tokens_cache_write: n(),
@@ -1805,6 +1806,36 @@ function section(text, heading) {
   const next = /^## /m.exec(rest);
   return { start: m.index, end: next ? m.index + m[0].length + next.index : text.length };
 }
+function parseDeps(cell) {
+  const out = [];
+  const id = (n2, w) => `T${String(n2).padStart(w, "0")}`;
+  for (const m of cell.matchAll(/T(\d+)(?:\s*[–-]\s*T?(\d+))?/gi)) {
+    const a = Number(m[1]);
+    const b2 = m[2] ? Math.min(Number(m[2]), a + 99) : a;
+    for (let n2 = a; n2 <= b2; n2++) out.push(id(n2, m[1]?.length ?? 2));
+  }
+  return out;
+}
+function plannedWall(tasks) {
+  if (tasks.some((t) => !t.deps)) return tasks.reduce((a, t) => a + t.planned_min, 0);
+  const byId = new Map(tasks.map((t) => [t.id, t]));
+  const memo = /* @__PURE__ */ new Map();
+  const finish = (t, seen) => {
+    const known = memo.get(t.id);
+    if (known !== void 0) return known;
+    if (seen.has(t.id)) return 0;
+    seen.add(t.id);
+    let start = 0;
+    for (const d of t.deps ?? []) {
+      const dt = byId.get(d);
+      if (dt && dt !== t) start = Math.max(start, finish(dt, seen));
+    }
+    const end = start + t.planned_min;
+    memo.set(t.id, end);
+    return end;
+  };
+  return Math.max(0, ...tasks.map((t) => finish(t, /* @__PURE__ */ new Set())));
+}
 function parsePlan(text) {
   const t = lf(text);
   const title = /^# (.+)$/m.exec(t)?.[1]?.trim() ?? "";
@@ -1812,15 +1843,21 @@ function parsePlan(text) {
   const tsec = section(t, /^## Tarefas[^\n]*$/m);
   if (tsec) {
     let estCol = 4;
+    let depCol = -1;
     for (const row of t.slice(tsec.start, tsec.end).split("\n")) {
       if (!row.trim().startsWith("|")) continue;
       const c = cells(row);
       const [id = "", title2 = "", agent = "", files = ""] = c;
-      const head = c.findIndex((h) => /^(estimativa|planejado)$/i.test(h));
-      if (/^id$/i.test(id) && head > 0) estCol = head;
+      if (/^id$/i.test(id)) {
+        const head = c.findIndex((h) => /^(estimativa|planejado)$/i.test(h));
+        if (head > 0) estCol = head;
+        depCol = c.findIndex((h) => /^depende de$/i.test(h));
+      }
       if (!/^T\d+/i.test(id)) continue;
       const planned_min = parseEstimate(c[estCol] ?? "");
-      tasks.push({ id: id.toUpperCase(), title: title2, agent, files, planned_min });
+      const task = { id: id.toUpperCase(), title: title2, agent, files, planned_min };
+      if (depCol > 0) task.deps = parseDeps(c[depCol] ?? "");
+      tasks.push(task);
     }
   }
   let approval = null;
@@ -1881,7 +1918,7 @@ function totalLine(tasks, times) {
   const end = done ? ts.map((x) => x.end ?? "").sort().at(-1) ?? "" : "";
   const status = done ? DONE : start ? DOING : TODO;
   const dur = end ? fmtMin((Date.parse(end) - Date.parse(start)) / 6e4) : "";
-  const planned = fmtMin(tasks.reduce((s2, t) => s2 + t.planned_min, 0));
+  const planned = fmtMin(plannedWall(tasks));
   return `| ${status} | ${TOTAL} | ${tasks.length} tarefas |  | ${planned} | ${start && dateHM(start)} | ${end && dateHM(end)} | ${dur} |`;
 }
 function execTable(lines, total) {
@@ -1933,6 +1970,7 @@ function computeMetrics(project, sprintId2, plan) {
     tasks_total: plan.tasks.length,
     tasks_done: plan.tasks.filter((t) => t.id in durations).length,
     planned_min: plan.tasks.reduce((a, t) => a + t.planned_min, 0),
+    planned_wall_min: plannedWall(plan.tasks),
     actual_min: r1(Object.values(durations).reduce((a, s2) => a + s2, 0) / 60),
     wall_min: 0,
     tokens_input: 0,
@@ -1995,7 +2033,8 @@ function renderMetrics(sprintId2, plan, m) {
     "",
     "| Indicador | Valor |",
     "|---|---|",
-    `| Tempo (planejado \xB7 soma \xB7 corrido) | ${fmtMin(m.planned_min)} \xB7 ${fmtMin(m.actual_min)} \xB7 ${fmtMin(m.wall_min)} |`,
+    `| Tempo de rel\xF3gio (previsto \xB7 corrido) | ${fmtMin(m.planned_wall_min)} \xB7 ${fmtMin(m.wall_min)} |`,
+    `| Soma das tarefas (planejada \xB7 real) | ${fmtMin(m.planned_min)} \xB7 ${fmtMin(m.actual_min)} |`,
     `| Tarefas feitas | ${m.tasks_done}/${m.tasks_total} |`,
     `| Tokens (entrada / sa\xEDda / escrita em cache / leitura de cache) | ${tok(m.tokens_input)} / ${tok(m.tokens_output)} / ${tok(m.tokens_cache_write)} / ${tok(m.tokens_cache_read)} |`,
     `| Custo total | ${usd2(m.usd)} |`,

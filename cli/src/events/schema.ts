@@ -29,6 +29,7 @@ export const DATA_SCHEMAS = {
     planned_min: n(),
     actual_min: n(),
     wall_min: n(opt),
+    planned_wall_min: n(opt),
     tokens_input: n(),
     tokens_output: n(),
     tokens_cache_write: n(),
