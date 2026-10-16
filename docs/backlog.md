@@ -30,3 +30,10 @@ Itens ainda não planejados. Pedidos dos projetos chegam pelo `inbox/` e `/inbox
 | B020 | Painel do ponytail desligado por padrão: `hx setup` grava `~/.claude/.ponytail-band=off` e garante `HOME` no Windows (sem ele o ponytail não lê o flag); `hx doctor` avisa | inbox: 2026-10-16-main-harness-painel-do-ponytail-desligado-por-padrao-nas-maquinas-do-harn.md | média | novo |
 | B021 | `hx sprint close`: tempo corrido das tarefas (1º start ao último done) e, à parte, a espera até o fechamento | inbox: 2026-10-16-main-harness-sprint-close-mostra-tempo-corrido-nao-tempo-desde-o-open.md | média | novo |
 | B022 | sprint-run e tech-lead: lista nativa de tarefas só se a ferramenta existir (não existe no VS Code) | inbox: 2026-10-16-main-harness-sprint-run-sem-lista-nativa-no-vs-code.md | baixa | novo |
+| B023 | Hook PreToolUse em `Write\|Edit` (`hx hook pre-edit`) bloqueia edição de `cli/dist/hx.js` e de `C:\harness-stable`; hoje o `pre-bash` só vigia o shell (`hooks/hooks.json`, matcher `Bash\|PowerShell`) | roadmap (auditoria S03) | alta | aberto |
+| B024 | `pre-bash` pergunta antes de `git commit` com `cli/src` no stage e `cli/dist/hx.js` desatualizado (regra do `CLAUDE.md` sem garantia) | roadmap (auditoria S03) | alta | aberto |
+| B025 | `index.md` com linhas duplicadas (ex.: `cli/test/review-security-recheck.test.ts`); achar a causa em `cli/src/repomap/` | roadmap (auditoria S03) | alta | aberto |
+| B026 | Checar tipos no fim da vez (Stop hook roda typecheck quando `cli/src` mudou); hoje o `post-edit` só formata e lint | roadmap (auditoria S03) | média | aberto |
+| B027 | `.claude/settings.json`: liberar comandos só de leitura (`npm run *`, `git status/diff/log`, Bash e PowerShell); usar a skill `fewer-permission-prompts` | roadmap (auditoria S03) | média | aberto |
+| B028 | `hx release` valida o manifesto do plugin (`claude plugin validate`, plugin `plugin-dev`) antes de publicar | roadmap (auditoria S03) | média | aberto |
+| B029 | CI (GitHub Action) com `npm run check` e `npm run build` + diff de `cli/dist` | roadmap (auditoria S03) | baixa | aberto |
