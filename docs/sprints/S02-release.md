@@ -16,5 +16,5 @@ Horários de Brasília (UTC−3). ✅ feita · 🔄 em andamento · ⬜ a fazer.
 | ✅ | T06 | B014: `sprint-plan` mostra planejado × real das sprints anteriores e estima pelo histórico | clone E | 10 min | 07:15 | 07:23 | 8 min |
 | ✅ | T07 | B010 + B012 + B013: regra dos casos de eval; caso 3 da `sprint-plan` sem a ação; caso 4 vago; fixtures de `adr` e `handoff` | clone F | 20 min | 07:10 | 07:19 | 9 min |
 | ✅ | T08 | Validação real: `hx eval sprint-plan`, `adr`, `handoff` (casos); tempo, sessões e custo no `hx usage` | reviewer | 15 min | 07:23 | 07:36 | 13 min |
-| 🔄 | T09 | Revisão final, backlog (B010–B018 → feito (S02)), CHANGELOG e release v0.3.0 (`hx release minor`) | tech-lead + reviewer | 15 min | 07:36 |  |  |
-| 🔄 | **Total** | 9 tarefas |  | 2 h 20 min | 2026-10-16 07:10 |  |  |
+| ✅ | T09 | Revisão final, backlog (B010–B018 → feito (S02)), CHANGELOG e release v0.3.0 (`hx release minor`) | tech-lead + reviewer | 15 min | 07:36 | 07:40 | 4 min |
+| ✅ | **Total** | 9 tarefas |  | 55 min | 2026-10-16 07:10 | 2026-10-16 07:40 | 30 min |
