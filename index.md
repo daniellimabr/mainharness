@@ -112,6 +112,7 @@ Uma linha por arquivo: caminho e propósito. Mantido pelo hook `post-edit`.
 - `docs/sprints/S01-plan.md` — S01 — Evals baratos, Reviewer no Sonnet e plugins companheiros (v0.2.0)
 - `docs/sprints/S01-release.md` — S01 — Release Report
 - `docs/sprints/S02-plan.md` — S02 — Sprint mais clara e mais segura (v0.3.0)
+- `docs/sprints/S02-release.md` — S02 — Release Report: Sprint mais clara e mais segura (v0.3.0)
 - `eslint.config.js` — ESLint flat config
 - `hooks/hooks.json` — hooks do plugin (forma exec chamando o hx)
 - `package-lock.json` — versões travadas das dependências de desenvolvimento
