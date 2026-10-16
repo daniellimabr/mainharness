@@ -18,6 +18,8 @@ Repo do plugin **main-harness** (Claude Code). Este repo é ao mesmo tempo o plu
 - `hx eval --changed`: roda os evals das skills que mudaram desde a última tag. `hx eval <skill>`: uma skill.
 - Sonnet, 1 rodada, até 3 sessões em paralelo, cada uma em sandbox temporário. As sessões entram no `hx usage`.
 - Escopo (ADR 0009): descrição mudou → só `evals/trigger.json` (8 consultas: 4 acionam, 4 não); corpo mudou → só `evals/evals.json`; mudança só em `evals/` não roda nada; skill nova roda tudo.
+- Prompt do caso: traz as **decisões do produto** (o quê), para a skill escrever em vez de perguntar, mas **nunca a ação que o teste confere** (ex.: "edite o plano agora"). Pedido vago que deve gerar perguntas é um caso separado.
+- Fixtures: arquivos que o caso pressupõe ficam em `evals/files*/` (ex.: `files-new/`) e entram em `files` do caso; o sandbox os copia no mesmo caminho relativo.
 - Resultado em `evals/trigger-results.json`, `evals/cases-results.json` (veredito do juiz por caso) e `evals/results.json` (carimbado com o hash da skill). O `hx release` recusa skill alterada sem resultado passando.
 
 ## Compact Instructions

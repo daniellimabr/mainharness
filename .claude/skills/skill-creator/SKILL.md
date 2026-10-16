@@ -142,6 +142,8 @@ Try to explain to the model why things are important in lieu of heavy-handed mus
 
 After writing the skill draft, come up with 2-3 realistic test prompts — the kind of thing a real user would actually say. Share them with the user: [you don't have to use this exact language] "Here are a few test cases I'd like to try. Do these look right, or do you want to add more?" Then run them.
 
+Each prompt carries the product decisions (the "what") so the skill writes instead of asking, but never the action the assertions check (e.g. not "edit the plan now"). A vague request that should trigger questions is its own separate case. Files a case assumes exist go in `evals/files*/` and are listed in the case's `files`.
+
 Save test cases to `evals/evals.json`. Don't write assertions yet — just the prompts. You'll draft assertions in the next step while the runs are in progress.
 
 ```json

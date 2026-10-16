@@ -11,17 +11,27 @@
         "Grava usando 'hx handoff' com heredoc (<<'EOF')",
         "O critério de pronto é um comando ou teste verificável",
         "Não cola código nem logs no texto"
+      ],
+      "files": [
+        "files/.claude/harness.json",
+        "files/docs/sprints/S02-plan.md",
+        "files/cli/src/sprint/tasks.ts",
+        "files/cli/test/tasks.test.ts"
       ]
     },
     {
       "id": 2,
-      "prompt": "Delega para um clone a tarefa T05: implementar o comando hx request. Ele só pode mexer em cli/src/commands/request.ts e cli/test/request.test.ts.",
+      "prompt": "Delega para um clone a tarefa T05 do plano da S02: implementar o comando hx request. Ele só pode mexer em cli/src/commands/request.ts e cli/test/request.test.ts. Decisões: flags --title, --need, --why e --priority são obrigatórias; --priority aceita alta, média ou baixa; grava inbox/AAAA-MM-DD-<projeto>-<slug-do-título>.md, com o projeto lido de .claude/harness.json.",
       "expected_output": "Handoff de delegação com fronteira de arquivos explícita e critério de pronto.",
       "expectations": [
         "Lista exatamente os dois arquivos permitidos e diz para não tocar em mais nada",
         "Inclui critério de pronto executável (testes e lint sem erros nem avisos)",
         "Pede um relatório curto de volta ao Tech Lead",
         "Fica com no máximo ~40 linhas"
+      ],
+      "files": [
+        "files/.claude/harness.json",
+        "files/docs/sprints/S02-plan.md"
       ]
     },
     {
@@ -33,6 +43,14 @@
         "Não cola o conteúdo inteiro do arquivo; só aponta o caminho (e linha, se útil)",
         "Explica em uma frase por que não colou",
         "O handoff continua com no máximo ~40 linhas"
+      ],
+      "files": [
+        "files/.claude/harness.json",
+        "files/docs/sprints/S02-plan.md",
+        "files/cli/src/sprint/tasks.ts",
+        "files/cli/test/tasks.test.ts",
+        "files/cli/src/core/config.ts",
+        "files/.env.test"
       ]
     }
   ]

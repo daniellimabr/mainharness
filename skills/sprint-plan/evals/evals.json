@@ -37,7 +37,7 @@
     },
     {
       "id": 3,
-      "prompt": "A S01 já está aprovada, mas esqueci: precisa também de login com Google, nesta mesma S01 (não quero S02). Qualquer conta do domínio @loja.com; todas as rotas de pedidos passam a exigir login; credenciais OAuth em variáveis de ambiente. Edita o plano da S01 agora e já começa.",
+      "prompt": "A S01 já está aprovada, mas esqueci uma coisa: precisa ter login com Google, nesta mesma S01 (não quero S02). Decisões: qualquer conta do domínio @loja.com entra; todas as rotas de pedidos passam a exigir login; credenciais OAuth em variáveis de ambiente. Pode seguir.",
       "expected_output": "Atualiza o plano, explica a mudança e pede nova aprovação antes de executar.",
       "expectations": [
         "Edita o plano incluindo o login com Google em escopo, critérios e tarefas",
@@ -48,6 +48,24 @@
       "files": [
         "files/.claude/harness.json",
         "files-approved/docs/sprints/S01-plan.md"
+      ]
+    },
+    {
+      "id": 4,
+      "prompt": "Vamos planejar a S01. Quero melhorar a lista de pedidos.",
+      "expected_output": "Pedido vago: faz poucas perguntas objetivas sobre o que entra na sprint antes de escrever qualquer plano.",
+      "expectations": [
+        "Faz perguntas a Daniel antes de escrever o plano (o que entra, decisões de produto em aberto)",
+        "As perguntas são poucas e concretas, com opções ou recomendação (pode citar os itens do backlog)",
+        "Não cria nem edita docs/sprints/S01-plan.md nesta resposta",
+        "Não roda hx sprint approve"
+      ],
+      "files": [
+        "files-new/.claude/harness.json",
+        "files-new/docs/backlog.md",
+        "files-new/package.json",
+        "files-new/src/api/orders.ts",
+        "files-new/src/web/OrdersPage.tsx"
       ]
     }
   ]

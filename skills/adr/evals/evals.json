@@ -31,11 +31,21 @@
         "Ou pesquisa/verifica a documentação, ou marca explicitamente o ponto como 'não verificado'",
         "O status é 'proposto' até Daniel aprovar",
         "Pede o ok de Daniel antes de marcar como aceito"
+      ],
+      "files": [
+        "files/docs/adr/0001-plugin-e-marketplace.md",
+        "files/docs/adr/0002-agente-da-sessao-principal.md",
+        "files/docs/adr/0003-hooks-no-windows.md",
+        "files/docs/adr/0004-hx-no-path-e-permissoes.md",
+        "files/docs/adr/0005-skills-opcionais-por-projeto.md",
+        "files/docs/adr/0006-continuacao-aos-250k.md",
+        "files/docs/adr/0007-consumo-via-transcripts.md",
+        "files/package.json"
       ]
     },
     {
       "id": 3,
-      "prompt": "O ADR 0003 está desatualizado: agora os hooks rodam por um wrapper em vez de exec direto. Atualiza a decisão.",
+      "prompt": "O ADR 0003 está desatualizado: agora os hooks rodam por um wrapper em vez de exec direto. Atualiza a decisão. Fatos: o wrapper é hooks/run.js (Node), chamado em forma exec como node ${CLAUDE_PLUGIN_ROOT}/hooks/run.js <hook> (veja hooks/hooks.json); motivo: um único try/catch com exit 0 e uma única medição de tempo para todos os hooks, em vez de repetir isso em cada um; continuam valendo exit 2 no pre-bash e no post-edit, a meta de menos de 300 ms e só Node (sem .sh/.ps1).",
       "expected_output": "Cria um ADR novo que substitui o 0003 e só muda o status do antigo.",
       "expectations": [
         "Cria um arquivo novo com o próximo número sequencial em vez de reescrever o conteúdo do 0003",
@@ -50,7 +60,8 @@
         "files/docs/adr/0004-hx-no-path-e-permissoes.md",
         "files/docs/adr/0005-skills-opcionais-por-projeto.md",
         "files/docs/adr/0006-continuacao-aos-250k.md",
-        "files/docs/adr/0007-consumo-via-transcripts.md"
+        "files/docs/adr/0007-consumo-via-transcripts.md",
+        "files/hooks/hooks.json"
       ]
     }
   ]
