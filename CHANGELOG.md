@@ -2,6 +2,36 @@
 
 Versões do Main Harness (versionamento semântico; `0.y.z` até a 1.0).
 
+## [0.3.0] - 2026-10-16
+
+### Novidades
+
+- feat(sprint): planned total is the expected wall clock from task dependencies (feedback 1)
+- feat(task): hx task phase shows the phase on the in-progress row (T05)
+- feat(sprint-plan): estimate from the last sprints' planned, sum and wall clock (T06)
+- feat(metrics): total shows planned, sum and wall clock (T04)
+- feat(doctor): warn about project paths with spaces (T02)
+
+### Correções
+
+- fix(paths): refuse relative or drive-root HARNESS_HOME; pre-bash keeps guarding (T01)
+- fix(sprint): approve hashes the plan as written when it adds the approval section
+
+### Outros
+
+- test(evals): real run of sprint-plan, adr and handoff cases; adr makes supersede rule explicit (T08)
+- test(evals): eval cases carry product decisions, never the checked action; add fixtures (T07)
+- docs(agents): [TNN] message prefix and Bash guidance for folders with spaces (T03)
+- chore(sprint): re-record S02 approval with the corrected hash
+- docs(sprint): plan S02 and cancel B001/B003 for now
+- chore(inbox): move 8 requests to backlog
+- chore(harness): migrate to v0.2.1
+- chore(inbox): sprint-plan eval cases must not give the answer
+- chore(inbox): message prefix request includes what and why
+- chore(inbox): requests from Daniel's S01 report feedback
+- docs(S01): rewrite task notes in plain language
+- docs(S01): release report and harness improvement requests
+
 ## [0.2.1] - 2026-10-16
 
 ### Correções
