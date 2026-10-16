@@ -1,6 +1,7 @@
 import * as fs from "node:fs";
 import * as path from "node:path";
 import { afterEach, beforeEach, describe, expect, it } from "vitest";
+import { PLUGINS as SETUP_PLUGINS, updatePlugins } from "../src/attach/setup";
 import { runDoctor } from "../src/commands/doctor";
 import { hxOnPath } from "../src/core/shim";
 import { HX, isolateHome, REPO_ROOT, rm, runHx, tempDir } from "./helpers";
@@ -112,6 +113,69 @@ describe("runDoctor", () => {
       process.chdir(prev);
       rm(outside);
     }
+  });
+});
+
+/** Fake marketplaces: each plugin available at `available` version. */
+function markets(available: string): void {
+  const known: Record<string, unknown> = {};
+  for (const id of PLUGINS) {
+    const [name = "", market = ""] = id.split("@");
+    const loc = path.join(claude, "mk", market);
+    known[market] = { installLocation: loc };
+    writeJson(path.join(loc, ".claude-plugin", "marketplace.json"), {
+      plugins: [{ name, source: `./${name}` }],
+    });
+    writeJson(path.join(loc, name, ".claude-plugin", "plugin.json"), { version: available });
+  }
+  writeJson(path.join(claude, "plugins", "known_marketplaces.json"), known);
+}
+
+describe("runDoctor companion plugins", () => {
+  it("warns about plugins missing or outdated in the project", () => {
+    markets("2.0.0");
+    writeJson(path.join(claude, "plugins", "installed_plugins.json"), {
+      version: 2,
+      plugins: {
+        "main-harness@harness-stable": [{ scope: "project", projectPath: proj, version: "2.0.0" }],
+        "ponytail@ponytail": [{ scope: "project", projectPath: proj, version: "1.0.0" }],
+        "security-guidance@claude-plugins-official": [
+          { scope: "project", projectPath: path.join(proj, "other"), version: "2.0.0" },
+        ],
+      },
+    });
+    const r = runDoctor({ projectRoot: proj });
+    expect(line(r.lines, "main-harness@harness-stable 2.0.0 no projeto")).toMatch(/^✓/);
+    expect(line(r.lines, "ponytail@ponytail desatualizado")).toMatch(/^⚠.*1\.0\.0.*2\.0\.0/);
+    expect(
+      line(r.lines, "security-guidance@claude-plugins-official não instalado no projeto"),
+    ).toMatch(/^⚠/);
+  });
+
+  it("accepts a user-scope install", () => {
+    markets("2.0.0");
+    writeJson(path.join(claude, "plugins", "installed_plugins.json"), {
+      plugins: { "ponytail@ponytail": [{ scope: "user", version: "2.0.0" }] },
+    });
+    const r = runDoctor({ projectRoot: proj });
+    expect(line(r.lines, "ponytail@ponytail 2.0.0 no projeto")).toMatch(/^✓/);
+  });
+});
+
+describe("updatePlugins", () => {
+  it("lists the companion plugins without remember", () => {
+    expect(SETUP_PLUGINS).toEqual(PLUGINS);
+  });
+
+  it("updates every plugin in every live project", () => {
+    const out = updatePlugins([proj, path.join(proj, "gone")]);
+    const calls = fs
+      .readFileSync(path.join(claude, "calls.txt"), "utf8")
+      .trim()
+      .split("\n")
+      .map((c) => JSON.parse(c) as string[]);
+    expect(calls).toEqual(PLUGINS.map((id) => ["plugin", "update", id, "--scope", "project"]));
+    expect(out).toContain("1 projeto");
   });
 });
 

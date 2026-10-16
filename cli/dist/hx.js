@@ -1721,7 +1721,7 @@ function releasePath(projectRoot, sprintId2) {
 function releaseStub(sprintId2) {
   return `# ${sprintId2} \u2014 Release Report
 
-> Sprint em andamento. A tabela de execu\xE7\xE3o abaixo \xE9 atualizada pelo \`hx\` a cada tarefa; o Writer completa o restante no fechamento (skill release-report), mantendo esta tabela.
+> Sprint em andamento. A tabela de execu\xE7\xE3o abaixo \xE9 atualizada pelo \`hx\` a cada tarefa; o Tech Lead completa o restante no fechamento (skill release-report), mantendo esta tabela.
 
 `;
 }
@@ -2970,11 +2970,14 @@ function installPlugins(root) {
 function updatePlugins(roots) {
   const bin = process.env.HARNESS_CLAUDE_BIN || "claude";
   const live = roots.filter((r) => fs24.existsSync(r));
-  const failed = live.filter(
-    (r) => runFixed(r, bin, ["plugin", "update", PLUGINS[0], "--scope", "project"]).status !== 0
+  const perProject = live.map(
+    (r) => PLUGINS.filter(
+      (id) => runFixed(r, bin, ["plugin", "update", id, "--scope", "project"]).status !== 0
+    ).map((id) => `${r} (${id})`)
   );
-  const ok = live.length - failed.length;
-  return `- plugin atualizado em ${ok} projeto(s)${failed.length ? `; falhou em: ${failed.join(", ")}` : ""}.`;
+  const ok = perProject.filter((f) => !f.length).length;
+  const failed = perProject.flat();
+  return `- plugins atualizados em ${ok} projeto(s)${failed.length ? `; falhou em: ${failed.join(", ")}` : ""}.`;
 }
 var import_node_child_process5, fs24, path24, PLUGINS, LINT_DEV_DEPS, ESLINT_CONFIGS2;
 var init_setup = __esm({
@@ -3033,10 +3036,10 @@ var init_git = __esm({
 // cli/src/core/shim.ts
 function writeShims(stableDir) {
   const js = path25.join(path25.resolve(stableDir), "cli", "dist", "hx.js");
-  const posix = js.replace(/\\/g, "/");
+  const posix2 = js.replace(/\\/g, "/");
   fs25.mkdirSync(shimDir(), { recursive: true });
   fs25.writeFileSync(path25.join(shimDir(), "hx"), `#!/bin/sh
-exec node "${posix}" "$@"
+exec node "${posix2}" "$@"
 `, {
     mode: 493
   });
@@ -3144,6 +3147,36 @@ function pluginAvailable(id) {
   const [name = "", market = ""] = id.split("@");
   return fs26.existsSync(path26.join(dir, "cache", market, name));
 }
+function installedVersion(id, root) {
+  const inst = readJson(
+    path26.join(claudeHome(), "plugins", "installed_plugins.json"),
+    {}
+  );
+  const list = inst.plugins?.[id] ?? [];
+  const hit = list.find((i) => i.projectPath && samePathKey(i.projectPath) === samePathKey(root)) ?? list.find((i) => i.scope === "user");
+  return hit ? hit.version ?? "" : null;
+}
+function availableVersion(id) {
+  const [name = "", market = ""] = id.split("@");
+  const known = readJson(
+    path26.join(claudeHome(), "plugins", "known_marketplaces.json"),
+    {}
+  );
+  const loc = known[market]?.installLocation;
+  if (!loc) return null;
+  const mk = readJson(
+    path26.join(loc, ".claude-plugin", "marketplace.json"),
+    {}
+  );
+  const entry = mk.plugins?.find((p) => p.name === name);
+  if (!entry) return null;
+  if (entry.version) return entry.version;
+  if (typeof entry.source !== "string") return null;
+  return readJson(
+    path26.join(loc, entry.source, ".claude-plugin", "plugin.json"),
+    {}
+  ).version ?? null;
+}
 function spacesWork(hx) {
   const dir = fs26.mkdtempSync(path26.join(os3.tmpdir(), "hx doctor "));
   try {
@@ -3234,7 +3267,20 @@ function runDoctor(opts = {}) {
       path26.join(root, ".claude", "settings.json"),
       {}
     );
-    const off = PROJECT_PLUGINS.filter((id) => st.enabledPlugins?.[id] !== true);
+    for (const id of PLUGINS) {
+      const have = installedVersion(id, root);
+      const want = availableVersion(id);
+      if (have === null) check(false, "", `${id} n\xE3o instalado no projeto: rode /attach`, true);
+      else if (want && have !== want)
+        check(
+          false,
+          "",
+          `${id} desatualizado no projeto (${have || "?"}; dispon\xEDvel ${want}): claude plugin update ${id} --scope project`,
+          true
+        );
+      else lines.push(`\u2713 ${id} ${have} no projeto`);
+    }
+    const off = PLUGINS.filter((id) => st.enabledPlugins?.[id] !== true);
     check(
       !off.length,
       "plugins ativos no projeto",
@@ -3282,7 +3328,7 @@ function run11(_args) {
   for (const l of r.lines) console.log(l);
   return r.ok ? 0 : 1;
 }
-var import_node_child_process8, fs26, os3, path26, TIMEOUT, SKILLS, THIRD_PARTY, PROJECT_PLUGINS;
+var import_node_child_process8, fs26, os3, path26, TIMEOUT, SKILLS, THIRD_PARTY;
 var init_doctor = __esm({
   "cli/src/commands/doctor.ts"() {
     "use strict";
@@ -3290,6 +3336,7 @@ var init_doctor = __esm({
     fs26 = __toESM(require("node:fs"));
     os3 = __toESM(require("node:os"));
     path26 = __toESM(require("node:path"));
+    init_setup();
     init_fsx();
     init_paths();
     init_projects();
@@ -3306,8 +3353,7 @@ var init_doctor = __esm({
       "tdd-workflow",
       "archify"
     ];
-    THIRD_PARTY = ["ponytail@ponytail", "security-guidance@claude-plugins-official"];
-    PROJECT_PLUGINS = ["main-harness@harness-stable", ...THIRD_PARTY];
+    THIRD_PARTY = PLUGINS.filter((id) => !id.startsWith("main-harness@"));
   }
 });
 
@@ -3501,22 +3547,440 @@ var init_skills2 = __esm({
   }
 });
 
+// cli/src/release/skills.ts
+function walk(dir, base2 = dir, out = []) {
+  for (const e of fs28.readdirSync(dir, { withFileTypes: true })) {
+    const p = path28.join(dir, e.name);
+    const rel = path28.relative(base2, p).split(path28.sep).join("/");
+    if (rel === "evals" || rel.startsWith("evals/")) continue;
+    if (e.isDirectory()) walk(p, base2, out);
+    else out.push(rel);
+  }
+  return out;
+}
+function skillHash(dir) {
+  const h = (0, import_node_crypto3.createHash)("sha256");
+  for (const rel of walk(dir).sort()) {
+    const buf = fs28.readFileSync(path28.join(dir, rel));
+    h.update(rel + "\0");
+    h.update(buf.includes(0) ? buf : Buffer.from(buf.toString("utf8").replace(/\r\n/g, "\n")));
+    h.update("\0");
+  }
+  return h.digest("hex");
+}
+function listSkills(repo) {
+  const root = path28.join(repo, "skills");
+  if (!fs28.existsSync(root)) return [];
+  const out = [];
+  for (const e of fs28.readdirSync(root, { withFileTypes: true })) {
+    if (!e.isDirectory()) continue;
+    const dir = path28.join(root, e.name);
+    if (fs28.existsSync(path28.join(dir, "SKILL.md"))) out.push(`skills/${e.name}`);
+    else
+      for (const s2 of fs28.readdirSync(dir, { withFileTypes: true }))
+        if (s2.isDirectory() && fs28.existsSync(path28.join(dir, s2.name, "SKILL.md")))
+          out.push(`skills/${e.name}/${s2.name}`);
+  }
+  return out.sort();
+}
+function changedSkills(repo, sinceTag) {
+  const all = listSkills(repo);
+  if (!sinceTag) return all;
+  const changed = git3(repo, ["diff", "--name-only", sinceTag, "HEAD", "--", "skills"], true).split("\n").filter(Boolean);
+  return all.filter(
+    (s2) => changed.some((f) => f.startsWith(s2 + "/") && !f.startsWith(s2 + "/evals/"))
+  );
+}
+function evalScope(repo, skill, sinceTag) {
+  const md = `${skill}/SKILL.md`;
+  if (!sinceTag || !git3(repo, ["ls-tree", "--name-only", sinceTag, "--", md], true))
+    return { trigger: true, evals: true, isNew: true };
+  const cur = lf2(fs28.readFileSync(path28.join(repo, md), "utf8"));
+  const prev = lf2(git3(repo, ["show", `${sinceTag}:${md}`], true));
+  const others = git3(repo, ["diff", "--name-only", sinceTag, "--", skill], true).split("\n").some((f) => f && f !== md && !f.startsWith(`${skill}/evals/`));
+  const body = (s2) => s2.slice(frontmatter(s2).length).trim();
+  return {
+    trigger: frontmatter(cur).trim() !== frontmatter(prev).trim(),
+    evals: others || body(cur) !== body(prev),
+    isNew: false
+  };
+}
+function checkSkills(repo, skills, sinceTag = versionTags(repo).pop() ?? null) {
+  return skills.map((skill) => {
+    const dir = path28.join(repo, skill);
+    const res = readJson(path28.join(dir, "evals", "results.json"), null);
+    if (!res) return { skill, ok: false, reason: "sem evals/results.json" };
+    if (!res.passed) return { skill, ok: false, reason: "evals n\xE3o passaram" };
+    if (res.skillSha256 !== skillHash(dir))
+      return { skill, ok: false, reason: "skill mudou depois dos evals" };
+    const need = evalScope(repo, skill, sinceTag);
+    if (need.trigger && !res.trigger)
+      return { skill, ok: false, reason: "falta o eval de acionamento (descri\xE7\xE3o mudou)" };
+    if (need.evals && !res.evals)
+      return { skill, ok: false, reason: "faltam os casos de eval (corpo mudou)" };
+    return { skill, ok: true, reason: "ok" };
+  });
+}
+function stampSkill(repo, skill, data) {
+  const dir = path28.join(repo, skill);
+  if (!fs28.existsSync(path28.join(dir, "SKILL.md"))) throw new Error(`skill n\xE3o encontrada: ${skill}`);
+  const res = {
+    skill: path28.basename(dir),
+    skillSha256: skillHash(dir),
+    date: (/* @__PURE__ */ new Date()).toISOString(),
+    ...data
+  };
+  writeJson(path28.join(dir, "evals", "results.json"), res);
+  return res;
+}
+var import_node_crypto3, fs28, path28, lf2, frontmatter;
+var init_skills3 = __esm({
+  "cli/src/release/skills.ts"() {
+    "use strict";
+    import_node_crypto3 = require("node:crypto");
+    fs28 = __toESM(require("node:fs"));
+    path28 = __toESM(require("node:path"));
+    init_fsx();
+    init_git();
+    lf2 = (s2) => s2.replace(/\r\n/g, "\n");
+    frontmatter = (s2) => /^---\n[\s\S]*?\n---\n?/.exec(s2)?.[0] ?? "";
+  }
+});
+
+// cli/src/eval/run.ts
+function parseStream(out) {
+  const s2 = { text: "", skills: [], sessionId: "", usage: [] };
+  for (const line2 of out.split("\n")) {
+    let o;
+    try {
+      o = JSON.parse(line2);
+    } catch {
+      continue;
+    }
+    if (o.type === "assistant") {
+      for (const c of o.message?.content ?? [])
+        if (c.type === "tool_use" && c.name === "Skill" && typeof c.input?.skill === "string")
+          s2.skills.push(c.input.skill);
+    }
+    if (o.type !== "result") continue;
+    s2.text = o.result ?? "";
+    s2.sessionId = o.session_id ?? "";
+    const mu = Object.entries(o.modelUsage ?? {});
+    const u = o.usage ?? {};
+    s2.usage = mu.length ? mu.map(([model, m]) => ({
+      model,
+      input: m.inputTokens ?? 0,
+      output: m.outputTokens ?? 0,
+      cache_write: m.cacheCreationInputTokens ?? 0,
+      cache_read: m.cacheReadInputTokens ?? 0,
+      usd: m.costUSD ?? null
+    })) : [
+      {
+        model: "sonnet",
+        input: u.input_tokens ?? 0,
+        output: u.output_tokens ?? 0,
+        cache_write: u.cache_creation_input_tokens ?? 0,
+        cache_read: u.cache_read_input_tokens ?? 0,
+        usd: o.total_cost_usd ?? null
+      }
+    ];
+  }
+  return s2;
+}
+async function pool(items, limit, fn) {
+  const out = new Array(items.length);
+  let next = 0;
+  let failed = false;
+  const worker = async () => {
+    while (!failed && next < items.length) {
+      const i = next++;
+      try {
+        out[i] = await fn(items[i]);
+      } catch (e) {
+        failed = true;
+        throw e;
+      }
+    }
+  };
+  await Promise.all(Array.from({ length: Math.min(limit, items.length) }, worker));
+  return out;
+}
+async function claude(prompt, cwd, extra, ctx) {
+  const bin = process.env.HX_CLAUDE_BIN || "claude";
+  const args = ["-p", "--model", "sonnet", "--output-format", "stream-json", "--verbose"];
+  const env = { ...process.env };
+  delete env.CLAUDECODE;
+  const s2 = await new Promise((resolve13, reject) => {
+    const child = (0, import_node_child_process9.spawn)([bin, ...args, "--setting-sources", "project", ...extra].join(" "), {
+      cwd,
+      env,
+      shell: true
+    });
+    const timer = setTimeout(() => {
+      if (process.platform === "win32" && child.pid)
+        (0, import_node_child_process9.spawnSync)("taskkill", ["/T", "/F", "/PID", String(child.pid)]);
+      else child.kill();
+    }, TIMEOUT_MS);
+    child.on("close", () => clearTimeout(timer));
+    let out = "";
+    let err = "";
+    child.stdout.setEncoding("utf8").on("data", (d) => out += d);
+    child.stderr.setEncoding("utf8").on("data", (d) => err += d);
+    child.on("error", reject);
+    child.on("close", (code) => {
+      const r = parseStream(out);
+      if (!r.sessionId) reject(new Error(`claude -p falhou (${code}): ${err.trim().slice(-300)}`));
+      else resolve13(r);
+    });
+    child.stdin.end(prompt);
+  });
+  for (const u of s2.usage) {
+    try {
+      emit({
+        type: "usage",
+        project: ctx.project,
+        session: ctx.session,
+        sprint: ctx.sprint,
+        agent: "eval",
+        data: { ...u, message_id: safeId2(`${s2.sessionId}:${u.model}`), transcript: "subagent" }
+      });
+    } catch (e) {
+      logError("eval", e);
+    }
+  }
+  return s2;
+}
+async function inSandbox(skillDir, fn) {
+  const dir = fs29.mkdtempSync(path29.join(os4.tmpdir(), "hx-eval-"));
+  try {
+    if (skillDir)
+      fs29.cpSync(skillDir, path29.join(dir, ".claude", "skills", path29.basename(skillDir)), {
+        recursive: true,
+        filter: (src) => path29.relative(skillDir, src).split(path29.sep)[0] !== "evals"
+      });
+    return await fn(dir);
+  } finally {
+    fs29.rmSync(dir, { recursive: true, force: true });
+  }
+}
+function outputs(dir, base2 = dir) {
+  const out = [];
+  for (const e of fs29.readdirSync(dir, { withFileTypes: true })) {
+    const p = path29.join(dir, e.name);
+    if (e.name === ".claude" || e.name === ".git") continue;
+    if (e.isDirectory()) out.push(...outputs(p, base2));
+    else {
+      const rel = path29.relative(base2, p).split(path29.sep).join("/");
+      out.push(`<file path="${rel}">
+${fs29.readFileSync(p, "utf8").slice(0, MAX_FILE)}
+</file>`);
+    }
+  }
+  return out;
+}
+async function evalSkill(repo, skill, scope, ctx) {
+  const dir = path29.join(repo, skill);
+  const name = path29.basename(dir);
+  const evalsDir = path29.join(dir, "evals");
+  const need = (f) => {
+    if (!fs29.existsSync(path29.join(evalsDir, f))) throw new Error(`${skill}: falta evals/${f}`);
+    return path29.join(evalsDir, f);
+  };
+  const prev = readJson(path29.join(evalsDir, "results.json"), null);
+  const date = (/* @__PURE__ */ new Date()).toISOString();
+  let trigger = prev?.trigger;
+  let evals = prev?.evals;
+  let ok = true;
+  let notes;
+  if (scope.trigger) {
+    const qs = readJson(need("trigger.json"), []);
+    const results = await pool(
+      qs,
+      PARALLEL,
+      (q) => inSandbox(dir, async (sb) => {
+        const s2 = await claude(q.query, sb, ["--max-turns", "2"], ctx);
+        const triggered = s2.skills.includes(name);
+        return { ...q, triggered, passed: triggered === q.should_trigger };
+      })
+    );
+    writeJson(path29.join(evalsDir, "trigger-results.json"), { date, results });
+    trigger = frac(results.map((r) => r.passed));
+    ok &&= trigger.passed >= trigger.total - 1;
+  }
+  if (scope.evals) {
+    const cases = readJson(need("evals.json"), { evals: [] }).evals;
+    const runs = [
+      ...cases.map((c) => ({ id: String(c.id), c, withSkill: true })),
+      ...scope.isNew ? cases.map((c) => ({ id: `baseline-${c.id}`, c, withSkill: false })) : []
+    ];
+    const done = await pool(
+      runs,
+      PARALLEL,
+      (r) => inSandbox(r.withSkill ? dir : null, async (sb) => {
+        const s2 = await claude(r.c.prompt, sb, ["--permission-mode", "acceptEdits"], ctx);
+        return { ...r, answer: s2.text, files: outputs(sb) };
+      })
+    );
+    const judge = await inSandbox(
+      null,
+      (sb) => claude(
+        [
+          "You are grading skill eval runs. For each run, decide if EVERY expectation holds, using",
+          "only the run's final answer and files. Reply with JSON only:",
+          '{"results":[{"id":"<run id>","passed":true,"failed":["<expectation not met>"]}]}',
+          ...done.map(
+            (r) => [
+              `<run id="${r.id}">`,
+              `<prompt>
+${r.c.prompt}
+</prompt>`,
+              `<expectations>
+${r.c.expectations.map((e) => `- ${e}`).join("\n")}
+</expectations>`,
+              `<answer>
+${r.answer}
+</answer>`,
+              ...r.files,
+              "</run>"
+            ].join("\n")
+          )
+        ].join("\n"),
+        sb,
+        ["--max-turns", "1"],
+        ctx
+      )
+    );
+    let verdicts = [];
+    try {
+      const t = judge.text;
+      verdicts = JSON.parse(t.slice(t.indexOf("{"), t.lastIndexOf("}") + 1)).results;
+    } catch {
+      logError("eval", `judge sem JSON: ${judge.text.slice(0, 200)}`);
+    }
+    const graded = done.map((r) => {
+      const v = verdicts.find((x) => String(x.id) === r.id);
+      return {
+        id: r.id,
+        baseline: !r.withSkill,
+        passed: v?.passed === true,
+        failed: v ? v.failed ?? [] : ["sem veredito do juiz"],
+        answer: r.answer.slice(0, 2e3)
+      };
+    });
+    writeJson(path29.join(evalsDir, "cases-results.json"), { date, runs: graded });
+    evals = frac(graded.filter((g) => !g.baseline).map((g) => g.passed));
+    ok &&= evals.passed === evals.total;
+    if (scope.isNew) {
+      const b2 = frac(graded.filter((g) => g.baseline).map((g) => g.passed));
+      notes = `baseline sem skill: ${b2.passed}/${b2.total}`;
+    }
+  }
+  return stampSkill(repo, skill, { passed: ok, trigger, evals, notes });
+}
+var import_node_child_process9, fs29, os4, path29, PARALLEL, TIMEOUT_MS, MAX_FILE, safeId2, frac;
+var init_run2 = __esm({
+  "cli/src/eval/run.ts"() {
+    "use strict";
+    import_node_child_process9 = require("node:child_process");
+    fs29 = __toESM(require("node:fs"));
+    os4 = __toESM(require("node:os"));
+    path29 = __toESM(require("node:path"));
+    init_fsx();
+    init_log();
+    init_emit();
+    init_skills3();
+    PARALLEL = 3;
+    TIMEOUT_MS = 10 * 6e4;
+    MAX_FILE = 2e4;
+    safeId2 = (s2) => s2.replace(/[^A-Za-z0-9._:@-]/g, "-").slice(0, 128);
+    frac = (xs) => ({ passed: xs.filter(Boolean).length, total: xs.length });
+  }
+});
+
+// cli/src/commands/eval.ts
+var eval_exports = {};
+__export(eval_exports, {
+  run: () => run14
+});
+async function run14(args) {
+  const p = parseArgs(args);
+  const repo = path30.resolve(loadConfig().harnessRepo);
+  const tag = versionTags(repo).pop() ?? null;
+  const all = listSkills(repo);
+  let targets;
+  if (p.flags.changed) targets = all;
+  else {
+    const want = p._[0]?.replace(/\\/g, "/").replace(/\/$/, "");
+    const hit = all.find((s2) => s2 === want || path30.posix.basename(s2) === want);
+    if (!hit) {
+      console.error(want ? `hx eval: skill n\xE3o encontrada: ${want}
+${USAGE}` : USAGE);
+      return 1;
+    }
+    targets = [hit];
+  }
+  let ctx = { project: "main-harness", session: null, sprint: null };
+  try {
+    const c = commandContext(repo);
+    ctx = { project: c.id, session: c.session, sprint: c.sprint };
+  } catch {
+  }
+  let ok = true;
+  let ran = 0;
+  for (const skill of targets) {
+    let scope = evalScope(repo, skill, tag);
+    if (!scope.trigger && !scope.evals) {
+      if (p.flags.changed) continue;
+      scope = { trigger: true, evals: true, isNew: false };
+    }
+    ran++;
+    console.log(
+      `${skill}: ${[scope.trigger && "acionamento", scope.evals && "casos"].filter(Boolean).join(" + ")}...`
+    );
+    const r = await evalSkill(repo, skill, scope, ctx);
+    ok &&= r.passed;
+    const f = (b2) => b2 ? `${b2.passed}/${b2.total}` : "-";
+    console.log(
+      `${r.passed ? "\u2713" : "\u2717"} ${skill}: acionamento ${f(r.trigger)} \xB7 casos ${f(r.evals)}` + (r.notes ? ` \xB7 ${r.notes}` : "")
+    );
+  }
+  if (!ran) console.log("Nenhuma skill precisa de eval desde a \xFAltima vers\xE3o.");
+  return ok ? 0 : 1;
+}
+var path30, USAGE;
+var init_eval = __esm({
+  "cli/src/commands/eval.ts"() {
+    "use strict";
+    path30 = __toESM(require("node:path"));
+    init_args();
+    init_config();
+    init_context();
+    init_run2();
+    init_git();
+    init_skills3();
+    USAGE = `uso: hx eval <skill> | --changed
+  Escopo desde a \xFAltima tag: descri\xE7\xE3o mudou -> trigger.json; corpo mudou -> evals.json;
+  s\xF3 evals/ mudou -> nada; skill nova -> ambos + baseline sem skill.
+  <skill> expl\xEDcita sem mudan\xE7a roda ambos. Sonnet, 1 rodada por consulta, at\xE9 3 sess\xF5es em paralelo.`;
+  }
+});
+
 // cli/src/commands/setup.ts
 var setup_exports = {};
 __export(setup_exports, {
-  run: () => run14
+  run: () => run15
 });
-function run14(args) {
+function run15(args) {
   const dry = parseArgs(args).flags["dry-run"] === true;
   const say = (msg) => console.log(dry ? `[simula\xE7\xE3o] ${msg}` : msg);
-  if (fs28.existsSync(home.config())) say("config.json j\xE1 existe");
+  if (fs30.existsSync(home.config())) say("config.json j\xE1 existe");
   else {
     if (!dry) ensureConfig();
     say(`config.json criado em ${home.config()}`);
   }
   const cfg = loadConfig();
   const known = readJson(
-    path28.join(claudeHome(), "plugins", "known_marketplaces.json"),
+    path31.join(claudeHome(), "plugins", "known_marketplaces.json"),
     {}
   );
   if (known["harness-stable"]) say("marketplace harness-stable j\xE1 registrado");
@@ -3530,15 +3994,15 @@ function run14(args) {
       }
     }
   }
-  const src = path28.join(pluginRoot(), "skills-user", "attach");
-  const dest = path28.join(claudeHome(), "skills", "attach");
+  const src = path31.join(pluginRoot(), "skills-user", "attach");
+  const dest = path31.join(claudeHome(), "skills", "attach");
   say(`instalando a skill /attach em ${dest}`);
   if (!dry) {
-    fs28.rmSync(dest, { recursive: true, force: true });
-    fs28.cpSync(src, dest, { recursive: true });
-    const skill = path28.join(dest, "SKILL.md");
+    fs30.rmSync(dest, { recursive: true, force: true });
+    fs30.cpSync(src, dest, { recursive: true });
+    const skill = path31.join(dest, "SKILL.md");
     const stable = cfg.stableDir.replace(/\\/g, "/").replace(/\/+$/, "");
-    fs28.writeFileSync(skill, fs28.readFileSync(skill, "utf8").split(PLACEHOLDER).join(stable));
+    fs30.writeFileSync(skill, fs30.readFileSync(skill, "utf8").split(PLACEHOLDER).join(stable));
   }
   say(`instalando o comando hx em ${shimDir()} (aponta para ${cfg.stableDir})`);
   let restart = false;
@@ -3555,12 +4019,12 @@ function run14(args) {
   );
   return 0;
 }
-var fs28, path28, PLACEHOLDER;
+var fs30, path31, PLACEHOLDER;
 var init_setup2 = __esm({
   "cli/src/commands/setup.ts"() {
     "use strict";
-    fs28 = __toESM(require("node:fs"));
-    path28 = __toESM(require("node:path"));
+    fs30 = __toESM(require("node:fs"));
+    path31 = __toESM(require("node:path"));
     init_args();
     init_config();
     init_fsx();
@@ -3571,100 +4035,21 @@ var init_setup2 = __esm({
   }
 });
 
-// cli/src/release/skills.ts
-function walk(dir, base2 = dir, out = []) {
-  for (const e of fs29.readdirSync(dir, { withFileTypes: true })) {
-    const p = path29.join(dir, e.name);
-    const rel = path29.relative(base2, p).split(path29.sep).join("/");
-    if (rel === "evals" || rel.startsWith("evals/")) continue;
-    if (e.isDirectory()) walk(p, base2, out);
-    else out.push(rel);
-  }
-  return out;
-}
-function skillHash(dir) {
-  const h = (0, import_node_crypto3.createHash)("sha256");
-  for (const rel of walk(dir).sort()) {
-    const buf = fs29.readFileSync(path29.join(dir, rel));
-    h.update(rel + "\0");
-    h.update(buf.includes(0) ? buf : Buffer.from(buf.toString("utf8").replace(/\r\n/g, "\n")));
-    h.update("\0");
-  }
-  return h.digest("hex");
-}
-function listSkills(repo) {
-  const root = path29.join(repo, "skills");
-  if (!fs29.existsSync(root)) return [];
-  const out = [];
-  for (const e of fs29.readdirSync(root, { withFileTypes: true })) {
-    if (!e.isDirectory()) continue;
-    const dir = path29.join(root, e.name);
-    if (fs29.existsSync(path29.join(dir, "SKILL.md"))) out.push(`skills/${e.name}`);
-    else
-      for (const s2 of fs29.readdirSync(dir, { withFileTypes: true }))
-        if (s2.isDirectory() && fs29.existsSync(path29.join(dir, s2.name, "SKILL.md")))
-          out.push(`skills/${e.name}/${s2.name}`);
-  }
-  return out.sort();
-}
-function changedSkills(repo, sinceTag) {
-  const all = listSkills(repo);
-  if (!sinceTag) return all;
-  const changed = git3(repo, ["diff", "--name-only", sinceTag, "HEAD", "--", "skills"], true).split("\n").filter(Boolean);
-  return all.filter(
-    (s2) => changed.some((f) => f.startsWith(s2 + "/") && !f.startsWith(s2 + "/evals/"))
-  );
-}
-function checkSkills(repo, skills) {
-  return skills.map((skill) => {
-    const dir = path29.join(repo, skill);
-    const res = readJson(path29.join(dir, "evals", "results.json"), null);
-    if (!res) return { skill, ok: false, reason: "sem evals/results.json" };
-    if (!res.passed) return { skill, ok: false, reason: "evals n\xE3o passaram" };
-    if (res.skillSha256 !== skillHash(dir))
-      return { skill, ok: false, reason: "skill mudou depois dos evals" };
-    return { skill, ok: true, reason: "ok" };
-  });
-}
-function stampSkill(repo, skill, data) {
-  const dir = path29.join(repo, skill);
-  if (!fs29.existsSync(path29.join(dir, "SKILL.md"))) throw new Error(`skill n\xE3o encontrada: ${skill}`);
-  const res = {
-    skill: path29.basename(dir),
-    skillSha256: skillHash(dir),
-    date: (/* @__PURE__ */ new Date()).toISOString(),
-    ...data
-  };
-  writeJson(path29.join(dir, "evals", "results.json"), res);
-  return res;
-}
-var import_node_crypto3, fs29, path29;
-var init_skills3 = __esm({
-  "cli/src/release/skills.ts"() {
-    "use strict";
-    import_node_crypto3 = require("node:crypto");
-    fs29 = __toESM(require("node:fs"));
-    path29 = __toESM(require("node:path"));
-    init_fsx();
-    init_git();
-  }
-});
-
 // cli/src/commands/release.ts
 var release_exports = {};
 __export(release_exports, {
   moveStable: () => moveStable,
-  run: () => run15
+  run: () => run16
 });
 function repoRoot() {
-  const repo = path30.resolve(loadConfig().harnessRepo);
-  if (!fs30.existsSync(path30.join(repo, ".claude-plugin", "plugin.json")))
+  const repo = path32.resolve(loadConfig().harnessRepo);
+  if (!fs31.existsSync(path32.join(repo, ".claude-plugin", "plugin.json")))
     throw new Error(`repo do harness n\xE3o encontrado em ${repo}`);
   return repo;
 }
 function runChecks(repo) {
   const cmd = process.env.HARNESS_RELEASE_CHECK || "npm run check";
-  const r = (0, import_node_child_process9.spawnSync)(cmd, { cwd: repo, shell: true, encoding: "utf8" });
+  const r = (0, import_node_child_process10.spawnSync)(cmd, { cwd: repo, shell: true, encoding: "utf8" });
   if (r.status !== 0) {
     const tail = `${r.stdout ?? ""}${r.stderr ?? ""}`.trim().split("\n").slice(-25).join("\n");
     throw new Error(`checagens falharam (${cmd}):
@@ -3689,19 +4074,19 @@ ${items.map((s2) => `- ${s2}`).join("\n")}
 ${block("Novidades", feats)}${block("Corre\xE7\xF5es", fixes)}${block("Outros", other)}`;
 }
 function writeChangelog(repo, section2) {
-  const file2 = path30.join(repo, "CHANGELOG.md");
+  const file2 = path32.join(repo, "CHANGELOG.md");
   const head = "# Changelog\n\nVers\xF5es do Main Harness (versionamento sem\xE2ntico; `0.y.z` at\xE9 a 1.0).\n\n";
-  const old = fs30.existsSync(file2) ? fs30.readFileSync(file2, "utf8") : head;
+  const old = fs31.existsSync(file2) ? fs31.readFileSync(file2, "utf8") : head;
   const i = old.indexOf("## [");
   const next = i < 0 ? old.trimEnd() + "\n\n" + section2 : old.slice(0, i) + section2 + old.slice(i);
-  fs30.writeFileSync(file2, next.trimEnd() + "\n");
+  fs31.writeFileSync(file2, next.trimEnd() + "\n");
 }
 function moveStable(repo, stable, tag) {
   if (samePathKey(repo) === samePathKey(stable))
     throw new Error("stableDir n\xE3o pode ser o repo do harness");
-  if (!fs30.existsSync(path30.join(stable, ".git"))) {
-    fs30.mkdirSync(path30.dirname(stable), { recursive: true });
-    git3(path30.dirname(stable), ["clone", "-q", repo, stable]);
+  if (!fs31.existsSync(path32.join(stable, ".git"))) {
+    fs31.mkdirSync(path32.dirname(stable), { recursive: true });
+    git3(path32.dirname(stable), ["clone", "-q", repo, stable]);
   }
   if (git3(stable, ["status", "--porcelain"]))
     throw new Error(`${stable} tem altera\xE7\xF5es locais; ningu\xE9m deve editar a vers\xE3o est\xE1vel`);
@@ -3723,7 +4108,7 @@ function release(kind, skipChecks) {
     for (const g of bad) console.error(`  \u2717 ${g.skill}: ${g.reason}`);
     return 1;
   }
-  const manifestPath = path30.join(repo, ".claude-plugin", "plugin.json");
+  const manifestPath = path32.join(repo, ".claude-plugin", "plugin.json");
   const manifest = readJson(manifestPath, {});
   const version = bumpVersion(String(manifest.version ?? "0.0.0"), kind);
   const tag = `v${version}`;
@@ -3733,7 +4118,7 @@ function release(kind, skipChecks) {
   git3(repo, ["add", "-A", "--", ".claude-plugin/plugin.json", "CHANGELOG.md"]);
   git3(repo, ["commit", "-q", "-m", `chore(release): ${tag}`]);
   git3(repo, ["tag", "-a", tag, "-m", `Main Harness ${tag}`]);
-  moveStable(repo, path30.resolve(cfg.stableDir), tag);
+  moveStable(repo, path32.resolve(cfg.stableDir), tag);
   emit({
     type: "harness.release",
     project: PROJECT,
@@ -3745,7 +4130,7 @@ function release(kind, skipChecks) {
   console.log(updatePlugins(readProjects().map((p) => p.path)));
   return 0;
 }
-function run15(args) {
+function run16(args) {
   const p = parseArgs(args);
   const [sub, target] = p._;
   if (sub === "check") {
@@ -3759,14 +4144,14 @@ function run15(args) {
   if (sub === "stamp") {
     if (!target)
       throw new Error("uso: hx release stamp <skills/nome> --trigger 15/16 --evals 3/3 [--failed]");
-    const frac = (s2) => {
+    const frac2 = (s2) => {
       const m = s2?.match(/^(\d+)\/(\d+)$/);
       return m ? { passed: Number(m[1]), total: Number(m[2]) } : void 0;
     };
     const res = stampSkill(repoRoot(), target.replace(/\\/g, "/"), {
       passed: !p.flags.failed,
-      trigger: frac(flagStr(p, "trigger")),
-      evals: frac(flagStr(p, "evals")),
+      trigger: frac2(flagStr(p, "trigger")),
+      evals: frac2(flagStr(p, "evals")),
       notes: flagStr(p, "notes")
     });
     console.log(
@@ -3779,13 +4164,13 @@ function run15(args) {
   console.error("uso: hx release patch|minor|major | check | stamp <skill>");
   return 1;
 }
-var import_node_child_process9, fs30, path30, PROJECT;
+var import_node_child_process10, fs31, path32, PROJECT;
 var init_release = __esm({
   "cli/src/commands/release.ts"() {
     "use strict";
-    import_node_child_process9 = require("node:child_process");
-    fs30 = __toESM(require("node:fs"));
-    path30 = __toESM(require("node:path"));
+    import_node_child_process10 = require("node:child_process");
+    fs31 = __toESM(require("node:fs"));
+    path32 = __toESM(require("node:path"));
     init_setup();
     init_args();
     init_config();
@@ -3802,11 +4187,11 @@ var init_release = __esm({
 // cli/src/commands/rollback.ts
 var rollback_exports = {};
 __export(rollback_exports, {
-  run: () => run16
+  run: () => run17
 });
-function run16(_args) {
-  const stable = path31.resolve(loadConfig().stableDir);
-  if (!fs31.existsSync(path31.join(stable, ".git")))
+function run17(_args) {
+  const stable = path33.resolve(loadConfig().stableDir);
+  if (!fs32.existsSync(path33.join(stable, ".git")))
     throw new Error(`vers\xE3o est\xE1vel n\xE3o encontrada em ${stable}`);
   git3(stable, ["fetch", "-q", "--tags", "origin"], true);
   const current = git3(stable, ["describe", "--tags", "--exact-match", "HEAD"], true);
@@ -3824,12 +4209,12 @@ function run16(_args) {
   console.log("Os projetos voltam para ela no pr\xF3ximo chat (o session-start migra para tr\xE1s).");
   return 0;
 }
-var fs31, path31;
+var fs32, path33;
 var init_rollback = __esm({
   "cli/src/commands/rollback.ts"() {
     "use strict";
-    fs31 = __toESM(require("node:fs"));
-    path31 = __toESM(require("node:path"));
+    fs32 = __toESM(require("node:fs"));
+    path33 = __toESM(require("node:path"));
     init_config();
     init_emit();
     init_git();
@@ -3851,6 +4236,7 @@ var COMMANDS = {
   attach: () => Promise.resolve().then(() => (init_attach(), attach_exports)),
   migrate: () => Promise.resolve().then(() => (init_migrate(), migrate_exports)),
   skills: () => Promise.resolve().then(() => (init_skills2(), skills_exports)),
+  eval: () => Promise.resolve().then(() => (init_eval(), eval_exports)),
   doctor: () => Promise.resolve().then(() => (init_doctor(), doctor_exports)),
   setup: () => Promise.resolve().then(() => (init_setup2(), setup_exports)),
   release: () => Promise.resolve().then(() => (init_release(), release_exports)),
@@ -3877,6 +4263,7 @@ var HELP = `hx <command> [args]
   attach [dir]                conecta um repo ao harness
   migrate                     aplica migra\xE7\xF5es do harness no projeto
   skills on|off <nome>        liga/desliga skill opcional
+  eval <skill>|--changed      roda os evals da skill (Sonnet) e grava results.json
   doctor                      confere o ambiente
   setup                       instala\xE7\xE3o da m\xE1quina (uma vez)
   release patch|minor|major   publica vers\xE3o do harness

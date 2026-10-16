@@ -3,7 +3,8 @@ import { spawnSync, type SpawnSyncReturns } from "node:child_process";
 import * as fs from "node:fs";
 import * as os from "node:os";
 import * as path from "node:path";
-import { readJson } from "../core/fsx";
+import { PLUGINS } from "../attach/setup";
+import { readJson, samePathKey } from "../core/fsx";
 import { claudeHome, home, pluginRoot } from "../core/paths";
 import { resolveProject } from "../core/projects";
 import { hxOnPath } from "../core/shim";
@@ -20,8 +21,7 @@ const SKILLS = [
   "tdd-workflow",
   "archify",
 ];
-const THIRD_PARTY = ["ponytail@ponytail", "security-guidance@claude-plugins-official"];
-const PROJECT_PLUGINS = ["main-harness@harness-stable", ...THIRD_PARTY];
+const THIRD_PARTY = PLUGINS.filter((id) => !id.startsWith("main-harness@"));
 
 /** Finds an executable on PATH (Windows: tries PATHEXT). `claude` honors HARNESS_CLAUDE_BIN. */
 function which(cmd: string): string | null {
@@ -83,6 +83,50 @@ function pluginAvailable(id: string): boolean {
   if ((inst.plugins ?? inst)[id]) return true;
   const [name = "", market = ""] = id.split("@");
   return fs.existsSync(path.join(dir, "cache", market, name));
+}
+
+interface Install {
+  scope?: string;
+  projectPath?: string;
+  version?: string;
+}
+
+/** Version installed for `root` (project/local scope there, else user scope); null if missing. */
+function installedVersion(id: string, root: string): string | null {
+  const inst = readJson<{ plugins?: Record<string, Install[]> }>(
+    path.join(claudeHome(), "plugins", "installed_plugins.json"),
+    {},
+  );
+  const list = inst.plugins?.[id] ?? [];
+  const hit =
+    list.find((i) => i.projectPath && samePathKey(i.projectPath) === samePathKey(root)) ??
+    list.find((i) => i.scope === "user");
+  return hit ? (hit.version ?? "") : null;
+}
+
+/** Version the plugin's marketplace offers now (entry version or the plugin's plugin.json). */
+function availableVersion(id: string): string | null {
+  const [name = "", market = ""] = id.split("@");
+  const known = readJson<Record<string, { installLocation?: string }>>(
+    path.join(claudeHome(), "plugins", "known_marketplaces.json"),
+    {},
+  );
+  const loc = known[market]?.installLocation;
+  if (!loc) return null;
+  const mk = readJson<{ plugins?: { name: string; source?: unknown; version?: string }[] }>(
+    path.join(loc, ".claude-plugin", "marketplace.json"),
+    {},
+  );
+  const entry = mk.plugins?.find((p) => p.name === name);
+  if (!entry) return null;
+  if (entry.version) return entry.version;
+  if (typeof entry.source !== "string") return null;
+  return (
+    readJson<{ version?: string }>(
+      path.join(loc, entry.source, ".claude-plugin", "plugin.json"),
+      {},
+    ).version ?? null
+  );
 }
 
 function spacesWork(hx: string): boolean {
@@ -184,7 +228,20 @@ export function runDoctor(opts: { projectRoot?: string } = {}): { ok: boolean; l
       path.join(root, ".claude", "settings.json"),
       {},
     );
-    const off = PROJECT_PLUGINS.filter((id) => st.enabledPlugins?.[id] !== true);
+    for (const id of PLUGINS) {
+      const have = installedVersion(id, root);
+      const want = availableVersion(id);
+      if (have === null) check(false, "", `${id} não instalado no projeto: rode /attach`, true);
+      else if (want && have !== want)
+        check(
+          false,
+          "",
+          `${id} desatualizado no projeto (${have || "?"}; disponível ${want}): claude plugin update ${id} --scope project`,
+          true,
+        );
+      else lines.push(`✓ ${id} ${have} no projeto`);
+    }
+    const off = PLUGINS.filter((id) => st.enabledPlugins?.[id] !== true);
     check(
       !off.length,
       "plugins ativos no projeto",

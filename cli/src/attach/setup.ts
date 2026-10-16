@@ -128,15 +128,16 @@ export function installPlugins(root: string): string {
   return `plugins: o comando claude falhou; ${failed.join(", ")} ligados direto no settings.`;
 }
 
-/** After a release: Claude Code caches the plugin per version, so each attached project needs an update. */
+/** After a release: Claude Code caches plugins per version, so each attached project needs an update. */
 export function updatePlugins(roots: string[]): string {
   const bin = process.env.HARNESS_CLAUDE_BIN || "claude";
   const live = roots.filter((r) => fs.existsSync(r));
-  const failed = live.filter(
-    (r) =>
-      runFixed(r, bin, ["plugin", "update", PLUGINS[0] as string, "--scope", "project"]).status !==
-      0,
+  const perProject = live.map((r) =>
+    PLUGINS.filter(
+      (id) => runFixed(r, bin, ["plugin", "update", id, "--scope", "project"]).status !== 0,
+    ).map((id) => `${r} (${id})`),
   );
-  const ok = live.length - failed.length;
-  return `- plugin atualizado em ${ok} projeto(s)${failed.length ? `; falhou em: ${failed.join(", ")}` : ""}.`;
+  const ok = perProject.filter((f) => !f.length).length;
+  const failed = perProject.flat();
+  return `- plugins atualizados em ${ok} projeto(s)${failed.length ? `; falhou em: ${failed.join(", ")}` : ""}.`;
 }
