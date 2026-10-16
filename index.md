@@ -81,6 +81,7 @@ Uma linha por arquivo: caminho e propósito. Mantido pelo hook `post-edit`.
 - `cli/test/hooks.test.ts` — testes de hooks
 - `cli/test/lint.test.ts` — testes de lint
 - `cli/test/migrate.test.ts` — testes de migrate
+- `cli/test/paths.test.ts` — testes de paths (HARNESS_HOME)
 - `cli/test/release.test.ts` — testes de release
 - `cli/test/repomap.test.ts` — testes de repomap
 - `cli/test/review-security-recheck.test.ts` — Re-review of T13 fixes (commit 0aeaf25): remaining bypasses and false positives in pre-bash.
@@ -110,6 +111,7 @@ Uma linha por arquivo: caminho e propósito. Mantido pelo hook `post-edit`.
 - `docs/sprints/S00-release.md` — Release Report da S00 (tabela de execução gerada pelo hx)
 - `docs/sprints/S01-plan.md` — S01 — Evals baratos, Reviewer no Sonnet e plugins companheiros (v0.2.0)
 - `docs/sprints/S01-release.md` — S01 — Release Report
+- `docs/sprints/S02-plan.md` — S02 — Sprint mais clara e mais segura (v0.3.0)
 - `eslint.config.js` — ESLint flat config
 - `hooks/hooks.json` — hooks do plugin (forma exec chamando o hx)
 - `package-lock.json` — versões travadas das dependências de desenvolvimento
