@@ -49,7 +49,7 @@ Notação: `?` = campo opcional (pode faltar); `| null` = pode ser `null`. Núme
 | `sprint.open` | `tasks` número | `hx sprint open` |
 | `sprint.close` | `tasks_done` número; `tasks_total` número; `duration_s` número | `hx sprint close` |
 | `sprint.feedback` | `adjustments` número | `hx sprint feedback <n>` (ajustes pedidos por Daniel) |
-| `sprint.metrics` | `tasks_total`, `tasks_done`, `planned_min`, `actual_min`, `tokens_input`, `tokens_output`, `tokens_cache_write`, `tokens_cache_read`, `usd`, `rework`, `review_rejections`, `context_alerts`, `handoffs` (todos número); `usd_by_agent`, `usd_by_task`, `actual_min_by_task` (objeto chave → número) | Fechamento da sprint |
+| `sprint.metrics` | `tasks_total`, `tasks_done`, `planned_min`, `actual_min`, `tokens_input`, `tokens_output`, `tokens_cache_write`, `tokens_cache_read`, `usd`, `rework`, `review_rejections`, `context_alerts`, `handoffs` (todos número); `wall_min?` número (tempo corrido: 1º `task.start` ao último `task.done`; desde a v0.3.0); `usd_by_agent`, `usd_by_task`, `actual_min_by_task` (objeto chave → número) | Fechamento da sprint |
 | `task.start` | `planned_min?` número | `hx task start` |
 | `task.done` | `duration_s` número; `planned_min?` número | `hx task done` |
 | `review.result` | `result`: `pass` ou `fail` | `hx review pass\|fail` |

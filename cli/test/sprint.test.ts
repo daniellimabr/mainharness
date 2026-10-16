@@ -228,6 +228,11 @@ describe("sprint commands (real bundle, project with spaces)", () => {
     expect(c.code).toBe(0);
     expect(c.stdout).toContain("### Indicadores — S01");
     expect(c.stdout).toContain("| Reprovações do Reviewer | 1 |");
+    // sequential with gaps: wall clock (02:05 → 03:50) is longer than the sum
+    expect(c.stdout).toContain("| **Total** | 1 h 50 min | 1 h 35 min (soma) | | US$ 2.25 |");
+    expect(c.stdout).toContain(
+      "| Tempo (planejado · soma · corrido) | 1 h 50 min · 1 h 35 min · 1 h 45 min |",
+    );
     const close = events().find((e) => e.type === "sprint.close");
     expect(close?.data).toEqual({ tasks_done: 3, tasks_total: 3, duration_s: 7200 });
     const m = events().find((e) => e.type === "sprint.metrics");
@@ -248,6 +253,22 @@ describe("sprint commands (real bundle, project with spaces)", () => {
       actual_min_by_task: { T01: 20, T02: 75, T03: 0 },
     });
     expect(hx("sprint", "status").code).toBe(1); // no active sprint anymore
+  });
+
+  it("metrics total: parallel tasks make the sum longer than the wall clock", () => {
+    hx("sprint", "approve", "S01");
+    hx("sprint", "open", "S01", "--at", "2026-10-15T01:55:00Z");
+    hx("task", "start", "T01", "--at", "2026-10-15T02:00:00Z");
+    hx("task", "start", "T02", "--at", "2026-10-15T02:00:00Z");
+    hx("task", "done", "T01", "--at", "2026-10-15T03:00:00Z");
+    hx("task", "done", "T02", "--at", "2026-10-15T03:00:00Z");
+    hx("task", "start", "T03", "--at", "2026-10-15T03:00:00Z");
+    hx("task", "done", "T03", "--at", "2026-10-15T03:30:00Z");
+    const r = hx("metrics", "S01", "--emit");
+    expect(r.code).toBe(0);
+    expect(r.stdout).toContain(
+      "| Tempo (planejado · soma · corrido) | 1 h 50 min · 2 h 30 min · 1 h 30 min |",
+    );
   });
 
   it("close refuses pending tasks unless --force", () => {

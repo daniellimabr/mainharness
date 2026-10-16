@@ -274,6 +274,8 @@ export interface SprintMetrics {
   tasks_done: number;
   planned_min: number;
   actual_min: number;
+  /** Wall clock: first task.start to last task.done. */
+  wall_min: number;
   tokens_input: number;
   tokens_output: number;
   tokens_cache_write: number;
@@ -305,6 +307,7 @@ export function computeMetrics(project: string, sprintId: string, plan: Plan): S
     tasks_done: plan.tasks.filter((t) => t.id in durations).length,
     planned_min: plan.tasks.reduce((a, t) => a + t.planned_min, 0),
     actual_min: r1(Object.values(durations).reduce((a, s) => a + s, 0) / 60),
+    wall_min: 0,
     tokens_input: 0,
     tokens_output: 0,
     tokens_cache_write: 0,
@@ -339,6 +342,16 @@ export function computeMetrics(project: string, sprintId: string, plan: Plan): S
   m.usd = r4(m.usd);
   for (const rec of [m.usd_by_agent, m.usd_by_task])
     for (const [k, v] of Object.entries(rec)) rec[k] = r4(v);
+  const ts = (type: string) =>
+    evs
+      .filter((e) => e.type === type)
+      .map((e) => Date.parse(e.ts))
+      .sort((a, b) => a - b);
+  const starts = ts("task.start");
+  const ends = ts("task.done");
+  const first = starts[0] ?? ends[0];
+  const last = ends.at(-1);
+  if (first !== undefined && last !== undefined) m.wall_min = r1((last - first) / 60000);
   return m;
 }
 
@@ -366,10 +379,11 @@ export function renderMetrics(sprintId: string, plan: Plan, m: SprintMetrics): s
     "| Tarefa | Planejado | Real | Diferença | Custo |",
     "|---|---|---|---|---|",
     ...rows,
-    `| **Total** | ${fmtMin(m.planned_min)} | ${fmtMin(m.actual_min)} | | ${usd(m.usd)} |`,
+    `| **Total** | ${fmtMin(m.planned_min)} | ${fmtMin(m.actual_min)} (soma) | | ${usd(m.usd)} |`,
     "",
     "| Indicador | Valor |",
     "|---|---|",
+    `| Tempo (planejado · soma · corrido) | ${fmtMin(m.planned_min)} · ${fmtMin(m.actual_min)} · ${fmtMin(m.wall_min)} |`,
     `| Tarefas feitas | ${m.tasks_done}/${m.tasks_total} |`,
     `| Tokens (entrada / saída / escrita em cache / leitura de cache) | ${tok(m.tokens_input)} / ${tok(m.tokens_output)} / ${tok(m.tokens_cache_write)} / ${tok(m.tokens_cache_read)} |`,
     `| Custo total | ${usd(m.usd)} |`,
