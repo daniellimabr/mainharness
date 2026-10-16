@@ -2,6 +2,12 @@
 
 Versões do Main Harness (versionamento semântico; `0.y.z` até a 1.0).
 
+## [0.2.1] - 2026-10-16
+
+### Correções
+
+- fix(sprint): total row in the task list; estimate column found by header
+
 ## [0.2.0] - 2026-10-16
 
 ### Novidades
