@@ -20,6 +20,8 @@ export function run(args: string[]): number {
   // The agent's command line runs in the system shell on purpose (it is a command, not a path).
   const r = spawnSync(cmd, {
     shell: true,
+    // Git Bash hands Node "c:\..."; vitest then loads itself twice (c: vs C:) and every suite fails.
+    cwd: process.cwd().replace(/^[a-z]:/, (d) => d.toUpperCase()),
     encoding: "utf8",
     maxBuffer: 256 * 1024 * 1024,
     stdio: ["inherit", "pipe", "pipe"],
