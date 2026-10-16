@@ -1,18 +1,10 @@
 [
-  {"query": "implementa a T04 do docs/sprints/S03-plan.md (parser do arquivo de config em src/config.ts), seguindo os critérios de aceite do plano", "should_trigger": true},
-  {"query": "tem um bug no cálculo de custo: tokensToUsd(1_000_000) retorna 0 quando o modelo é opus. corrige com teste de regressão", "should_trigger": true},
-  {"query": "monta o plano de testes do sprint plan S04, um tipo de teste pra cada critério de aceite", "should_trigger": true},
-  {"query": "let's do this TDD style: write the failing test first for the new retry logic in src/http/retry.ts, then implement", "should_trigger": true},
-  {"query": "refatora o src/events/emit.ts pra tirar a duplicação entre emitTask e emitSprint sem quebrar nada, com os testes rodando antes e depois", "should_trigger": true},
-  {"query": "pega a tarefa T07 da sprint e faz: adicionar flag --dry-run no hx release. um commit no final", "should_trigger": true},
-  {"query": "o teste de integração do hook pre-commit está falhando depois da minha mudança, implementa o fix seguindo red/green", "should_trigger": true},
-  {"query": "fix the off-by-one in paginate() in src/list.ts — page 2 repeats the last item of page 1. need a regression test", "should_trigger": true},
-  {"query": "roda a suíte de testes e me diz quantos passaram", "should_trigger": false},
-  {"query": "explica a diferença entre teste unitário e de integração no Vitest", "should_trigger": false},
-  {"query": "monta o sprint plan da S05 a partir do PRD 0004", "should_trigger": false},
-  {"query": "abre o app no navegador em localhost:5173 e tira um screenshot da tela de login pra ver se o botão aparece", "should_trigger": false},
-  {"query": "configura o vitest com cobertura no package.json, só a config", "should_trigger": false},
-  {"query": "faz a revisão de segurança do commit da T05", "should_trigger": false},
-  {"query": "escreve o release report da S03 com tempo planejado vs real", "should_trigger": false},
-  {"query": "what's the coverage percentage right now in cli/? just the number", "should_trigger": false}
+  {"query":"implementa a T04 do docs/sprints/S03-plan.md (parser do arquivo de config em src/config.ts), seguindo os critérios de aceite do plano","should_trigger":true},
+  {"query":"tem um bug no cálculo de custo: tokensToUsd(1_000_000) retorna 0 quando o modelo é opus. corrige com teste de regressão","should_trigger":true},
+  {"query":"monta o plano de testes do sprint plan S04, um tipo de teste pra cada critério de aceite","should_trigger":true},
+  {"query":"refatora o src/events/emit.ts pra tirar a duplicação entre emitTask e emitSprint sem quebrar nada, com os testes rodando antes e depois","should_trigger":true},
+  {"query":"monta o sprint plan da S05 a partir do PRD 0004","should_trigger":false},
+  {"query":"abre o app no navegador em localhost:5173 e tira um screenshot da tela de login pra ver se o botão aparece","should_trigger":false},
+  {"query":"faz a revisão de segurança do commit da T05","should_trigger":false},
+  {"query":"roda a suíte de testes e me diz quantos passaram","should_trigger":false}
 ]

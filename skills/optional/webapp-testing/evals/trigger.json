@@ -1,18 +1,10 @@
 [
-  {"query": "testa no navegador se o fluxo de cadastro do app funciona: npm run dev na 5173, preenche o form e confere a mensagem de sucesso", "should_trigger": true},
-  {"query": "tira um screenshot da página /settings do app local (localhost:3000) pra eu ver como ficou o layout", "should_trigger": true},
-  {"query": "the 'Add to cart' button does nothing when I click it on localhost:8080, can you check the browser console logs and figure out why?", "should_trigger": true},
-  {"query": "escreve um teste ponta a ponta com Playwright pro login do painel admin e roda", "should_trigger": true},
-  {"query": "sobe o backend (python server.py na 8000) e o front (npm run dev na 5173) e verifica se a lista de pedidos carrega na tela", "should_trigger": true},
-  {"query": "verifica se o modal de confirmação abre e fecha certinho no app rodando em localhost:4200", "should_trigger": true},
-  {"query": "abre o dist/index.html gerado no navegador e confere se todos os links do menu estão presentes e clicáveis", "should_trigger": true},
-  {"query": "can you click through the checkout on my local dev server and tell me which step breaks?", "should_trigger": true},
-  {"query": "escreve testes unitários com Vitest pra função formatPrice em src/utils/price.ts", "should_trigger": false},
-  {"query": "desenha a tela de login nova do app, quero algo menos genérico", "should_trigger": false},
-  {"query": "o endpoint POST /api/orders está retornando 500, olha o handler em server/routes/orders.ts", "should_trigger": false},
-  {"query": "busca na web a documentação do Playwright sobre o método locator.filter", "should_trigger": false},
-  {"query": "configura o GitHub Actions pra rodar os testes Playwright no CI", "should_trigger": false},
-  {"query": "faz o scraping dos preços do site da concorrente e salva num CSV", "should_trigger": false},
-  {"query": "explica a diferença entre Playwright e Cypress pra eu decidir qual usar", "should_trigger": false},
-  {"query": "o build do Vite está falhando com 'Cannot find module @/components', arruma o alias", "should_trigger": false}
+  {"query":"testa no navegador se o fluxo de cadastro do app funciona: npm run dev na 5173, preenche o form e confere a mensagem de sucesso","should_trigger":true},
+  {"query":"the 'Add to cart' button does nothing when I click it on localhost:8080, can you check the browser console logs and figure out why?","should_trigger":true},
+  {"query":"sobe o backend (python server.py na 8000) e o front (npm run dev na 5173) e verifica se a lista de pedidos carrega na tela","should_trigger":true},
+  {"query":"can you click through the checkout on my local dev server and tell me which step breaks?","should_trigger":true},
+  {"query":"escreve testes unitários com Vitest pra função formatPrice em src/utils/price.ts","should_trigger":false},
+  {"query":"o endpoint POST /api/orders está retornando 500, olha o handler em server/routes/orders.ts","should_trigger":false},
+  {"query":"configura o GitHub Actions pra rodar os testes Playwright no CI","should_trigger":false},
+  {"query":"explica a diferença entre Playwright e Cypress pra eu decidir qual usar","should_trigger":false}
 ]
