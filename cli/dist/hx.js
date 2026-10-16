@@ -2283,7 +2283,7 @@ function run4(args) {
 }
 function approve(ctx, p, id, force) {
   const { file: file2, text, plan } = loadPlan(ctx.root, id);
-  const sha = planHash(text);
+  const sha = planHash(text.replace(/\n*$/, "\n\n"));
   let a = plan.approval;
   if (a && a.sha256 !== sha && !force) throw new Error(CHANGED);
   if (!a || a.sha256 !== sha) {

@@ -123,6 +123,15 @@ describe("sprint commands (real bundle, project with spaces)", () => {
     });
   });
 
+  it("approve of a plan without an approval section records the hash open checks", () => {
+    const t = fs.readFileSync(plan, "utf8");
+    fs.writeFileSync(plan, `${t.slice(0, t.indexOf("## Aprovação")).trimEnd()}\n`);
+    expect(hx("sprint", "approve", "S01").code).toBe(0);
+    const o = hx("sprint", "open", "S01");
+    expect(o.stderr).toBe("");
+    expect(o.code).toBe(0);
+  });
+
   it("open fails when the plan changed after approval", () => {
     expect(hx("sprint", "open", "S01").code).toBe(1); // not approved yet
     hx("sprint", "approve", "S01");

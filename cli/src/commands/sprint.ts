@@ -50,7 +50,8 @@ const base = (ctx: CommandContext, sprint: string) => ({
 
 function approve(ctx: CommandContext, p: Parsed, id: string, force: boolean): number {
   const { file, text, plan } = loadPlan(ctx.root, id);
-  const sha = planHash(text);
+  // fillApproval separates a new section with a blank line; hash the text as it will be written.
+  const sha = planHash(text.replace(/\n*$/, "\n\n"));
   let a = plan.approval;
   if (a && a.sha256 !== sha && !force) throw new Error(CHANGED);
   if (!a || a.sha256 !== sha) {
