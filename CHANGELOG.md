@@ -2,6 +2,26 @@
 
 Versões do Main Harness (versionamento semântico; `0.y.z` até a 1.0).
 
+## [0.2.0] - 2026-10-16
+
+### Novidades
+
+- feat(plugins): release updates and doctor checks companion plugins (S01 T04)
+- feat(eval): hx eval runner on Sonnet with change-based scope and gate (S01 T01)
+- feat(agents): reviewer on Sonnet with Opus override, drop the Writer (S01 T03)
+
+### Outros
+
+- T09: pre-release cleanup (index, events example, backlog status)
+- T08: validate hx eval for real; fix case runner and add fixtures
+- docs: B008 findings, handoff via Bash heredoc (S01 T06)
+- refactor: single git wrapper, runTool and eslint config pattern (S01 T05)
+- docs: ADR 0009, how to run evals, backlog for S01 (S01 T07)
+- test(skills): trim trigger evals to 8 queries (4/4) (S01 T02)
+- docs: S01 sprint plan (approved)
+- chore(harness): migrate to v0.1.3
+- docs: S00 release report and backlog updates
+
 ## [0.1.3] - 2026-10-15
 
 ### Correções
