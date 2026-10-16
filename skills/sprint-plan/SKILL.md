@@ -20,7 +20,7 @@ Nada de código antes do plano aprovado por Daniel. O plano é o contrato da spr
    - **Plano de testes:** para cada critério, tipo de teste e o que prova. Use a skill `tdd-workflow` (teste antes do código). Diga quais dados de teste e como limpar.
    - **Tarefas:** tabela `Id | Tarefa | Agente | Arquivos | Estimativa`.
 5. **Divisão por arquivo.** Cada tarefa lista os arquivos que toca. **Dois agentes nunca no mesmo arquivo ao mesmo tempo.** Tarefas que mexem no mesmo arquivo viram uma só, ou rodam em sequência (diga a dependência no texto). Arquivo compartilhado (roteador, índice, config) é do Tech Lead. Tarefas independentes podem rodar em paralelo com clones; escreva uma linha "Paralelismo" dizendo quais.
-6. **Agentes:** `tech-lead` para decisão e integração; clones para tarefas isoladas; `writer` para documentação e skills; `reviewer` para a revisão final (lint, testes, `main-harness:security-review`, critérios de aceite).
+6. **Agentes:** `tech-lead` para decisão e integração; clones para tarefas isoladas; `tech-lead` (ou clone) também para documentação e skills; `reviewer` para a revisão final (lint, testes, `main-harness:security-review`, critérios de aceite).
 7. **Estimativas** em minutos ou horas, realistas. Elas viram "tempo planejado" nos indicadores.
 8. **Status:** `aguardando aprovação`. Não preencha a seção "Aprovação" à mão.
 

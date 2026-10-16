@@ -46,7 +46,7 @@ function releaseStub(sprintId: string): string {
   return (
     `# ${sprintId} — Release Report\n\n` +
     "> Sprint em andamento. A tabela de execução abaixo é atualizada pelo `hx` a cada tarefa; " +
-    "o Writer completa o restante no fechamento (skill release-report), mantendo esta tabela.\n\n"
+    "o Tech Lead completa o restante no fechamento (skill release-report), mantendo esta tabela.\n\n"
   );
 }
 
