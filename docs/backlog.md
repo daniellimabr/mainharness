@@ -38,3 +38,15 @@ Itens ainda não planejados. Pedidos dos projetos chegam pelo `inbox/` e `/inbox
 | B028 | `hx release` valida o manifesto do plugin (`claude plugin validate`, plugin `plugin-dev`) antes de publicar | roadmap (auditoria S03) | média | aberto |
 | B029 | CI (GitHub Action) com `npm run check` e `npm run build` + diff de `cli/dist` | roadmap (auditoria S03) | baixa | aberto |
 | B030 | Validar com o Dashboard o ciclo de pedidos ao harness: `hx request` no projeto → `inbox/` → `/inbox` → backlog → sprint → release → o projeto recebe a correção (e fica sabendo) | roadmap (Daniel, S03) | alta | aberto |
+| B031 | `sprint-plan` sugere estimativas pelo real das sprints anteriores (`hx metrics`) | inbox: 2026-10-16-dashboard-ia-calibrar-estimativas-do-sprint-plan-pelo-historico.md | média | novo |
+| B032 | Eventos do harness em `~/.main-harness/events/AAAA-MM-DD.jsonl` (sessão, agentes, sprint, tarefa, revisão, consumo) para o Dashboard IA | inbox: 2026-10-16-dashboard-ia-gravar-eventos-do-harness-em-arquivo-para-o-dashboard-ia.md | alta | novo |
+| B033 | Navegador headless (Playwright) para o Reviewer testar telas (tema escuro, 360 px, recarregar) | inbox: 2026-10-16-dashboard-ia-navegador-para-o-reviewer-testar-telas.md | alta | novo |
+| B034 | Registro central `~/.main-harness/projects.json` com id fixo por projeto (gerado no attach, em `.claude/harness.json`) | inbox: 2026-10-16-dashboard-ia-registro-central-de-projetos-com-id-fixo.md | alta | novo |
+| B035 | Duração da tarefa até a fase revisão separada do tempo até o done (fila da revisão da onda) | inbox: 2026-10-16-main-harness-duracao-da-tarefa-sem-a-espera-pela-revisao-da-onda.md | baixa | novo |
+| B036 | `hx eval` reexecuta só os casos/consultas que falharam, mantendo o carimbo | inbox: 2026-10-16-main-harness-hx-eval-roda-so-os-casos-que-falharam.md | média | novo |
+| B037 | Tempo corrido desconta pausas sem eventos acima de ~30 min (`hx metrics`, `sprint close`) | inbox: 2026-10-16-main-harness-tempo-corrido-desconta-pausas-longas-da-sessao.md | média | novo |
+| B038 | `sprint-plan` mostra razão real/planejado das sprints anteriores e a usa na estimativa | inbox: 2026-10-18-dashboard-ia-calibrar-estimativas-com-o-historico.md | média | novo |
+| B039 | Estimativa calibrada por padrão: fator real/planejado do projeto, bruta × calibrada no plano, tempo de agente × espera por Daniel (substitui B031/B038) | inbox: 2026-10-18-dashboard-ia-estimativas-de-sprint-muito-acima-do-real-urgente-antes-da-s.md | alta | novo |
+| B040 | `hx sprint feedback` mede início/fim de cada rodada de ajuste (tempo e custo) | inbox: 2026-10-18-dashboard-ia-medir-o-tempo-das-rodadas-de-ajuste.md | média | novo |
+| B041 | Agentes leem/buscam/editam só com Read/Grep/Glob/Edit/Write; shell sem `cd` nem `/c/...` (prompts, handoff; avaliar hook) | inbox: 2026-10-18-dashboard-ia-padronizar-exploracao-e-edicao-de-arquivos-pelos-agentes-win.md | alta | novo |
+| B042 | Bloqueio de `Remove-Item` não trata caminho entre aspas com espaço dentro do repo como caminho de sistema | inbox: 2026-10-18-dashboard-ia-remove-item-bloqueado-em-caminho-com-espaco.md | alta | novo |
