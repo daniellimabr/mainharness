@@ -29,11 +29,21 @@ O que fica para depois (vai para o backlog).
 
 ## Tarefas
 
-| Id | Tarefa | Agente | Arquivos | Estimativa |
+| Id | Tarefa | Agente | Arquivos | Depende de | Bruta | Planejado |
+|---|---|---|---|---|---|---|
+| T01 | Descrição curta | tech-lead | `caminho/arquivo` | — | 40 min | 20 min |
+| T02 | Descrição curta | tech-lead | `caminho/arquivo` | T01 | 2 h | 1 h |
+| T03 | Revisão: lint e tipos zerados, testes, critérios de aceite | reviewer | (só leitura) | T02 | 1 h | 30 min |
+
+**Histórico (hx metrics):**
+
+| Sprint | Previsto | Corrido | Soma planejada | Soma real |
 |---|---|---|---|---|
-| T01 | Descrição curta | tech-lead | `caminho/arquivo` | 20 min |
-| T02 | Descrição curta | tech-lead | `caminho/arquivo` | 1 h |
-| T03 | Revisão: lint e tipos zerados, testes, critérios de aceite | reviewer | (só leitura) | 30 min |
+| SNN | 1 h | 30 min | 2 h | 1 h |
+
+Fator: relógio X%, soma Y%; média = fator padrão. Sprint fora da média: motivo. (Sem histórico: fator 1.)
+
+**Total estimado:** soma calibrada (bruta). Relógio: tempo de agente + espera por Daniel (teste e ajustes), à parte.
 
 ## Aprovação
 
