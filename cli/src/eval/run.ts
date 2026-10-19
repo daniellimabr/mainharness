@@ -41,7 +41,12 @@ export interface Session {
 interface StreamLine {
   type?: string;
   message?: {
-    content?: { type?: string; name?: string; text?: string; input?: { skill?: unknown } }[];
+    content?: {
+      type?: string;
+      name?: string;
+      text?: string;
+      input?: { skill?: unknown; prompt?: unknown };
+    }[];
   };
   result?: string;
   session_id?: string;
@@ -80,6 +85,13 @@ export function parseStream(out: string): Session {
         if (c.type === "text" && c.text) texts.push(c.text);
         if (c.type === "tool_use" && c.name === "Skill" && typeof c.input?.skill === "string")
           s.skills.push(c.input.skill);
+        // the judge must see what was delegated (handoff text), not only the final summary
+        if (
+          c.type === "tool_use" &&
+          (c.name === "Agent" || c.name === "Task") &&
+          typeof c.input?.prompt === "string"
+        )
+          texts.push(`[prompt enviado ao subagente]\n${c.input.prompt}`);
       }
     if (o.type !== "result") continue;
     s.text = o.result ?? "";

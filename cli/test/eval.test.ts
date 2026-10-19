@@ -137,6 +137,13 @@ describe("parseStream / pool", () => {
     ].join("\n");
     expect(parseStream(out)).toMatchObject({ text: "done", answer: "plan\n\ndone" });
   });
+  it("answer includes the prompt delegated to a subagent", () => {
+    const out = [
+      '{"type":"assistant","message":{"content":[{"type":"tool_use","name":"Agent","input":{"prompt":"# Handoff T05"}}]}}',
+      '{"type":"result","result":"ok","session_id":"abc"}',
+    ].join("\n");
+    expect(parseStream(out).answer).toBe("[prompt enviado ao subagente]\n# Handoff T05");
+  });
   it("never runs more than the limit at once", async () => {
     let now = 0;
     let max = 0;

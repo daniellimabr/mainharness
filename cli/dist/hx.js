@@ -4068,6 +4068,9 @@ function parseStream(out) {
         if (c.type === "text" && c.text) texts.push(c.text);
         if (c.type === "tool_use" && c.name === "Skill" && typeof c.input?.skill === "string")
           s2.skills.push(c.input.skill);
+        if (c.type === "tool_use" && (c.name === "Agent" || c.name === "Task") && typeof c.input?.prompt === "string")
+          texts.push(`[prompt enviado ao subagente]
+${c.input.prompt}`);
       }
     if (o.type !== "result") continue;
     s2.text = o.result ?? "";
