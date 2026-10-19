@@ -10,6 +10,8 @@ import {
   fillApproval,
   fmtMin,
   planHash,
+  type Plan,
+  type PlanTask,
   planRel,
   renderMetrics,
   renderTaskList,
@@ -94,16 +96,21 @@ function open(ctx: CommandContext, p: Parsed, id: string): number {
     s.activeSprint = id;
     s.sprintOpenedAt ??= at;
   });
-  updateExecution(
-    ctx.root,
-    id,
-    plan.tasks,
-    (t) => plan.execution[t.id]?.line ?? taskLine(t, st.tasks[t.id]),
-    st.tasks,
-  );
+  refresh(ctx, id, plan, st.tasks);
   emit({ ...base(ctx, id), type: "sprint.open", ts: at, data: { tasks: plan.tasks.length } });
   console.log(renderTaskList(ctx.root, id));
   return 0;
+}
+
+/** Rewrites the execution table (task rows, feedback rounds, total) from state and events. */
+function refresh(
+  ctx: CommandContext,
+  id: string,
+  plan: Plan,
+  tasks = readState(ctx.id).tasks,
+): void {
+  const line = (t: PlanTask) => plan.execution[t.id]?.line ?? taskLine(t, tasks[t.id]);
+  updateExecution(ctx.root, id, plan.tasks, line, tasks);
 }
 
 function feedback(ctx: CommandContext, arg: string | undefined): number {
@@ -112,6 +119,7 @@ function feedback(ctx: CommandContext, arg: string | undefined): number {
     throw new Error("uso: hx sprint feedback <n de ajustes>");
   if (!ctx.sprint) throw new Error("nenhuma sprint aberta");
   emit({ ...base(ctx, ctx.sprint), type: "sprint.feedback", data: { adjustments: n } });
+  refresh(ctx, ctx.sprint, loadPlan(ctx.root, ctx.sprint).plan);
   console.log(`Retorno de Daniel registrado: ${n} ajuste(s).`);
   return 0;
 }
@@ -134,6 +142,7 @@ function close(ctx: CommandContext, p: Parsed, id: string, force: boolean): numb
     ts: at,
     data: { tasks_done: done, tasks_total: plan.tasks.length, duration_s },
   });
+  refresh(ctx, id, plan, st.tasks); // closes the open feedback round in the table
   const m = computeMetrics(ctx.id, id, plan);
   emit({ ...base(ctx, id), type: "sprint.metrics", ts: at, data: { ...m } });
   updateState(ctx.id, (s) => {
@@ -148,9 +157,10 @@ function close(ctx: CommandContext, p: Parsed, id: string, force: boolean): numb
     ),
   );
   const wait = (Date.parse(at) - lastDone) / 60000; // Infinity when no task is done: no wait shown
+  const paused = m.pause_min ? ` (pausas: ${fmtMin(m.pause_min)})` : "";
   const waited = wait >= 1 && Number.isFinite(wait) ? ` (aguardou teste por ${fmtMin(wait)})` : "";
   console.log(
-    `Sprint ${id} fechada: ${done}/${plan.tasks.length} tarefas em ${fmtMin(m.wall_min)}${waited}\n\n${renderMetrics(id, plan, m)}`,
+    `Sprint ${id} fechada: ${done}/${plan.tasks.length} tarefas em ${fmtMin(m.wall_min)}${paused}${waited}\n\n${renderMetrics(id, plan, m)}`,
   );
   return 0;
 }

@@ -452,8 +452,14 @@ var init_schema = __esm({
         handoffs: n(),
         usd_by_agent: { type: "numberRecord" },
         usd_by_task: { type: "numberRecord" },
-        actual_min_by_task: { type: "numberRecord" }
+        actual_min_by_task: { type: "numberRecord" },
+        pause_min: n(opt),
+        review_min_by_task: { type: "numberRecord", optional: true },
+        feedback_rounds: n(opt),
+        feedback_min: n(opt),
+        feedback_usd: n(opt)
       },
+      "task.phase": { phase: s() },
       "task.start": { planned_min: n(opt) },
       "task.done": { duration_s: n(), planned_min: n(opt) },
       "review.result": { result: s({ enum: ["pass", "fail"] }) },
@@ -827,10 +833,33 @@ function ingest(input, c) {
 function tokensOf(input) {
   return input.transcript_path ? currentContextTokens(input.transcript_path) : null;
 }
+function execIn(root) {
+  return (cmd, args) => {
+    if (cmd === process.execPath && !fs10.existsSync(args[0] ?? ""))
+      return { status: null, stdout: "" };
+    const r = (0, import_node_child_process.spawnSync)(cmd, args, { cwd: root, encoding: "utf8", timeout: 6e4 });
+    return { status: r.status, stdout: r.stdout ?? "" };
+  };
+}
+function typecheckReason(root, exec = execIn(root)) {
+  if (!fs10.existsSync(path10.join(root, "cli", "tsconfig.json"))) return null;
+  const changed = exec("git", ["status", "--porcelain"]).stdout.split("\n").some((l) => l.slice(3).replace(/^"/, "").startsWith("cli/src/"));
+  if (!changed) return null;
+  const tsc = path10.join(root, "node_modules", "typescript", "bin", "tsc");
+  const r = exec(process.execPath, [tsc, "--noEmit", "-p", "cli"]);
+  if (!r.status) return null;
+  const head = r.stdout.trim().split("\n").slice(0, 20).join("\n");
+  return `Erros de tipo em cli/src (tsc --noEmit -p cli). Corrija antes de parar:
+${head}`;
+}
 function stop(input) {
   const c = context(input);
   if (!c) return {};
   ingest(input, c);
+  if (!input.stop_hook_active) {
+    const reason = typecheckReason(c.p.root);
+    if (reason) return jsonOut({ decision: "block", reason });
+  }
   const cfg = loadConfig();
   if (cfg.contextStrategy !== "compact" || input.stop_hook_active) return {};
   const tokens = tokensOf(input);
@@ -892,10 +921,12 @@ function sessionEnd(input) {
   });
   return {};
 }
-var path10, time;
+var import_node_child_process, fs10, path10, time;
 var init_lifecycle = __esm({
   "cli/src/hooks/lifecycle.ts"() {
     "use strict";
+    import_node_child_process = require("node:child_process");
+    fs10 = __toESM(require("node:fs"));
     path10 = __toESM(require("node:path"));
     init_config();
     init_log();
@@ -923,13 +954,13 @@ async function format(req, root, file2) {
   const ignorePath = [path11.join(root, ".gitignore"), path11.join(root, ".prettierignore")];
   const info = await prettier.getFileInfo(file2, { ignorePath });
   if (info.ignored || !info.inferredParser) return;
-  const src = fs10.readFileSync(file2, "utf8");
+  const src = fs11.readFileSync(file2, "utf8");
   const options = await prettier.resolveConfig(file2) ?? {};
   const out = await prettier.format(src, { ...options, filepath: file2 });
-  if (out !== src) fs10.writeFileSync(file2, out);
+  if (out !== src) fs11.writeFileSync(file2, out);
 }
 async function lint(req, root, file2) {
-  if (!fs10.readdirSync(root).some((f) => ESLINT_CONFIG.test(f))) return [];
+  if (!fs11.readdirSync(root).some((f) => ESLINT_CONFIG.test(f))) return [];
   const mod = load(req, "eslint");
   if (!mod) return [];
   const eslint = new mod.ESLint({ cwd: root, fix: true });
@@ -943,7 +974,7 @@ async function lint(req, root, file2) {
 }
 async function lintFile(root, file2) {
   const pkg = path11.join(root, "package.json");
-  if (!fs10.existsSync(pkg)) return [];
+  if (!fs11.existsSync(pkg)) return [];
   const req = (0, import_node_module.createRequire)(pkg);
   try {
     await format(req, root, file2);
@@ -953,11 +984,11 @@ async function lintFile(root, file2) {
   if (lines.length <= MAX_LINES) return lines;
   return [...lines.slice(0, MAX_LINES), `... e mais ${lines.length - MAX_LINES} problemas`];
 }
-var fs10, import_node_module, path11, ESLINT_CONFIG, MAX_LINES;
+var fs11, import_node_module, path11, ESLINT_CONFIG, MAX_LINES;
 var init_lint = __esm({
   "cli/src/lint/index.ts"() {
     "use strict";
-    fs10 = __toESM(require("node:fs"));
+    fs11 = __toESM(require("node:fs"));
     import_node_module = require("node:module");
     path11 = __toESM(require("node:path"));
     ESLINT_CONFIG = /^eslint\.config\.[cm]?[jt]s$/;
@@ -976,10 +1007,10 @@ function clean(s2) {
 function describeFile(file2) {
   let text;
   try {
-    const fd = fs11.openSync(file2, "r");
+    const fd = fs12.openSync(file2, "r");
     const buf = Buffer.alloc(4096);
-    const n2 = fs11.readSync(fd, buf, 0, buf.length, 0);
-    fs11.closeSync(fd);
+    const n2 = fs12.readSync(fd, buf, 0, buf.length, 0);
+    fs12.closeSync(fd);
     text = buf.subarray(0, n2).toString("utf8");
     if (text.charCodeAt(0) === 65279) text = text.slice(1);
   } catch {
@@ -1017,12 +1048,24 @@ function entryLine(root, rel) {
 }
 function ensureIndexEntry(root, file2) {
   const idx = path12.join(root, "index.md");
-  if (!fs11.existsSync(idx)) return false;
+  if (!fs12.existsSync(idx)) return false;
   const rel = path12.relative(root, file2).split(path12.sep).join("/");
-  if (!rel || rel.startsWith("..") || rel === "index.md" || isSkipped(rel)) return false;
-  const eol = fs11.readFileSync(idx, "utf8").includes("\r\n") ? "\r\n" : "\n";
-  const lines = fs11.readFileSync(idx, "utf8").split(/\r?\n/);
-  if (lines.some((l) => entryPath(l) === rel)) return false;
+  if (!rel || rel.startsWith("..") || isSkipped(rel)) return false;
+  const text = fs12.readFileSync(idx, "utf8");
+  const eol = text.includes("\r\n") ? "\r\n" : "\n";
+  const seen = /* @__PURE__ */ new Set();
+  const lines = text.split(/\r?\n/).filter((l) => {
+    const p = entryPath(l);
+    if (p === null) return true;
+    if (seen.has(p)) return false;
+    seen.add(p);
+    return true;
+  });
+  const deduped = lines.join(eol) !== text;
+  if (rel === "index.md" || seen.has(rel)) {
+    if (deduped) writeFileAtomic(idx, lines.join(eol));
+    return false;
+  }
   const line2 = entryLine(root, rel);
   const head = lines.findIndex((l) => l.trim() === SECTION);
   if (head < 0) {
@@ -1047,9 +1090,9 @@ function ensureIndexEntry(root, file2) {
   return true;
 }
 function listFiles(root) {
-  if (fs11.existsSync(path12.join(root, ".git"))) {
+  if (fs12.existsSync(path12.join(root, ".git"))) {
     try {
-      const out2 = (0, import_node_child_process.execFileSync)(
+      const out2 = (0, import_node_child_process2.execFileSync)(
         "git",
         ["-C", root, "ls-files", "-z", "--cached", "--others", "--exclude-standard"],
         { encoding: "utf8", stdio: ["ignore", "pipe", "ignore"], maxBuffer: 64 * 1024 * 1024 }
@@ -1060,7 +1103,7 @@ function listFiles(root) {
   }
   const out = [];
   const walk2 = (dir, prefix) => {
-    for (const e of fs11.readdirSync(dir, { withFileTypes: true })) {
+    for (const e of fs12.readdirSync(dir, { withFileTypes: true })) {
       if (SKIP_DIRS.has(e.name)) continue;
       const rel = prefix + e.name;
       if (e.isDirectory()) walk2(path12.join(dir, e.name), `${rel}/`);
@@ -1071,7 +1114,7 @@ function listFiles(root) {
   return out;
 }
 function buildRepoMap(root) {
-  const files = listFiles(root).filter((f) => f !== "index.md" && !isSkipped(f) && fs11.existsSync(path12.join(root, f))).sort((a, b2) => a < b2 ? -1 : a > b2 ? 1 : 0);
+  const files = listFiles(root).filter((f) => f !== "index.md" && !isSkipped(f) && fs12.existsSync(path12.join(root, f))).sort((a, b2) => a < b2 ? -1 : a > b2 ? 1 : 0);
   return [
     "# Mapa do repo",
     "",
@@ -1086,7 +1129,7 @@ function buildRepoMap(root) {
 function summarizeIndex(root, max = 1500) {
   let text;
   try {
-    text = fs11.readFileSync(path12.join(root, "index.md"), "utf8");
+    text = fs12.readFileSync(path12.join(root, "index.md"), "utf8");
   } catch {
     return null;
   }
@@ -1096,12 +1139,12 @@ function summarizeIndex(root, max = 1500) {
   const s2 = `Mapa do repo (index.md): ${count} arquivos. Se\xE7\xF5es: ${heads.join("; ") || "nenhuma"}.`;
   return s2.length > max ? `${s2.slice(0, max - 3)}...` : s2;
 }
-var import_node_child_process, fs11, path12, SECTION, SKIP_DIRS, NO_PURPOSE;
+var import_node_child_process2, fs12, path12, SECTION, SKIP_DIRS, NO_PURPOSE;
 var init_repomap = __esm({
   "cli/src/repomap/index.ts"() {
     "use strict";
-    import_node_child_process = require("node:child_process");
-    fs11 = __toESM(require("node:fs"));
+    import_node_child_process2 = require("node:child_process");
+    fs12 = __toESM(require("node:fs"));
     path12 = __toESM(require("node:path"));
     init_fsx();
     SECTION = "## Arquivos";
@@ -1117,7 +1160,7 @@ async function postEdit(input) {
   const cwd = input.cwd || process.cwd();
   const root = resolveProject(cwd)?.root ?? cwd;
   const file2 = path13.resolve(cwd, raw);
-  if (!isInside(file2, root) || !fs12.statSync(file2, { throwIfNoEntry: false })?.isFile()) return {};
+  if (!isInside(file2, root) || !fs13.statSync(file2, { throwIfNoEntry: false })?.isFile()) return {};
   if (isSkipped(path13.relative(root, file2).split(path13.sep).join("/"))) return {};
   ensureIndexEntry(root, file2);
   const problems = await lintFile(root, file2);
@@ -1126,11 +1169,11 @@ async function postEdit(input) {
 Corrija antes de seguir.
 ` };
 }
-var fs12, path13;
+var fs13, path13;
 var init_post_edit = __esm({
   "cli/src/hooks/post-edit.ts"() {
     "use strict";
-    fs12 = __toESM(require("node:fs"));
+    fs13 = __toESM(require("node:fs"));
     path13 = __toESM(require("node:path"));
     init_fsx();
     init_projects();
@@ -1239,7 +1282,7 @@ function recursiveTargets(cmd, args) {
 function tempRoots() {
   const t = path14.join(os2.tmpdir(), "claude");
   try {
-    return [t, fs13.realpathSync.native(t)];
+    return [t, fs14.realpathSync.native(t)];
   } catch {
     return [t];
   }
@@ -1261,12 +1304,12 @@ function currentBranch(dir) {
     const dotGit = path14.join(cur, ".git");
     try {
       let gitDir = dotGit;
-      if (fs13.statSync(dotGit).isFile()) {
-        const m = /gitdir:\s*(.+)/.exec(fs13.readFileSync(dotGit, "utf8"));
+      if (fs14.statSync(dotGit).isFile()) {
+        const m = /gitdir:\s*(.+)/.exec(fs14.readFileSync(dotGit, "utf8"));
         if (!m?.[1]) return null;
         gitDir = path14.resolve(cur, m[1].trim());
       }
-      const head = fs13.readFileSync(path14.join(gitDir, "HEAD"), "utf8");
+      const head = fs14.readFileSync(path14.join(gitDir, "HEAD"), "utf8");
       return /^ref: refs\/heads\/(.+)$/m.exec(head)?.[1]?.trim() ?? null;
     } catch {
       const up = path14.dirname(cur);
@@ -1323,7 +1366,24 @@ function checkGit(args, cwd, stable) {
     return { decision: "ask", reason: `git ${sub} . descarta altera\xE7\xF5es: confirme.` };
   if (sub === "rebase")
     return { decision: "ask", reason: "git rebase reescreve hist\xF3rico: confirme." };
+  if (sub === "commit" && staleBundle(dir))
+    return { decision: "ask", reason: "bundle desatualizado: rode npm run build." };
   return null;
+}
+function staleBundle(dir) {
+  const git2 = (...a) => (0, import_node_child_process3.spawnSync)("git", ["-C", dir, ...a], { encoding: "utf8" }).stdout?.trim() ?? "";
+  const top = git2("rev-parse", "--show-toplevel");
+  if (!top) return false;
+  const src = path14.join(top, "cli", "src");
+  let bundle;
+  try {
+    bundle = fs14.statSync(path14.join(top, "cli", "dist", "hx.js")).mtimeMs;
+  } catch {
+    return false;
+  }
+  const staged = git2("diff", "--cached", "--name-only").split("\n");
+  if (!staged.some((f) => f.startsWith("cli/src/"))) return false;
+  return fs14.readdirSync(src, { recursive: true, encoding: "utf8" }).some((f) => fs14.statSync(path14.join(src, f)).mtimeMs > bundle);
 }
 function innerCommand(cmd, args) {
   if (cmd === "cmd") {
@@ -1384,6 +1444,11 @@ function classifyCommand(command, cwd, root, stable, vars = /* @__PURE__ */ new 
     }
     if (!v && ["cd", "set-location", "sl", "chdir", "pushd"].includes(cmd)) {
       const target = args.find((a) => !a.startsWith("-") && !/^\/d$/i.test(a));
+      if (target && /^\/(?:mnt\/|cygdrive\/)?[a-zA-Z]\//.test(target))
+        return {
+          decision: "deny",
+          reason: `Bloqueado: cd "${target}": use caminho relativo ou as ferramentas Read/Grep/Edit; o cwd j\xE1 \xE9 o projeto.`
+        };
       dir = (target === void 0 ? os2.homedir() : expandPath(target, dir)) ?? dir;
     }
     if (!v && cmd === "git") v = checkGit(args, dir, stable);
@@ -1437,11 +1502,12 @@ function preBash(input) {
     }
   });
 }
-var fs13, os2, path14, shellVars, RECURSIVE_DELETE, GIT_WRITES, FILE_WRITERS, COPIERS, WRAPPERS, UNCHECKABLE, PS_VALUE_OPTS, PS_COMMAND;
+var import_node_child_process3, fs14, os2, path14, shellVars, RECURSIVE_DELETE, GIT_WRITES, FILE_WRITERS, COPIERS, WRAPPERS, UNCHECKABLE, PS_VALUE_OPTS, PS_COMMAND;
 var init_pre_bash = __esm({
   "cli/src/hooks/pre-bash.ts"() {
     "use strict";
-    fs13 = __toESM(require("node:fs"));
+    import_node_child_process3 = require("node:child_process");
+    fs14 = __toESM(require("node:fs"));
     os2 = __toESM(require("node:os"));
     path14 = __toESM(require("node:path"));
     init_config();
@@ -1514,6 +1580,45 @@ var init_pre_bash = __esm({
   }
 });
 
+// cli/src/hooks/pre-edit.ts
+function deny(reason) {
+  return jsonOut({
+    hookSpecificOutput: {
+      hookEventName: "PreToolUse",
+      permissionDecision: "deny",
+      permissionDecisionReason: reason
+    }
+  });
+}
+function preEdit(input) {
+  const file2 = input.tool_input?.file_path;
+  if (typeof file2 !== "string" || !file2.trim()) return {};
+  const cwd = input.cwd || process.cwd();
+  let root = cwd;
+  let stable = DEFAULT_CONFIG.stableDir;
+  try {
+    root = resolveProject(cwd)?.root ?? cwd;
+    stable = loadConfig().stableDir;
+  } catch {
+  }
+  const abs = path15.resolve(cwd, file2);
+  if (isInside(abs, stable)) return deny(`Bloqueado: nunca edite ${stable} (s\xF3 via hx release).`);
+  if (samePathKey(abs) === samePathKey(path15.join(root, "cli", "dist", "hx.js")))
+    return deny("Bloqueado: cli/dist/hx.js \xE9 gerado; edite cli/src e rode npm run build.");
+  return {};
+}
+var path15;
+var init_pre_edit = __esm({
+  "cli/src/hooks/pre-edit.ts"() {
+    "use strict";
+    path15 = __toESM(require("node:path"));
+    init_config();
+    init_fsx();
+    init_projects();
+    init_runner();
+  }
+});
+
 // cli/src/core/args.ts
 function parseArgs(args) {
   const out = { _: [], flags: {} };
@@ -1576,12 +1681,12 @@ function versionTags(cwd) {
     return 0;
   });
 }
-var import_node_child_process2, gitRun, isGitRepo;
+var import_node_child_process4, gitRun, isGitRepo;
 var init_git = __esm({
   "cli/src/release/git.ts"() {
     "use strict";
-    import_node_child_process2 = require("node:child_process");
-    gitRun = (cwd, args, timeout) => (0, import_node_child_process2.spawnSync)("git", args, { cwd, encoding: "utf8", windowsHide: true, timeout });
+    import_node_child_process4 = require("node:child_process");
+    gitRun = (cwd, args, timeout) => (0, import_node_child_process4.spawnSync)("git", args, { cwd, encoding: "utf8", windowsHide: true, timeout });
     isGitRepo = (cwd) => gitRun(cwd, ["rev-parse", "--is-inside-work-tree"]).stdout?.trim() === "true";
   }
 });
@@ -1593,7 +1698,7 @@ __export(migrate_exports, {
   run: () => run
 });
 function writePlan(root, m, from, to, down) {
-  const rel = path15.join("docs", `harness-migration-${m.version}.md`);
+  const rel = path16.join("docs", `harness-migration-${m.version}.md`);
   const text = `# Migra\xE7\xE3o do harness ${m.version} (${down ? "rollback" : "atualiza\xE7\xE3o"})
 
 - **De:** ${from}
@@ -1610,18 +1715,18 @@ ${m.description}
 2. Aplique as mudan\xE7as descritas (ou pe\xE7a ao Tech Lead).
 3. Atualize \`.claude/harness.json\` \u2192 \`version\` e rode \`hx migrate\` de novo.
 `;
-  fs14.mkdirSync(path15.join(root, "docs"), { recursive: true });
-  fs14.writeFileSync(path15.join(root, rel), text);
+  fs15.mkdirSync(path16.join(root, "docs"), { recursive: true });
+  fs15.writeFileSync(path16.join(root, rel), text);
   return rel;
 }
 function refreshOptionalSkills(root, names) {
   const touched = [];
   for (const name of names) {
-    const src = path15.join(pluginRoot(), "skills", "optional", name);
-    if (!fs14.existsSync(src)) continue;
-    const dest = path15.join(root, ".claude", "skills", name);
-    fs14.rmSync(dest, { recursive: true, force: true });
-    fs14.cpSync(src, dest, { recursive: true });
+    const src = path16.join(pluginRoot(), "skills", "optional", name);
+    if (!fs15.existsSync(src)) continue;
+    const dest = path16.join(root, ".claude", "skills", name);
+    fs15.rmSync(dest, { recursive: true, force: true });
+    fs15.cpSync(src, dest, { recursive: true });
     touched.push(dest);
   }
   return touched;
@@ -1664,7 +1769,7 @@ function migrateProject(root, opts = {}) {
     }
     result.applied.push(m.version);
     if (opts.dryRun || !fn) continue;
-    for (const f of fn(root)) touched.add(path15.resolve(root, f));
+    for (const f of fn(root)) touched.add(path16.resolve(root, f));
     if (down) done.delete(m.version);
     else done.add(m.version);
     event(m.kind, true);
@@ -1678,11 +1783,11 @@ function migrateProject(root, opts = {}) {
   if (result.pending === null || result.applied.length) {
     hj.migrations = [...done].sort(compareVersions);
     writeHarnessJson(root, hj);
-    touched.add(path15.join(root, ".claude", "harness.json"));
+    touched.add(path16.join(root, ".claude", "harness.json"));
   }
   if ((opts.commit ?? isGitRepo(root)) && touched.size) {
-    const files = [...touched].map((f) => path15.relative(root, f)).filter(
-      (f) => fs14.existsSync(path15.join(root, f)) || gitRun(root, ["ls-files", "--", f]).stdout
+    const files = [...touched].map((f) => path16.relative(root, f)).filter(
+      (f) => fs15.existsSync(path16.join(root, f)) || gitRun(root, ["ls-files", "--", f]).stdout
     );
     const add2 = gitRun(root, ["add", "-A", "--", ...files]);
     const msg = `chore(harness): migrate to v${result.pending ? result.applied.at(-1) : to}`;
@@ -1715,12 +1820,12 @@ function run(args) {
   }
   return 0;
 }
-var fs14, path15;
+var fs15, path16;
 var init_migrate = __esm({
   "cli/src/commands/migrate.ts"() {
     "use strict";
-    fs14 = __toESM(require("node:fs"));
-    path15 = __toESM(require("node:path"));
+    fs15 = __toESM(require("node:fs"));
+    path16 = __toESM(require("node:path"));
     init_args();
     init_log();
     init_paths();
@@ -1763,10 +1868,10 @@ var init_time = __esm({
 
 // cli/src/sprint/index.ts
 function planPath(projectRoot, sprintId2) {
-  return path16.join(projectRoot, "docs", "sprints", `${sprintId2}-plan.md`);
+  return path17.join(projectRoot, "docs", "sprints", `${sprintId2}-plan.md`);
 }
 function releasePath(projectRoot, sprintId2) {
-  return path16.join(projectRoot, "docs", "sprints", `${sprintId2}-release.md`);
+  return path17.join(projectRoot, "docs", "sprints", `${sprintId2}-release.md`);
 }
 function releaseStub(sprintId2) {
   return `# ${sprintId2} \u2014 Release Report
@@ -1777,12 +1882,69 @@ function releaseStub(sprintId2) {
 }
 function readExecution(projectRoot, sprintId2) {
   const file2 = releasePath(projectRoot, sprintId2);
-  return fs15.existsSync(file2) ? parsePlan(fs15.readFileSync(file2, "utf8")).execution : {};
+  return fs16.existsSync(file2) ? parsePlan(fs16.readFileSync(file2, "utf8")).execution : {};
 }
 function updateExecution(projectRoot, sprintId2, tasks, lineFor, times) {
   const file2 = releasePath(projectRoot, sprintId2);
-  const text = fs15.existsSync(file2) ? fs15.readFileSync(file2, "utf8") : releaseStub(sprintId2);
-  writePlan2(file2, text, writeExecution(text, tasks, lineFor, times));
+  const text = fs16.existsSync(file2) ? fs16.readFileSync(file2, "utf8") : releaseStub(sprintId2);
+  const a = activity(resolveProject(projectRoot)?.id ?? "");
+  const line2 = (t) => {
+    const x = times[t.id];
+    if (!x?.start || !x.end) return lineFor(t);
+    const tt = taskTime(a, t.id, Date.parse(x.start), Date.parse(x.end));
+    return taskLine(t, { ...x, duration_s: tt.min * 60 }, tt.review);
+  };
+  const last = a.times.at(-1) ?? 0;
+  const pause = (from, to) => pauseMs(a.times, from, Math.min(to, last));
+  const rounds = feedbackRounds(a.evs.filter((e) => e.sprint === sprintId2)).map(
+    (r) => roundLine(r, a)
+  );
+  writePlan2(file2, text, writeExecution(text, tasks, line2, times, pause, rounds));
+}
+function pauseMs(evTimes, from, to) {
+  if (!(to > from)) return 0;
+  const pts = [from, to, ...evTimes.filter((t) => t > from && t < to)].sort((x, y) => x - y);
+  let p = 0;
+  for (let i = 1; i < pts.length; i++) {
+    const gap = (pts[i] ?? 0) - (pts[i - 1] ?? 0);
+    if (gap > PAUSE_MS) p += gap;
+  }
+  return p;
+}
+function activity(project) {
+  const evs = readEvents((e) => e.project === project).sort(
+    (x, y) => Date.parse(x.ts) - Date.parse(y.ts)
+  );
+  return { evs, times: evs.map((e) => Date.parse(e.ts)) };
+}
+function taskTime(a, task, start, end) {
+  const net = (to) => (to - start - pauseMs(a.times, start, to)) / 6e4;
+  const ph = a.evs.find(
+    (e) => e.type === "task.phase" && e.task === task && e.data.phase === "revis\xE3o" && Date.parse(e.ts) >= start && Date.parse(e.ts) <= end
+  );
+  return { min: net(end), review: ph ? net(Date.parse(ph.ts)) : void 0 };
+}
+function feedbackRounds(sprintEvs) {
+  const out = [];
+  for (const e of sprintEvs) {
+    if (e.type !== "sprint.feedback" && e.type !== "sprint.close") continue;
+    const last = out.at(-1);
+    if (last && !last.end) last.end = e.ts;
+    const n2 = num(e.data.adjustments);
+    if (e.type === "sprint.feedback" && n2 > 0)
+      out.push({ n: out.length + 1, adjustments: n2, start: e.ts });
+  }
+  return out;
+}
+function roundStats(r, a) {
+  const s2 = Date.parse(r.start);
+  const e = r.end ? Date.parse(r.end) : Math.max(s2, a.times.at(-1) ?? s2);
+  const usd3 = a.evs.filter((x) => x.type === "usage" && Date.parse(x.ts) >= s2 && Date.parse(x.ts) < e).reduce((acc, x) => acc + num(x.data.usd), 0);
+  return { min: (e - s2 - pauseMs(a.times, s2, e)) / 6e4, usd: usd3 };
+}
+function roundLine(r, a) {
+  const head = `| ${r.end ? DONE : DOING} | Ajuste ${r.n} | ${r.adjustments} ajuste(s) |  |  | ${localHM(r.start)} |`;
+  return r.end ? `${head} ${localHM(r.end)} | ${fmtMin(roundStats(r, a).min)} |` : `${head}  |  |`;
 }
 function planRel(sprintId2) {
   return `docs/sprints/${sprintId2}-plan.md`;
@@ -1906,27 +2068,39 @@ function fillApproval(text, a, harness) {
   const out = sec ? t.slice(0, sec.start) + block + t.slice(sec.end) : t.replace(/\n*$/, "\n\n") + block;
   return out.replace(/\n+$/, "\n");
 }
-function taskLine(t, times) {
+function taskLine(t, times, reviewMin) {
   const title = t.title.replace(/\|/g, "/");
   const row = (status, start = "", end = "", dur = "") => `| ${status} | ${t.id} | ${title} | ${t.agent} | ${fmtMin(t.planned_min)} | ${start} | ${end} | ${dur} |`;
   if (times?.end) {
     const start = times.start ?? times.end;
-    return row(DONE, localHM(start), localHM(times.end), fmtMin((times.duration_s ?? 0) / 60));
+    const review = reviewMin === void 0 ? "" : ` (revis\xE3o: ${fmtMin(reviewMin)})`;
+    const dur = fmtMin((times.duration_s ?? 0) / 60) + review;
+    return row(DONE, localHM(start), localHM(times.end), dur);
   }
   if (times?.start)
     return row(times.phase ? `${DOING} ${times.phase}` : DOING, localHM(times.start));
   return row(TODO);
 }
-function totalLine(tasks, times) {
+function totalLine(tasks, times, pause = () => 0) {
   const ts = tasks.map((t) => times[t.id] ?? {});
   const starts = ts.flatMap((x) => x.start ?? x.end ?? []).sort();
   const done = ts.every((x) => x.end);
   const start = starts[0] ?? "";
   const end = done ? ts.map((x) => x.end ?? "").sort().at(-1) ?? "" : "";
   const status = done ? DONE : start ? DOING : TODO;
-  const dur = end ? fmtMin((Date.parse(end) - Date.parse(start)) / 6e4) : "";
+  const s2 = Date.parse(start);
+  let fim = "";
+  let dur = "";
+  if (end) {
+    const p = pause(s2, Date.parse(end));
+    fim = dateHM(end);
+    dur = fmtMin((Date.parse(end) - s2 - p) / 6e4) + (p ? ` (pausas: ${fmtMin(p / 6e4)})` : "");
+  } else if (start) {
+    const f = dateHM(new Date(s2 + plannedWall(tasks) * 6e4 + pause(s2, Infinity)).toISOString());
+    fim = `~${f.slice(0, 10) === dateHM(start).slice(0, 10) ? f.slice(11) : f} (previsto)`;
+  }
   const planned = fmtMin(plannedWall(tasks));
-  return `| ${status} | ${TOTAL} | ${tasks.length} tarefas |  | ${planned} | ${start && dateHM(start)} | ${end && dateHM(end)} | ${dur} |`;
+  return `| ${status} | ${TOTAL} | ${tasks.length} tarefas |  | ${planned} | ${start && dateHM(start)} | ${fim} | ${dur} |`;
 }
 function execTable(lines, total) {
   return `${EXEC_NOTE}
@@ -1935,11 +2109,12 @@ ${EXEC_HEADER}
 ${lines.join("\n")}
 ${total}`;
 }
-function writeExecution(text, tasks, lineFor, times = {}) {
+function writeExecution(text, tasks, lineFor, times = {}, pause, rounds = []) {
   const t = lf(text);
+  const lines = [...tasks.map(lineFor), ...rounds];
   const block = `${EXEC_HEADING}
 
-${execTable(tasks.map(lineFor), totalLine(tasks, times))}
+${execTable(lines, totalLine(tasks, times, pause))}
 
 `;
   const sec = section(t, /^## Execução[^\n]*$/m);
@@ -1947,12 +2122,12 @@ ${execTable(tasks.map(lineFor), totalLine(tasks, times))}
   return out.replace(/\n+$/, "\n");
 }
 function writePlan2(file2, original, next) {
-  fs15.writeFileSync(file2, original.includes("\r\n") ? next.replace(/\n/g, "\r\n") : next);
+  fs16.writeFileSync(file2, original.includes("\r\n") ? next.replace(/\n/g, "\r\n") : next);
 }
 function renderTaskList(projectRoot, sprintId2) {
   const file2 = planPath(projectRoot, sprintId2);
-  if (!fs15.existsSync(file2)) return "";
-  const plan = parsePlan(fs15.readFileSync(file2, "utf8"));
+  if (!fs16.existsSync(file2)) return "";
+  const plan = parsePlan(fs16.readFileSync(file2, "utf8"));
   plan.execution = readExecution(projectRoot, sprintId2);
   const lines = plan.tasks.map((t) => {
     const line2 = plan.execution[t.id]?.line;
@@ -1960,25 +2135,34 @@ function renderTaskList(projectRoot, sprintId2) {
   });
   const done = plan.tasks.filter((t) => plan.execution[t.id]?.done).length;
   const rel = releasePath(projectRoot, sprintId2);
-  const stored = fs15.existsSync(rel) ? lf(fs15.readFileSync(rel, "utf8")).split("\n").find((l) => l.includes(`| ${TOTAL} |`)) : void 0;
-  const total = stored ?? totalLine(plan.tasks, {});
+  const stored = fs16.existsSync(rel) ? lf(fs16.readFileSync(rel, "utf8")).split("\n") : [];
+  const rounds = stored.filter((l) => /^\| \S+ \| Ajuste \d+ \|/.test(l));
+  const total = stored.find((l) => l.includes(`| ${TOTAL} |`)) ?? totalLine(plan.tasks, {});
   return `Sprint ${sprintId2} \u2014 ${done}/${plan.tasks.length} feitas
 
-${execTable(lines, total)}`;
+${execTable([...lines, ...rounds], total)}`;
 }
 function computeMetrics(project, sprintId2, plan) {
-  const evs = readEvents((e) => e.project === project && e.sprint === sprintId2);
+  const a = activity(project);
+  const evs = a.evs.filter((e) => e.sprint === sprintId2);
   const durations = {};
+  const review_min_by_task = {};
   for (const e of evs)
-    if (e.type === "task.done" && e.task) durations[e.task] = num(e.data.duration_s);
+    if (e.type === "task.done" && e.task) {
+      const end = Date.parse(e.ts);
+      const tt = taskTime(a, e.task, end - num(e.data.duration_s) * 1e3, end);
+      durations[e.task] = tt.min * 60;
+      if (tt.review !== void 0) review_min_by_task[e.task] = r1(tt.review);
+    }
   const actual_min_by_task = {};
   for (const [k, s2] of Object.entries(durations)) actual_min_by_task[k] = r1(s2 / 60);
+  const rounds = feedbackRounds(evs).map((r) => roundStats(r, a));
   const m = {
     tasks_total: plan.tasks.length,
     tasks_done: plan.tasks.filter((t) => t.id in durations).length,
-    planned_min: plan.tasks.reduce((a, t) => a + t.planned_min, 0),
+    planned_min: plan.tasks.reduce((a2, t) => a2 + t.planned_min, 0),
     planned_wall_min: plannedWall(plan.tasks),
-    actual_min: r1(Object.values(durations).reduce((a, s2) => a + s2, 0) / 60),
+    actual_min: r1(Object.values(durations).reduce((a2, s2) => a2 + s2, 0) / 60),
     wall_min: 0,
     tokens_input: 0,
     tokens_output: 0,
@@ -1991,7 +2175,12 @@ function computeMetrics(project, sprintId2, plan) {
     handoffs: 0,
     usd_by_agent: {},
     usd_by_task: {},
-    actual_min_by_task
+    actual_min_by_task,
+    pause_min: 0,
+    review_min_by_task,
+    feedback_rounds: rounds.length,
+    feedback_min: r1(rounds.reduce((acc, r) => acc + r.min, 0)),
+    feedback_usd: r4(rounds.reduce((acc, r) => acc + r.usd, 0))
   };
   for (const e of evs) {
     const d = e.data;
@@ -2014,12 +2203,16 @@ function computeMetrics(project, sprintId2, plan) {
   m.usd = r4(m.usd);
   for (const rec of [m.usd_by_agent, m.usd_by_task])
     for (const [k, v] of Object.entries(rec)) rec[k] = r4(v);
-  const ts = (type) => evs.filter((e) => e.type === type).map((e) => Date.parse(e.ts)).sort((a, b2) => a - b2);
+  const ts = (type) => evs.filter((e) => e.type === type).map((e) => Date.parse(e.ts)).sort((a2, b2) => a2 - b2);
   const starts = ts("task.start");
   const ends = ts("task.done");
   const first = starts[0] ?? ends[0];
   const last = ends.at(-1);
-  if (first !== void 0 && last !== void 0) m.wall_min = r1((last - first) / 6e4);
+  if (first !== void 0 && last !== void 0) {
+    const p = pauseMs(a.times, first, last);
+    m.pause_min = r1(p / 6e4);
+    m.wall_min = r1((last - first - p) / 6e4);
+  }
   return m;
 }
 function renderMetrics(sprintId2, plan, m) {
@@ -2027,7 +2220,9 @@ function renderMetrics(sprintId2, plan, m) {
     const a = m.actual_min_by_task[t.id];
     const diff = a === void 0 ? "\u2014" : `${a - t.planned_min >= 0 ? "+" : "\u2212"}${fmtMin(Math.abs(a - t.planned_min))}`;
     const cost = m.usd_by_task[t.id];
-    return `| ${t.id} | ${fmtMin(t.planned_min)} | ${a === void 0 ? "\u2014" : fmtMin(a)} | ${diff} | ${cost === void 0 ? "\u2014" : usd2(cost)} |`;
+    const rev = m.review_min_by_task[t.id];
+    const real = a === void 0 ? "\u2014" : fmtMin(a) + (rev === void 0 ? "" : ` (revis\xE3o: ${fmtMin(rev)})`);
+    return `| ${t.id} | ${fmtMin(t.planned_min)} | ${real} | ${diff} | ${cost === void 0 ? "\u2014" : usd2(cost)} |`;
   });
   const byAgent = Object.entries(m.usd_by_agent).map(([k, v]) => `${k} ${usd2(v)}`).join(" \xB7 ") || "\u2014";
   return [
@@ -2041,28 +2236,32 @@ function renderMetrics(sprintId2, plan, m) {
     "| Indicador | Valor |",
     "|---|---|",
     `| Tempo de rel\xF3gio (previsto \xB7 corrido) | ${fmtMin(m.planned_wall_min)} \xB7 ${fmtMin(m.wall_min)} |`,
+    `| Pausas (mais de 30 min sem eventos, fora do corrido) | ${fmtMin(m.pause_min)} |`,
     `| Soma das tarefas (planejada \xB7 real) | ${fmtMin(m.planned_min)} \xB7 ${fmtMin(m.actual_min)} |`,
     `| Tarefas feitas | ${m.tasks_done}/${m.tasks_total} |`,
     `| Tokens (entrada / sa\xEDda / escrita em cache / leitura de cache) | ${tok(m.tokens_input)} / ${tok(m.tokens_output)} / ${tok(m.tokens_cache_write)} / ${tok(m.tokens_cache_read)} |`,
     `| Custo total | ${usd2(m.usd)} |`,
     `| Custo por agente | ${byAgent} |`,
     `| Retrabalho (ajustes pedidos por Daniel) | ${m.rework} |`,
+    `| Rodadas de ajuste (quantidade \xB7 tempo \xB7 custo) | ${m.feedback_rounds} \xB7 ${fmtMin(m.feedback_min)} \xB7 ${usd2(m.feedback_usd)} |`,
     `| Reprova\xE7\xF5es do Reviewer | ${m.review_rejections} |`,
     `| Alertas de contexto | ${m.context_alerts} |`,
     `| Handoffs | ${m.handoffs} |`
   ].join("\n");
 }
-var import_node_crypto2, fs15, path16, APPROVAL_RE, EXEC_HEADING, lf, cells, DONE, DOING, TODO, EXEC_HEADER, EXEC_NOTE, TOTAL, dateHM, r1, r4, num, usd2, tok;
+var import_node_crypto2, fs16, path17, APPROVAL_RE, EXEC_HEADING, PAUSE_MS, lf, cells, DONE, DOING, TODO, EXEC_HEADER, EXEC_NOTE, TOTAL, dateHM, r1, r4, num, usd2, tok;
 var init_sprint = __esm({
   "cli/src/sprint/index.ts"() {
     "use strict";
     import_node_crypto2 = require("node:crypto");
-    fs15 = __toESM(require("node:fs"));
-    path16 = __toESM(require("node:path"));
+    fs16 = __toESM(require("node:fs"));
+    path17 = __toESM(require("node:path"));
+    init_projects();
     init_time();
     init_emit();
     APPROVAL_RE = /^## Aprovação/m;
     EXEC_HEADING = "## Execu\xE7\xE3o";
+    PAUSE_MS = 30 * 6e4;
     lf = (text) => text.replace(/\r\n/g, "\n");
     cells = (row) => row.trim().replace(/^\||(?<!\\)\|$/g, "").split(/(?<!\\)\|/).map((c) => c.trim().replace(/\\\|/g, "|"));
     DONE = "\u2705";
@@ -2125,7 +2324,7 @@ function sessionStart(input) {
   const lh = state.lastHandoff;
   if (lh && !lh.consumed && (source === "compact" || source === "startup")) {
     try {
-      let text = fs16.readFileSync(lh.file, "utf8");
+      let text = fs17.readFileSync(lh.file, "utf8");
       if (text.length > HANDOFF_MAX) text = `${text.slice(0, HANDOFF_MAX)}
 [...]`;
       parts2.push(`\xDAltimo handoff:
@@ -2144,11 +2343,11 @@ Continue a sprint a partir deste handoff.`);
     hookSpecificOutput: { hookEventName: "SessionStart", additionalContext: parts2.join("\n\n") }
   });
 }
-var fs16, HANDOFF_MAX;
+var fs17, HANDOFF_MAX;
 var init_session_start = __esm({
   "cli/src/hooks/session-start.ts"() {
     "use strict";
-    fs16 = __toESM(require("node:fs"));
+    fs17 = __toESM(require("node:fs"));
     init_migrate();
     init_config();
     init_log();
@@ -2184,12 +2383,14 @@ var init_hooks = __esm({
     init_lifecycle();
     init_post_edit();
     init_pre_bash();
+    init_pre_edit();
     init_runner();
     init_session_start();
     HOOKS = {
       "session-start": sessionStart,
       "post-edit": postEdit,
       "pre-bash": preBash,
+      "pre-edit": preEdit,
       stop,
       "subagent-stop": subagentStop,
       "pre-compact": preCompact,
@@ -2233,30 +2434,30 @@ function boolFlag(p, name) {
 }
 function loadPlan(root, sprintId2) {
   const file2 = planPath(root, sprintId2);
-  if (!fs17.existsSync(file2))
+  if (!fs18.existsSync(file2))
     throw new Error(`plano n\xE3o encontrado: docs/sprints/${sprintId2}-plan.md`);
-  const text = fs17.readFileSync(file2, "utf8");
+  const text = fs18.readFileSync(file2, "utf8");
   const plan = parsePlan(text);
   plan.execution = readExecution(root, sprintId2);
   return { file: file2, text, plan };
 }
 function createNew(dir, stem, content) {
   for (let n2 = 1; ; n2++) {
-    const file2 = path17.join(dir, `${stem}${n2 > 1 ? `-${n2}` : ""}.md`);
+    const file2 = path18.join(dir, `${stem}${n2 > 1 ? `-${n2}` : ""}.md`);
     try {
-      fs17.writeFileSync(file2, content, { flag: "wx" });
+      fs18.writeFileSync(file2, content, { flag: "wx" });
       return file2;
     } catch (e) {
       if (e.code !== "EEXIST") throw e;
     }
   }
 }
-var fs17, path17, sprintId;
+var fs18, path18, sprintId;
 var init_cmd = __esm({
   "cli/src/sprint/cmd.ts"() {
     "use strict";
-    fs17 = __toESM(require("node:fs"));
-    path17 = __toESM(require("node:path"));
+    fs18 = __toESM(require("node:fs"));
+    path18 = __toESM(require("node:path"));
     init_args();
     init_emit();
     init_sprint();
@@ -2309,6 +2510,7 @@ function run3(args) {
   );
   const ev = { project: ctx.id, session: ctx.session, sprint, task: id, agent: ctx.agent, ts: at };
   if (sub === "phase") {
+    emit({ ...ev, type: "task.phase", data: { phase: times.phase ?? "" } });
     console.log(renderTaskList(ctx.root, sprint));
     return 0;
   }
@@ -2407,16 +2609,14 @@ function open(ctx, p, id) {
     s2.activeSprint = id;
     s2.sprintOpenedAt ??= at;
   });
-  updateExecution(
-    ctx.root,
-    id,
-    plan.tasks,
-    (t) => plan.execution[t.id]?.line ?? taskLine(t, st.tasks[t.id]),
-    st.tasks
-  );
+  refresh(ctx, id, plan, st.tasks);
   emit({ ...base(ctx, id), type: "sprint.open", ts: at, data: { tasks: plan.tasks.length } });
   console.log(renderTaskList(ctx.root, id));
   return 0;
+}
+function refresh(ctx, id, plan, tasks = readState(ctx.id).tasks) {
+  const line2 = (t) => plan.execution[t.id]?.line ?? taskLine(t, tasks[t.id]);
+  updateExecution(ctx.root, id, plan.tasks, line2, tasks);
 }
 function feedback(ctx, arg) {
   const n2 = Number(arg);
@@ -2424,6 +2624,7 @@ function feedback(ctx, arg) {
     throw new Error("uso: hx sprint feedback <n de ajustes>");
   if (!ctx.sprint) throw new Error("nenhuma sprint aberta");
   emit({ ...base(ctx, ctx.sprint), type: "sprint.feedback", data: { adjustments: n2 } });
+  refresh(ctx, ctx.sprint, loadPlan(ctx.root, ctx.sprint).plan);
   console.log(`Retorno de Daniel registrado: ${n2} ajuste(s).`);
   return 0;
 }
@@ -2443,6 +2644,7 @@ function close(ctx, p, id, force) {
     ts: at,
     data: { tasks_done: done, tasks_total: plan.tasks.length, duration_s }
   });
+  refresh(ctx, id, plan, st.tasks);
   const m = computeMetrics(ctx.id, id, plan);
   emit({ ...base(ctx, id), type: "sprint.metrics", ts: at, data: { ...m } });
   updateState(ctx.id, (s2) => {
@@ -2457,9 +2659,10 @@ function close(ctx, p, id, force) {
     )
   );
   const wait = (Date.parse(at) - lastDone) / 6e4;
+  const paused = m.pause_min ? ` (pausas: ${fmtMin(m.pause_min)})` : "";
   const waited = wait >= 1 && Number.isFinite(wait) ? ` (aguardou teste por ${fmtMin(wait)})` : "";
   console.log(
-    `Sprint ${id} fechada: ${done}/${plan.tasks.length} tarefas em ${fmtMin(m.wall_min)}${waited}
+    `Sprint ${id} fechada: ${done}/${plan.tasks.length} tarefas em ${fmtMin(m.wall_min)}${paused}${waited}
 
 ${renderMetrics(id, plan, m)}`
   );
@@ -2531,7 +2734,7 @@ function run6(args) {
   const ctx = commandContext(process.cwd(), flagStr(p, "agent"));
   const last = readState(ctx.id).lastHandoff;
   if (p.flags.show !== void 0 || p.flags.consume !== void 0) {
-    if (!last || !fs18.existsSync(last.file)) {
+    if (!last || !fs19.existsSync(last.file)) {
       console.log("Nenhum handoff registrado neste projeto.");
       return 0;
     }
@@ -2540,19 +2743,19 @@ function run6(args) {
         if (s2.lastHandoff) s2.lastHandoff.consumed = true;
       });
       console.log(`Handoff marcado como consumido: ${last.file}`);
-    } else console.log(fs18.readFileSync(last.file, "utf8"));
+    } else console.log(fs19.readFileSync(last.file, "utf8"));
     return 0;
   }
   if (process.stdin.isTTY) throw new Error(EMPTY2);
   let body = "";
   try {
-    body = fs18.readFileSync(0, "utf8").trim();
+    body = fs19.readFileSync(0, "utf8").trim();
   } catch {
   }
   if (!body) throw new Error(EMPTY2);
   const at = utcStamp();
   const dir = home.handoffs(ctx.id);
-  fs18.mkdirSync(dir, { recursive: true });
+  fs19.mkdirSync(dir, { recursive: true });
   const stamp2 = at.slice(0, 19).replace(/[-:]/g, "").replace("T", "-");
   const header = [
     `# Handoff \u2014 ${ctx.harness.name || ctx.id}`,
@@ -2576,17 +2779,17 @@ ${body}
     sprint: ctx.sprint,
     agent: ctx.agent,
     ts: at,
-    data: { mode: "manual", file: path18.basename(file2) }
+    data: { mode: "manual", file: path19.basename(file2) }
   });
   console.log(`Handoff gravado: ${file2}`);
   return 0;
 }
-var fs18, path18, EMPTY2;
+var fs19, path19, EMPTY2;
 var init_handoff = __esm({
   "cli/src/commands/handoff.ts"() {
     "use strict";
-    fs18 = __toESM(require("node:fs"));
-    path18 = __toESM(require("node:path"));
+    fs19 = __toESM(require("node:fs"));
+    path19 = __toESM(require("node:path"));
     init_args();
     init_context();
     init_paths();
@@ -2611,7 +2814,7 @@ function run7(args) {
   }
   const cmd = parts2.length === 1 ? parts2[0] : parts2.map((a) => /\s/.test(a) ? `"${a}"` : a).join(" ");
   const t0 = Date.now();
-  const r = (0, import_node_child_process3.spawnSync)(cmd, {
+  const r = (0, import_node_child_process5.spawnSync)(cmd, {
     shell: true,
     // Git Bash hands Node "c:\..."; vitest then loads itself twice (c: vs C:) and every suite fails.
     cwd: process.cwd().replace(/^[a-z]:/, (d) => d.toUpperCase()),
@@ -2633,11 +2836,11 @@ ${r.stderr ?? ""}`.replace(ANSI_RE, "").split(/\r?\n/).map((l) => l.trimEnd()).f
   console.log(out.join("\n"));
   return code;
 }
-var import_node_child_process3, SUMMARY_RE, FAIL_RE, ANSI_RE;
+var import_node_child_process5, SUMMARY_RE, FAIL_RE, ANSI_RE;
 var init_run = __esm({
   "cli/src/commands/run.ts"() {
     "use strict";
-    import_node_child_process3 = require("node:child_process");
+    import_node_child_process5 = require("node:child_process");
     SUMMARY_RE = /\b(pass|passed|fail|failed|error|errors|warning|warnings|tests?)\b/i;
     FAIL_RE = /(error|erro|fail|falh|exception|✗|×)/i;
     ANSI_RE = /\x1b\[[0-9;]*[A-Za-z]/g;
@@ -2676,13 +2879,13 @@ function run8(args) {
     priority,
     example: flagStr(p, "example") ?? "\u2014"
   };
-  const template = fs19.readFileSync(
-    path19.join(pluginRoot(), "templates", "inbox-request.md"),
+  const template = fs20.readFileSync(
+    path20.join(pluginRoot(), "templates", "inbox-request.md"),
     "utf8"
   );
   const content = template.replace(/\{\{(\w+)\}\}/g, (m, k) => values[k] ?? m);
   const dir = loadConfig().inboxDir;
-  fs19.mkdirSync(dir, { recursive: true });
+  fs20.mkdirSync(dir, { recursive: true });
   const stem = `${date}-${ctx.id}-${slugify(title).slice(0, 60).replace(/-+$/, "")}`;
   const file2 = createNew(dir, stem, content);
   emit({
@@ -2691,17 +2894,17 @@ function run8(args) {
     session: ctx.session,
     sprint: ctx.sprint,
     agent: ctx.agent,
-    data: { file: path19.basename(file2), priority }
+    data: { file: path20.basename(file2), priority }
   });
   console.log(`Pedido criado: ${file2}`);
   return 0;
 }
-var fs19, path19, PRIORITIES;
+var fs20, path20, PRIORITIES;
 var init_request = __esm({
   "cli/src/commands/request.ts"() {
     "use strict";
-    fs19 = __toESM(require("node:fs"));
-    path19 = __toESM(require("node:path"));
+    fs20 = __toESM(require("node:fs"));
+    path20 = __toESM(require("node:path"));
     init_args();
     init_config();
     init_context();
@@ -2799,11 +3002,11 @@ function run10(args) {
     return 0;
   }
   const only = flagStr(p, "session");
-  const sessions = only ? [only] : fs20.readdirSync(dir).filter((f) => f.endsWith(".jsonl")).map((f) => f.slice(0, -6));
+  const sessions = only ? [only] : fs21.readdirSync(dir).filter((f) => f.endsWith(".jsonl")).map((f) => f.slice(0, -6));
   const fresh = [];
   for (const id of sessions) {
-    const transcriptPath = path20.join(dir, `${id}.jsonl`);
-    if (!fs20.existsSync(transcriptPath)) {
+    const transcriptPath = path21.join(dir, `${id}.jsonl`);
+    if (!fs21.existsSync(transcriptPath)) {
       console.error(`Sess\xE3o n\xE3o encontrada: ${id}`);
       return 1;
     }
@@ -2826,12 +3029,12 @@ function run10(args) {
   );
   return 0;
 }
-var fs20, path20, zero, fmt, line;
+var fs21, path21, zero, fmt, line;
 var init_usage2 = __esm({
   "cli/src/commands/usage.ts"() {
     "use strict";
-    fs20 = __toESM(require("node:fs"));
-    path20 = __toESM(require("node:path"));
+    fs21 = __toESM(require("node:fs"));
+    path21 = __toESM(require("node:path"));
     init_args();
     init_context();
     init_emit();
@@ -2849,13 +3052,13 @@ function classify(root) {
     const name = e.name;
     if (IGNORED.has(name)) continue;
     if (name === ".claude" && e.isDirectory()) {
-      for (const c of entries(path21.join(root, name)))
+      for (const c of entries(path22.join(root, name)))
         if (!CLAUDE_KEEP.has(c.name)) out.harness.push(`.claude/${c.name}`);
     } else if (name === ".github" && e.isDirectory()) {
-      for (const c of entries(path21.join(root, name)))
+      for (const c of entries(path22.join(root, name)))
         (c.name === "copilot-instructions.md" ? out.harness : out.system).push(`.github/${c.name}`);
     } else if (HARNESS_FILES.test(name)) out.harness.push(name);
-    else if (e.isDirectory() && /^(prompts|agents)$/i.test(name) && entries(path21.join(root, name)).some((c) => c.name.endsWith(".md")))
+    else if (e.isDirectory() && /^(prompts|agents)$/i.test(name) && entries(path22.join(root, name)).some((c) => c.name.endsWith(".md")))
       out.harness.push(name);
     else if (name === "docs" || /^readme/i.test(name) || e.isFile() && name.endsWith(".md"))
       out.docs.push(name);
@@ -2864,29 +3067,29 @@ function classify(root) {
   return out;
 }
 function hasPreviousHarness(root, c) {
-  return c.harness.length > 0 && !fs21.existsSync(path21.join(root, ".claude", "harness.json"));
+  return c.harness.length > 0 && !fs22.existsSync(path22.join(root, ".claude", "harness.json"));
 }
 function hasOtherLanguage(root) {
   for (const e of entries(root)) {
     if (IGNORED.has(e.name) || e.name.startsWith(".")) continue;
     if (e.isFile() && OTHER_CODE.test(e.name)) return true;
-    if (e.isDirectory() && entries(path21.join(root, e.name)).some((c) => OTHER_CODE.test(c.name)))
+    if (e.isDirectory() && entries(path22.join(root, e.name)).some((c) => OTHER_CODE.test(c.name)))
       return true;
   }
   return false;
 }
-var fs21, path21, IGNORED, HARNESS_FILES, CLAUDE_KEEP, entries, OTHER_CODE;
+var fs22, path22, IGNORED, HARNESS_FILES, CLAUDE_KEEP, entries, OTHER_CODE;
 var init_classify = __esm({
   "cli/src/attach/classify.ts"() {
     "use strict";
-    fs21 = __toESM(require("node:fs"));
-    path21 = __toESM(require("node:path"));
+    fs22 = __toESM(require("node:fs"));
+    path22 = __toESM(require("node:path"));
     IGNORED = /* @__PURE__ */ new Set(["node_modules", ".git", "dist"]);
     HARNESS_FILES = /^(CLAUDE\.md|AGENTS\.md|GEMINI\.md)$|^\.cursor|^\.windsurf|^\.aider/i;
     CLAUDE_KEEP = /* @__PURE__ */ new Set(["settings.json", "settings.local.json", "harness.json"]);
     entries = (dir) => {
       try {
-        return fs21.readdirSync(dir, { withFileTypes: true });
+        return fs22.readdirSync(dir, { withFileTypes: true });
       } catch {
         return [];
       }
@@ -2936,30 +3139,30 @@ function writePlan3(root, harness, creates, backup) {
     "Para aprovar: `hx attach --approved`.",
     ""
   ];
-  const file2 = path22.join(root, PLAN_FILE);
-  fs22.mkdirSync(path22.dirname(file2), { recursive: true });
-  fs22.writeFileSync(file2, lines.join("\n"));
+  const file2 = path23.join(root, PLAN_FILE);
+  fs23.mkdirSync(path23.dirname(file2), { recursive: true });
+  fs23.writeFileSync(file2, lines.join("\n"));
   return lines.join("\n");
 }
 function moveToLegacy(root, harness, useGit) {
   for (const rel of harness) {
-    const from = path22.join(root, rel);
-    const to = path22.join(root, LEGACY_DIR, rel);
-    if (!fs22.existsSync(from)) continue;
-    fs22.mkdirSync(path22.dirname(to), { recursive: true });
+    const from = path23.join(root, rel);
+    const to = path23.join(root, LEGACY_DIR, rel);
+    if (!fs23.existsSync(from)) continue;
+    fs23.mkdirSync(path23.dirname(to), { recursive: true });
     if (useGit) gitRun(root, ["mv", "-k", rel, `${LEGACY_DIR}/${rel}`]);
-    if (fs22.existsSync(from)) {
-      fs22.cpSync(from, to, { recursive: true });
-      fs22.rmSync(from, { recursive: true, force: true });
+    if (fs23.existsSync(from)) {
+      fs23.cpSync(from, to, { recursive: true });
+      fs23.rmSync(from, { recursive: true, force: true });
     }
   }
 }
-var fs22, path22, PLAN_FILE, LEGACY_DIR;
+var fs23, path23, PLAN_FILE, LEGACY_DIR;
 var init_reorg = __esm({
   "cli/src/attach/reorg.ts"() {
     "use strict";
-    fs22 = __toESM(require("node:fs"));
-    path22 = __toESM(require("node:path"));
+    fs23 = __toESM(require("node:fs"));
+    path23 = __toESM(require("node:path"));
     init_git();
     PLAN_FILE = "docs/harness-reorg-plan.md";
     LEGACY_DIR = "docs/legacy-harness";
@@ -2968,37 +3171,37 @@ var init_reorg = __esm({
 
 // cli/src/attach/skills.ts
 function catalogDir() {
-  return path23.join(pluginRoot(), "skills", "optional");
+  return path24.join(pluginRoot(), "skills", "optional");
 }
 function listCatalog() {
   try {
-    return fs23.readdirSync(catalogDir(), { withFileTypes: true }).filter((e) => e.isDirectory()).map((e) => e.name).sort();
+    return fs24.readdirSync(catalogDir(), { withFileTypes: true }).filter((e) => e.isDirectory()).map((e) => e.name).sort();
   } catch {
     return [];
   }
 }
 function projectSkillDir(root, name) {
-  return path23.join(root, ".claude", "skills", name);
+  return path24.join(root, ".claude", "skills", name);
 }
 function enableSkill(root, name) {
   const dest = projectSkillDir(root, name);
-  fs23.rmSync(dest, { recursive: true, force: true });
-  fs23.cpSync(path23.join(catalogDir(), name), dest, { recursive: true });
+  fs24.rmSync(dest, { recursive: true, force: true });
+  fs24.cpSync(path24.join(catalogDir(), name), dest, { recursive: true });
 }
 function disableSkill(root, name) {
-  fs23.rmSync(projectSkillDir(root, name), { recursive: true, force: true });
+  fs24.rmSync(projectSkillDir(root, name), { recursive: true, force: true });
 }
 function isWebProject(root, pkg) {
   const deps = { ...pkg?.dependencies ?? {}, ...pkg?.devDependencies ?? {} };
   if (Object.keys(deps).some((d) => WEB_DEPS.has(d))) return true;
-  return ["", "public", "src"].some((d) => fs23.existsSync(path23.join(root, d, "index.html")));
+  return ["", "public", "src"].some((d) => fs24.existsSync(path24.join(root, d, "index.html")));
 }
-var fs23, path23, WEB_DEPS;
+var fs24, path24, WEB_DEPS;
 var init_skills = __esm({
   "cli/src/attach/skills.ts"() {
     "use strict";
-    fs23 = __toESM(require("node:fs"));
-    path23 = __toESM(require("node:path"));
+    fs24 = __toESM(require("node:fs"));
+    path24 = __toESM(require("node:path"));
     init_paths();
     WEB_DEPS = /* @__PURE__ */ new Set([
       "react",
@@ -3025,11 +3228,11 @@ function which(cmd) {
   if (cmd === "claude" && process.env.HARNESS_CLAUDE_BIN) return process.env.HARNESS_CLAUDE_BIN;
   const win = process.platform === "win32";
   const exts = win ? (process.env.PATHEXT || ".COM;.EXE;.BAT;.CMD").split(";") : [""];
-  for (const dir of (process.env.PATH || "").split(path24.delimiter)) {
+  for (const dir of (process.env.PATH || "").split(path25.delimiter)) {
     if (!dir) continue;
     for (const ext of exts) {
-      const f = path24.join(dir, cmd + ext.toLowerCase());
-      if (fs24.existsSync(f) && fs24.statSync(f).isFile()) return f;
+      const f = path25.join(dir, cmd + ext.toLowerCase());
+      if (fs25.existsSync(f) && fs25.statSync(f).isFile()) return f;
     }
   }
   return null;
@@ -3039,51 +3242,51 @@ function runTool(cmd, args, timeout = 5e3, cwd) {
   if (!bin) return { ok: false, out: "" };
   const o = { cwd, encoding: "utf8", timeout, windowsHide: true };
   let r;
-  if (/\.(c|m)?js$/i.test(bin)) r = (0, import_node_child_process4.spawnSync)(process.execPath, [bin, ...args], o);
+  if (/\.(c|m)?js$/i.test(bin)) r = (0, import_node_child_process6.spawnSync)(process.execPath, [bin, ...args], o);
   else if (/\.(cmd|bat)$/i.test(bin)) {
     const all = [bin, ...args];
     if (all.some((a) => /["%^&|<>!\r\n]/.test(a))) return { ok: false, out: "" };
     const line2 = `"${all.map((a) => `"${a}"`).join(" ")}"`;
-    r = (0, import_node_child_process4.spawnSync)(process.env.ComSpec || "cmd.exe", ["/d", "/s", "/c", line2], {
+    r = (0, import_node_child_process6.spawnSync)(process.env.ComSpec || "cmd.exe", ["/d", "/s", "/c", line2], {
       ...o,
       windowsVerbatimArguments: true
     });
-  } else r = (0, import_node_child_process4.spawnSync)(bin, args, o);
+  } else r = (0, import_node_child_process6.spawnSync)(bin, args, o);
   return { ok: !r.error && r.status === 0, out: `${r.stdout ?? ""}${r.stderr ?? ""}`.trim() };
 }
-var import_node_child_process4, fs24, path24;
+var import_node_child_process6, fs25, path25;
 var init_proc = __esm({
   "cli/src/core/proc.ts"() {
     "use strict";
-    import_node_child_process4 = require("node:child_process");
-    fs24 = __toESM(require("node:fs"));
-    path24 = __toESM(require("node:path"));
+    import_node_child_process6 = require("node:child_process");
+    fs25 = __toESM(require("node:fs"));
+    path25 = __toESM(require("node:path"));
   }
 });
 
 // cli/src/attach/setup.ts
 function templatePath(name) {
-  return path25.join(pluginRoot(), "templates", name);
+  return path26.join(pluginRoot(), "templates", name);
 }
 function render(name, vars) {
-  return fs25.readFileSync(templatePath(name), "utf8").replace(/\{\{(\w+)\}\}/g, (m, k) => vars[k] ?? m);
+  return fs26.readFileSync(templatePath(name), "utf8").replace(/\{\{(\w+)\}\}/g, (m, k) => vars[k] ?? m);
 }
 function createIfMissing(file2, content) {
-  if (fs25.existsSync(file2)) return false;
-  fs25.mkdirSync(path25.dirname(file2), { recursive: true });
-  fs25.writeFileSync(file2, content);
+  if (fs26.existsSync(file2)) return false;
+  fs26.mkdirSync(path26.dirname(file2), { recursive: true });
+  fs26.writeFileSync(file2, content);
   return true;
 }
 function setupLint(root, install) {
-  const pkgFile = path25.join(root, "package.json");
+  const pkgFile = path26.join(root, "package.json");
   const pkg = readJson(pkgFile, null);
   const hasEslint = (f) => ESLINT_CONFIG.test(f) || f.startsWith(".eslintrc");
-  if (fs25.readdirSync(root).some(hasEslint) || pkg?.eslintConfig)
+  if (fs26.readdirSync(root).some(hasEslint) || pkg?.eslintConfig)
     return "lint: o repo j\xE1 tem ESLint; mantido.";
   if (!pkg && hasOtherLanguage(root))
     return "lint: projeto de outra linguagem; o lint padr\xE3o n\xE3o se aplica.";
   const next = pkg ?? {
-    name: path25.basename(root).toLowerCase().replace(/[^a-z0-9-]+/g, "-"),
+    name: path26.basename(root).toLowerCase().replace(/[^a-z0-9-]+/g, "-"),
     private: true
   };
   const dev = { ...next.devDependencies ?? {} };
@@ -3096,12 +3299,12 @@ function setupLint(root, install) {
     [".prettierrc", ".prettierrc"],
     ["tsconfig.json", "tsconfig.json"]
   ])
-    createIfMissing(path25.join(root, dest), fs25.readFileSync(templatePath(`lint/${src}`), "utf8"));
+    createIfMissing(path26.join(root, dest), fs26.readFileSync(templatePath(`lint/${src}`), "utf8"));
   if (!install) return "lint: ESLint + Prettier configurados (npm install pulado).";
   return runTool("npm", ["install"], INSTALL_MS, root).ok ? "lint: ESLint + Prettier instalados." : "lint: configurado, mas o npm install falhou; rode npm install no repo.";
 }
 function mergeSettings(root, contextLimit) {
-  const file2 = path25.join(root, ".claude", "settings.json");
+  const file2 = path26.join(root, ".claude", "settings.json");
   const s2 = readJson(file2, {});
   const perms = s2.permissions ?? {};
   const allow = perms.allow ?? [];
@@ -3121,7 +3324,7 @@ function installPlugins(root) {
     (id) => !runTool("claude", ["plugin", "install", id, "--scope", "project"], PLUGIN_MS, root).ok
   );
   if (!failed.length) return "plugins: instalados no projeto.";
-  const file2 = path25.join(root, ".claude", "settings.json");
+  const file2 = path26.join(root, ".claude", "settings.json");
   const s2 = readJson(file2, {});
   const enabled = { ...s2.enabledPlugins ?? {} };
   for (const id of failed) enabled[id] = true;
@@ -3130,7 +3333,7 @@ function installPlugins(root) {
   return `plugins: o comando claude falhou; ${failed.join(", ")} ligados direto no settings.`;
 }
 function updatePlugins(roots) {
-  const live = roots.filter((r) => fs25.existsSync(r));
+  const live = roots.filter((r) => fs26.existsSync(r));
   const perProject = live.map(
     (r) => PLUGINS.filter(
       (id) => !runTool("claude", ["plugin", "update", id, "--scope", "project"], PLUGIN_MS, r).ok
@@ -3140,12 +3343,12 @@ function updatePlugins(roots) {
   const failed = perProject.flat();
   return `- plugins atualizados em ${ok} projeto(s)${failed.length ? `; falhou em: ${failed.join(", ")}` : ""}.`;
 }
-var fs25, path25, PLUGINS, LINT_DEV_DEPS, INSTALL_MS, PLUGIN_MS;
+var fs26, path26, PLUGINS, LINT_DEV_DEPS, INSTALL_MS, PLUGIN_MS;
 var init_setup = __esm({
   "cli/src/attach/setup.ts"() {
     "use strict";
-    fs25 = __toESM(require("node:fs"));
-    path25 = __toESM(require("node:path"));
+    fs26 = __toESM(require("node:fs"));
+    path26 = __toESM(require("node:path"));
     init_fsx();
     init_paths();
     init_proc();
@@ -3171,26 +3374,26 @@ var init_setup = __esm({
 
 // cli/src/core/shim.ts
 function writeShims(stableDir) {
-  const js = path26.join(path26.resolve(stableDir), "cli", "dist", "hx.js");
+  const js = path27.join(path27.resolve(stableDir), "cli", "dist", "hx.js");
   const posix2 = js.replace(/\\/g, "/");
-  fs26.mkdirSync(shimDir(), { recursive: true });
-  fs26.writeFileSync(path26.join(shimDir(), "hx"), `#!/bin/sh
+  fs27.mkdirSync(shimDir(), { recursive: true });
+  fs27.writeFileSync(path27.join(shimDir(), "hx"), `#!/bin/sh
 exec node "${posix2}" "$@"
 `, {
     mode: 493
   });
-  fs26.writeFileSync(path26.join(shimDir(), "hx.cmd"), `@node "${js}" %*\r
+  fs27.writeFileSync(path27.join(shimDir(), "hx.cmd"), `@node "${js}" %*\r
 `);
 }
 function hxOnPath(envPath = process.env.PATH ?? "") {
-  return envPath.split(path26.delimiter).filter(Boolean).some((d) => ["hx", "hx.cmd"].some((f) => fs26.existsSync(path26.join(d, f))));
+  return envPath.split(path27.delimiter).filter(Boolean).some((d) => ["hx", "hx.cmd"].some((f) => fs27.existsSync(path27.join(d, f))));
 }
 function addToUserPath(dir) {
   if (process.platform !== "win32" || process.env.HARNESS_NO_PATH) return null;
   const q = reg(["query", "HKCU\\Environment", "/v", "Path"]);
   const cur = /Path\s+REG_(?:EXPAND_)?SZ\s+(.*)/i.exec(q.stdout ?? "")?.[1]?.trim() ?? "";
   const parts2 = cur.split(";").filter(Boolean);
-  if (parts2.some((p) => path26.resolve(p).toLowerCase() === path26.resolve(dir).toLowerCase()))
+  if (parts2.some((p) => path27.resolve(p).toLowerCase() === path27.resolve(dir).toLowerCase()))
     return "present";
   const add2 = reg([
     "add",
@@ -3204,19 +3407,19 @@ function addToUserPath(dir) {
     "/f"
   ]);
   if (add2.status !== 0) return `falha ao gravar o PATH: ${(add2.stderr ?? "").trim()}`;
-  (0, import_node_child_process5.spawnSync)("setx", ["HARNESS_BIN", dir], { windowsHide: true, stdio: "ignore" });
+  (0, import_node_child_process7.spawnSync)("setx", ["HARNESS_BIN", dir], { windowsHide: true, stdio: "ignore" });
   return "added";
 }
-var import_node_child_process5, fs26, path26, shimDir, reg;
+var import_node_child_process7, fs27, path27, shimDir, reg;
 var init_shim = __esm({
   "cli/src/core/shim.ts"() {
     "use strict";
-    import_node_child_process5 = require("node:child_process");
-    fs26 = __toESM(require("node:fs"));
-    path26 = __toESM(require("node:path"));
+    import_node_child_process7 = require("node:child_process");
+    fs27 = __toESM(require("node:fs"));
+    path27 = __toESM(require("node:path"));
     init_paths();
-    shimDir = () => path26.join(harnessHome(), "bin");
-    reg = (args) => (0, import_node_child_process5.spawnSync)("reg", args, {
+    shimDir = () => path27.join(harnessHome(), "bin");
+    reg = (args) => (0, import_node_child_process7.spawnSync)("reg", args, {
       encoding: "utf8",
       windowsHide: true,
       stdio: ["ignore", "pipe", "pipe"]
@@ -3233,24 +3436,24 @@ __export(setup_exports, {
 });
 function userHomeVarSet() {
   if (process.platform !== "win32") return true;
-  return (0, import_node_child_process6.spawnSync)("reg", ["query", "HKCU\\Environment", "/v", "HOME"], { windowsHide: true }).status === 0;
+  return (0, import_node_child_process8.spawnSync)("reg", ["query", "HKCU\\Environment", "/v", "HOME"], { windowsHide: true }).status === 0;
 }
 function disablePonytailBand(setx = (a) => process.env.HARNESS_NO_PATH || runTool("setx", a), homeVarSet = userHomeVarSet) {
-  fs27.mkdirSync(claudeHome(), { recursive: true });
-  fs27.writeFileSync(path27.join(claudeHome(), ".ponytail-band"), "off");
+  fs28.mkdirSync(claudeHome(), { recursive: true });
+  fs28.writeFileSync(path28.join(claudeHome(), ".ponytail-band"), "off");
   if (!homeVarSet()) setx(["HOME", os3.homedir()]);
 }
 function run11(args) {
   const dry = parseArgs(args).flags["dry-run"] === true;
   const say = (msg) => console.log(dry ? `[simula\xE7\xE3o] ${msg}` : msg);
-  if (fs27.existsSync(home.config())) say("config.json j\xE1 existe");
+  if (fs28.existsSync(home.config())) say("config.json j\xE1 existe");
   else {
     if (!dry) ensureConfig();
     say(`config.json criado em ${home.config()}`);
   }
   const cfg = loadConfig();
   const known = readJson(
-    path27.join(claudeHome(), "plugins", "known_marketplaces.json"),
+    path28.join(claudeHome(), "plugins", "known_marketplaces.json"),
     {}
   );
   if (known["harness-stable"]) say("marketplace harness-stable j\xE1 registrado");
@@ -3264,15 +3467,15 @@ function run11(args) {
       }
     }
   }
-  const src = path27.join(pluginRoot(), "skills-user", "attach");
-  const dest = path27.join(claudeHome(), "skills", "attach");
+  const src = path28.join(pluginRoot(), "skills-user", "attach");
+  const dest = path28.join(claudeHome(), "skills", "attach");
   say(`instalando a skill /attach em ${dest}`);
   if (!dry) {
-    fs27.rmSync(dest, { recursive: true, force: true });
-    fs27.cpSync(src, dest, { recursive: true });
-    const skill = path27.join(dest, "SKILL.md");
+    fs28.rmSync(dest, { recursive: true, force: true });
+    fs28.cpSync(src, dest, { recursive: true });
+    const skill = path28.join(dest, "SKILL.md");
     const stable = cfg.stableDir.replace(/\\/g, "/").replace(/\/+$/, "");
-    fs27.writeFileSync(skill, fs27.readFileSync(skill, "utf8").split(PLACEHOLDER).join(stable));
+    fs28.writeFileSync(skill, fs28.readFileSync(skill, "utf8").split(PLACEHOLDER).join(stable));
   }
   say("desligando o painel do ponytail (Task board: /plugin \u2192 ponytail \u2192 Task board)");
   if (!dry) disablePonytailBand();
@@ -3291,14 +3494,14 @@ function run11(args) {
   );
   return 0;
 }
-var import_node_child_process6, fs27, os3, path27, PLACEHOLDER;
+var import_node_child_process8, fs28, os3, path28, PLACEHOLDER;
 var init_setup2 = __esm({
   "cli/src/commands/setup.ts"() {
     "use strict";
-    import_node_child_process6 = require("node:child_process");
-    fs27 = __toESM(require("node:fs"));
+    import_node_child_process8 = require("node:child_process");
+    fs28 = __toESM(require("node:fs"));
     os3 = __toESM(require("node:os"));
-    path27 = __toESM(require("node:path"));
+    path28 = __toESM(require("node:path"));
     init_args();
     init_config();
     init_fsx();
@@ -3328,18 +3531,18 @@ function pythonVersion() {
   return null;
 }
 function pluginAvailable(id) {
-  const dir = path28.join(claudeHome(), "plugins");
+  const dir = path29.join(claudeHome(), "plugins");
   const inst = readJson(
-    path28.join(dir, "installed_plugins.json"),
+    path29.join(dir, "installed_plugins.json"),
     {}
   );
   if ((inst.plugins ?? inst)[id]) return true;
   const [name = "", market = ""] = id.split("@");
-  return fs28.existsSync(path28.join(dir, "cache", market, name));
+  return fs29.existsSync(path29.join(dir, "cache", market, name));
 }
 function installedVersion(id, root) {
   const inst = readJson(
-    path28.join(claudeHome(), "plugins", "installed_plugins.json"),
+    path29.join(claudeHome(), "plugins", "installed_plugins.json"),
     {}
   );
   const list = inst.plugins?.[id] ?? [];
@@ -3349,13 +3552,13 @@ function installedVersion(id, root) {
 function availableVersion(id) {
   const [name = "", market = ""] = id.split("@");
   const known = readJson(
-    path28.join(claudeHome(), "plugins", "known_marketplaces.json"),
+    path29.join(claudeHome(), "plugins", "known_marketplaces.json"),
     {}
   );
   const loc = known[market]?.installLocation;
   if (!loc) return null;
   const mk = readJson(
-    path28.join(loc, ".claude-plugin", "marketplace.json"),
+    path29.join(loc, ".claude-plugin", "marketplace.json"),
     {}
   );
   const entry = mk.plugins?.find((p) => p.name === name);
@@ -3363,17 +3566,17 @@ function availableVersion(id) {
   if (entry.version) return entry.version;
   if (typeof entry.source !== "string") return null;
   return readJson(
-    path28.join(loc, entry.source, ".claude-plugin", "plugin.json"),
+    path29.join(loc, entry.source, ".claude-plugin", "plugin.json"),
     {}
   ).version ?? null;
 }
 function spacesWork(hx) {
-  const dir = fs28.mkdtempSync(path28.join(os4.tmpdir(), "hx doctor "));
+  const dir = fs29.mkdtempSync(path29.join(os4.tmpdir(), "hx doctor "));
   try {
-    const f = path28.join(dir, "teste com espa\xE7o.txt");
-    fs28.writeFileSync(f, "ok");
-    if (fs28.readFileSync(f, "utf8") !== "ok") return false;
-    const r = (0, import_node_child_process7.spawnSync)(process.execPath, [hx, "version"], {
+    const f = path29.join(dir, "teste com espa\xE7o.txt");
+    fs29.writeFileSync(f, "ok");
+    if (fs29.readFileSync(f, "utf8") !== "ok") return false;
+    const r = (0, import_node_child_process9.spawnSync)(process.execPath, [hx, "version"], {
       cwd: dir,
       encoding: "utf8",
       timeout: TIMEOUT,
@@ -3381,15 +3584,15 @@ function spacesWork(hx) {
     });
     return r.status === 0 && /\d+\.\d+\.\d+/.test(r.stdout);
   } finally {
-    fs28.rmSync(dir, { recursive: true, force: true });
+    fs29.rmSync(dir, { recursive: true, force: true });
   }
 }
 function eventsWritable() {
   try {
-    fs28.mkdirSync(home.events(), { recursive: true });
-    const f = path28.join(home.events(), `.doctor-${process.pid}.tmp`);
-    fs28.writeFileSync(f, "");
-    fs28.rmSync(f);
+    fs29.mkdirSync(home.events(), { recursive: true });
+    const f = path29.join(home.events(), `.doctor-${process.pid}.tmp`);
+    fs29.writeFileSync(f, "");
+    fs29.rmSync(f);
     return true;
   } catch {
     return false;
@@ -3431,12 +3634,12 @@ function runDoctor(opts = {}) {
     "comando hx fora do PATH: rode hx setup e reabra o VS Code"
   );
   check(
-    fs28.existsSync(home.config()),
+    fs29.existsSync(home.config()),
     "config.json",
     `config.json ausente em ${home.config()}: rode hx setup`
   );
   const markets = readJson(
-    path28.join(claudeHome(), "plugins", "known_marketplaces.json"),
+    path29.join(claudeHome(), "plugins", "known_marketplaces.json"),
     {}
   );
   check(
@@ -3444,7 +3647,7 @@ function runDoctor(opts = {}) {
     "marketplace harness-stable",
     "marketplace harness-stable n\xE3o registrado: rode hx setup"
   );
-  const band = readText(path28.join(claudeHome(), ".ponytail-band"))?.trim();
+  const band = readText(path29.join(claudeHome(), ".ponytail-band"))?.trim();
   if (band !== "off" || !(opts.homeVarSet ?? userHomeVarSet)())
     lines.push(
       "\u26A0 painel do ponytail ligado: rode hx setup e reinicie o VS Code. O Task board desliga em /plugin \u2192 ponytail \u2192 Task board (o hx n\xE3o mexe na config do plugin)"
@@ -3463,7 +3666,7 @@ function runDoctor(opts = {}) {
     );
   if (root) {
     const st = readJson(
-      path28.join(root, ".claude", "settings.json"),
+      path29.join(root, ".claude", "settings.json"),
       {}
     );
     for (const id of PLUGINS) {
@@ -3498,7 +3701,7 @@ function runDoctor(opts = {}) {
   } catch {
   }
   const missing = SKILLS.filter(
-    (s2) => !plugin || !fs28.existsSync(path28.join(plugin, "skills", s2, "SKILL.md"))
+    (s2) => !plugin || !fs29.existsSync(path29.join(plugin, "skills", s2, "SKILL.md"))
   );
   check(
     !missing.length,
@@ -3506,8 +3709,8 @@ function runDoctor(opts = {}) {
     `skills ausentes no plugin: ${missing.join(", ")}`,
     true
   );
-  const hx = plugin ? path28.join(plugin, "cli", "dist", "hx.js") : "";
-  const hasHx = !!plugin && fs28.existsSync(hx);
+  const hx = plugin ? path29.join(plugin, "cli", "dist", "hx.js") : "";
+  const hasHx = !!plugin && fs29.existsSync(hx);
   check(hasHx, "cli/dist/hx.js", "cli/dist/hx.js ausente: rode npm run build no harness");
   check(
     hasHx && spacesWork(hx),
@@ -3527,14 +3730,14 @@ function run12(_args) {
   for (const l of r.lines) console.log(l);
   return r.ok ? 0 : 1;
 }
-var import_node_child_process7, fs28, os4, path28, TIMEOUT, SKILLS, THIRD_PARTY;
+var import_node_child_process9, fs29, os4, path29, TIMEOUT, SKILLS, THIRD_PARTY;
 var init_doctor = __esm({
   "cli/src/commands/doctor.ts"() {
     "use strict";
-    import_node_child_process7 = require("node:child_process");
-    fs28 = __toESM(require("node:fs"));
+    import_node_child_process9 = require("node:child_process");
+    fs29 = __toESM(require("node:fs"));
     os4 = __toESM(require("node:os"));
-    path28 = __toESM(require("node:path"));
+    path29 = __toESM(require("node:path"));
     init_setup();
     init_fsx();
     init_proc();
@@ -3572,8 +3775,8 @@ function indexMd(root, vars) {
 }
 function run13(args) {
   const p = parseArgs(args);
-  const root = path29.resolve(p._[0] ?? process.cwd());
-  if (!fs29.existsSync(root) || !fs29.statSync(root).isDirectory()) {
+  const root = path30.resolve(p._[0] ?? process.cwd());
+  if (!fs30.existsSync(root) || !fs30.statSync(root).isDirectory()) {
     console.error(`hx attach: pasta n\xE3o encontrada: ${root}`);
     return 1;
   }
@@ -3597,18 +3800,18 @@ function run13(args) {
     console.log(`Harness anterior movido para docs/legacy-harness/ (${c.harness.length} itens).`);
   }
   if (!git2) git(root, ["init", "-q", "-b", "main"]);
-  const ignore = path29.join(root, ".gitignore");
-  const ignored = fs29.existsSync(ignore) ? fs29.readFileSync(ignore, "utf8") : "";
+  const ignore = path30.join(root, ".gitignore");
+  const ignored = fs30.existsSync(ignore) ? fs30.readFileSync(ignore, "utf8") : "";
   if (!/^\/?node_modules\/?$/m.test(ignored))
-    fs29.appendFileSync(ignore, `${ignored && !ignored.endsWith("\n") ? "\n" : ""}node_modules/
+    fs30.appendFileSync(ignore, `${ignored && !ignored.endsWith("\n") ? "\n" : ""}node_modules/
 `);
-  const name = path29.basename(root);
+  const name = path30.basename(root);
   const prev = readHarnessJson(root);
   const id = prev?.project ?? slugify(name);
   const version = harnessVersion();
   const attachedAt = prev?.attachedAt ?? utcStamp();
   registerProject({ id, name, path: root, version, attachedAt });
-  const pkg = readJson(path29.join(root, "package.json"), null);
+  const pkg = readJson(path30.join(root, "package.json"), null);
   const web = isWebProject(root, pkg);
   const catalog = listCatalog();
   const optionalSkills = prev?.optionalSkills ?? (web ? catalog : []);
@@ -3623,15 +3826,15 @@ function run13(args) {
     migrations: prev?.migrations ?? []
   });
   const vars = { project: id, name, version, date: utcStamp().slice(0, 10) };
-  createIfMissing(path29.join(root, "docs", "backlog.md"), render("backlog.md", vars));
-  createIfMissing(path29.join(root, "docs", "roadmap.md"), render("roadmap.md", vars));
+  createIfMissing(path30.join(root, "docs", "backlog.md"), render("backlog.md", vars));
+  createIfMissing(path30.join(root, "docs", "roadmap.md"), render("roadmap.md", vars));
   for (const d of ["adr", "prd", "sprints"])
-    createIfMissing(path29.join(root, "docs", d, ".gitkeep"), "");
-  createIfMissing(path29.join(root, "CLAUDE.md"), render("CLAUDE.md", vars));
+    createIfMissing(path30.join(root, "docs", d, ".gitkeep"), "");
+  createIfMissing(path30.join(root, "CLAUDE.md"), render("CLAUDE.md", vars));
   const lintMsg = setupLint(root, p.flags["no-install"] !== true);
   mergeSettings(root, loadConfig().contextLimit);
   const pluginMsg = p.flags["no-plugins"] === true ? "plugins: pulados (--no-plugins)." : installPlugins(root);
-  createIfMissing(path29.join(root, "index.md"), indexMd(root, vars));
+  createIfMissing(path30.join(root, "index.md"), indexMd(root, vars));
   let gitMsg = "git: reposit\xF3rio existente (nada commitado pelo attach).";
   if (!git2) {
     try {
@@ -3667,12 +3870,12 @@ function run13(args) {
   );
   return 0;
 }
-var fs29, path29, CREATES;
+var fs30, path30, CREATES;
 var init_attach = __esm({
   "cli/src/commands/attach.ts"() {
     "use strict";
-    fs29 = __toESM(require("node:fs"));
-    path29 = __toESM(require("node:path"));
+    fs30 = __toESM(require("node:fs"));
+    path30 = __toESM(require("node:path"));
     init_classify();
     init_reorg();
     init_git();
@@ -3751,9 +3954,9 @@ var init_skills2 = __esm({
 
 // cli/src/release/skills.ts
 function walk(dir, base2 = dir, out = []) {
-  for (const e of fs30.readdirSync(dir, { withFileTypes: true })) {
-    const p = path30.join(dir, e.name);
-    const rel = path30.relative(base2, p).split(path30.sep).join("/");
+  for (const e of fs31.readdirSync(dir, { withFileTypes: true })) {
+    const p = path31.join(dir, e.name);
+    const rel = path31.relative(base2, p).split(path31.sep).join("/");
     if (rel === "evals" || rel.startsWith("evals/")) continue;
     if (e.isDirectory()) walk(p, base2, out);
     else out.push(rel);
@@ -3763,7 +3966,7 @@ function walk(dir, base2 = dir, out = []) {
 function skillHash(dir) {
   const h = (0, import_node_crypto3.createHash)("sha256");
   for (const rel of walk(dir).sort()) {
-    const buf = fs30.readFileSync(path30.join(dir, rel));
+    const buf = fs31.readFileSync(path31.join(dir, rel));
     h.update(rel + "\0");
     h.update(buf.includes(0) ? buf : Buffer.from(buf.toString("utf8").replace(/\r\n/g, "\n")));
     h.update("\0");
@@ -3771,16 +3974,16 @@ function skillHash(dir) {
   return h.digest("hex");
 }
 function listSkills(repo) {
-  const root = path30.join(repo, "skills");
-  if (!fs30.existsSync(root)) return [];
+  const root = path31.join(repo, "skills");
+  if (!fs31.existsSync(root)) return [];
   const out = [];
-  for (const e of fs30.readdirSync(root, { withFileTypes: true })) {
+  for (const e of fs31.readdirSync(root, { withFileTypes: true })) {
     if (!e.isDirectory()) continue;
-    const dir = path30.join(root, e.name);
-    if (fs30.existsSync(path30.join(dir, "SKILL.md"))) out.push(`skills/${e.name}`);
+    const dir = path31.join(root, e.name);
+    if (fs31.existsSync(path31.join(dir, "SKILL.md"))) out.push(`skills/${e.name}`);
     else
-      for (const s2 of fs30.readdirSync(dir, { withFileTypes: true }))
-        if (s2.isDirectory() && fs30.existsSync(path30.join(dir, s2.name, "SKILL.md")))
+      for (const s2 of fs31.readdirSync(dir, { withFileTypes: true }))
+        if (s2.isDirectory() && fs31.existsSync(path31.join(dir, s2.name, "SKILL.md")))
           out.push(`skills/${e.name}/${s2.name}`);
   }
   return out.sort();
@@ -3797,7 +4000,7 @@ function evalScope(repo, skill, sinceTag) {
   const md = `${skill}/SKILL.md`;
   if (!sinceTag || !git(repo, ["ls-tree", "--name-only", sinceTag, "--", md], true))
     return { trigger: true, evals: true, isNew: true };
-  const cur = lf2(fs30.readFileSync(path30.join(repo, md), "utf8"));
+  const cur = lf2(fs31.readFileSync(path31.join(repo, md), "utf8"));
   const prev = lf2(git(repo, ["show", `${sinceTag}:${md}`], true));
   const others = git(repo, ["diff", "--name-only", sinceTag, "--", skill], true).split("\n").some((f) => f && f !== md && !f.startsWith(`${skill}/evals/`));
   const body = (s2) => s2.slice(frontmatter(s2).length).trim();
@@ -3809,8 +4012,8 @@ function evalScope(repo, skill, sinceTag) {
 }
 function checkSkills(repo, skills, sinceTag = versionTags(repo).pop() ?? null) {
   return skills.map((skill) => {
-    const dir = path30.join(repo, skill);
-    const res = readJson(path30.join(dir, "evals", "results.json"), null);
+    const dir = path31.join(repo, skill);
+    const res = readJson(path31.join(dir, "evals", "results.json"), null);
     if (!res) return { skill, ok: false, reason: "sem evals/results.json" };
     if (!res.passed) return { skill, ok: false, reason: "evals n\xE3o passaram" };
     if (res.skillSha256 !== skillHash(dir))
@@ -3824,24 +4027,24 @@ function checkSkills(repo, skills, sinceTag = versionTags(repo).pop() ?? null) {
   });
 }
 function stampSkill(repo, skill, data) {
-  const dir = path30.join(repo, skill);
-  if (!fs30.existsSync(path30.join(dir, "SKILL.md"))) throw new Error(`skill n\xE3o encontrada: ${skill}`);
+  const dir = path31.join(repo, skill);
+  if (!fs31.existsSync(path31.join(dir, "SKILL.md"))) throw new Error(`skill n\xE3o encontrada: ${skill}`);
   const res = {
-    skill: path30.basename(dir),
+    skill: path31.basename(dir),
     skillSha256: skillHash(dir),
     date: (/* @__PURE__ */ new Date()).toISOString(),
     ...data
   };
-  writeJson(path30.join(dir, "evals", "results.json"), res);
+  writeJson(path31.join(dir, "evals", "results.json"), res);
   return res;
 }
-var import_node_crypto3, fs30, path30, lf2, frontmatter;
+var import_node_crypto3, fs31, path31, lf2, frontmatter;
 var init_skills3 = __esm({
   "cli/src/release/skills.ts"() {
     "use strict";
     import_node_crypto3 = require("node:crypto");
-    fs30 = __toESM(require("node:fs"));
-    path30 = __toESM(require("node:path"));
+    fs31 = __toESM(require("node:fs"));
+    path31 = __toESM(require("node:path"));
     init_fsx();
     init_git();
     lf2 = (s2) => s2.replace(/\r\n/g, "\n");
@@ -3913,17 +4116,17 @@ async function pool(items, limit, fn) {
 async function claude(prompt, cwd, extra, ctx) {
   const bin = process.env.HX_CLAUDE_BIN || "claude";
   const args = ["-p", "--model", "sonnet", "--output-format", "stream-json", "--verbose"];
-  const env = { ...process.env, HARNESS_HOME: path31.join(cwd, ".hx-home") };
+  const env = { ...process.env, HARNESS_HOME: path32.join(cwd, ".hx-home") };
   delete env.CLAUDECODE;
-  const s2 = await new Promise((resolve13, reject) => {
-    const child = (0, import_node_child_process8.spawn)([bin, ...args, "--setting-sources", "project", ...extra].join(" "), {
+  const s2 = await new Promise((resolve14, reject) => {
+    const child = (0, import_node_child_process10.spawn)([bin, ...args, "--setting-sources", "project", ...extra].join(" "), {
       cwd,
       env,
       shell: true
     });
     const timer = setTimeout(() => {
       if (process.platform === "win32" && child.pid)
-        (0, import_node_child_process8.spawnSync)("taskkill", ["/T", "/F", "/PID", String(child.pid)]);
+        (0, import_node_child_process10.spawnSync)("taskkill", ["/T", "/F", "/PID", String(child.pid)]);
       else child.kill();
     }, TIMEOUT_MS);
     child.on("close", () => clearTimeout(timer));
@@ -3935,7 +4138,7 @@ async function claude(prompt, cwd, extra, ctx) {
     child.on("close", (code) => {
       const r = parseStream(out);
       if (!r.sessionId) reject(new Error(`claude -p falhou (${code}): ${err.trim().slice(-300)}`));
-      else resolve13(r);
+      else resolve14(r);
     });
     child.stdin.end(prompt);
   });
@@ -3956,59 +4159,69 @@ async function claude(prompt, cwd, extra, ctx) {
   return s2;
 }
 async function inSandbox(skillDir, fn, files = [], evalsDir = "") {
-  const dir = fs31.mkdtempSync(path31.join(fs31.realpathSync.native(os5.tmpdir()), "hx-eval-"));
+  const dir = fs32.mkdtempSync(path32.join(fs32.realpathSync.native(os5.tmpdir()), "hx-eval-"));
   try {
     for (const f of files) {
       const [set = "", ...parts2] = f.split(/[\\/]/);
-      const rel = path31.join(...parts2);
-      if (!set.startsWith("files") || !parts2.length || rel.startsWith("..") || path31.isAbsolute(rel))
+      const rel = path32.join(...parts2);
+      if (!set.startsWith("files") || !parts2.length || rel.startsWith("..") || path32.isAbsolute(rel))
         throw new Error(`fixture fora de files*/: ${f}`);
-      fs31.mkdirSync(path31.dirname(path31.join(dir, rel)), { recursive: true });
-      fs31.copyFileSync(path31.join(evalsDir, f), path31.join(dir, rel));
+      fs32.mkdirSync(path32.dirname(path32.join(dir, rel)), { recursive: true });
+      fs32.copyFileSync(path32.join(evalsDir, f), path32.join(dir, rel));
     }
     if (skillDir)
-      fs31.cpSync(skillDir, path31.join(dir, ".claude", "skills", path31.basename(skillDir)), {
+      fs32.cpSync(skillDir, path32.join(dir, ".claude", "skills", path32.basename(skillDir)), {
         recursive: true,
-        filter: (src) => path31.relative(skillDir, src).split(path31.sep)[0] !== "evals"
+        filter: (src) => path32.relative(skillDir, src).split(path32.sep)[0] !== "evals"
       });
     return await fn(dir);
   } finally {
-    fs31.rmSync(dir, { recursive: true, force: true });
+    fs32.rmSync(dir, { recursive: true, force: true });
   }
 }
 function outputs(dir, base2 = dir) {
   const out = [];
-  for (const e of fs31.readdirSync(dir, { withFileTypes: true })) {
-    const p = path31.join(dir, e.name);
+  for (const e of fs32.readdirSync(dir, { withFileTypes: true })) {
+    const p = path32.join(dir, e.name);
     if (e.name === ".claude" || e.name === ".git") continue;
     if (e.isDirectory()) out.push(...outputs(p, base2));
     else {
-      const rel = path31.relative(base2, p).split(path31.sep).join("/");
+      const rel = path32.relative(base2, p).split(path32.sep).join("/");
       out.push(`<file path="${rel}">
-${fs31.readFileSync(p, "utf8").slice(0, MAX_FILE)}
+${fs32.readFileSync(p, "utf8").slice(0, MAX_FILE)}
 </file>`);
     }
   }
   return out;
 }
-async function evalSkill(repo, skill, scope, ctx) {
-  const dir = path31.join(repo, skill);
-  const name = path31.basename(dir);
-  const evalsDir = path31.join(dir, "evals");
+async function evalSkill(repo, skill, scope, ctx, opts = {}) {
+  const dir = path32.join(repo, skill);
+  const name = path32.basename(dir);
+  const evalsDir = path32.join(dir, "evals");
   const need = (f) => {
-    if (!fs31.existsSync(path31.join(evalsDir, f))) throw new Error(`${skill}: falta evals/${f}`);
-    return path31.join(evalsDir, f);
+    if (!fs32.existsSync(path32.join(evalsDir, f))) throw new Error(`${skill}: falta evals/${f}`);
+    return path32.join(evalsDir, f);
   };
-  const prev = readJson(path31.join(evalsDir, "results.json"), null);
+  const prev = readJson(path32.join(evalsDir, "results.json"), null);
   const date = (/* @__PURE__ */ new Date()).toISOString();
   let trigger = prev?.trigger;
   let evals = prev?.evals;
   let ok = true;
   let notes;
+  const reuse = !!opts.failed && !!prev && prev.skillSha256 === skillHash(dir);
+  if (opts.failed && prev && !reuse)
+    console.warn("skill mudou desde a \xFAltima rodada: rodando tudo");
+  const kept = (file2, key, keep) => reuse ? (readJson(path32.join(evalsDir, file2), {})[key] ?? []).filter(keep) : [];
   if (scope.trigger) {
     const qs = readJson(need("trigger.json"), []);
-    const results = await pool(
-      qs,
+    const old = kept(
+      "trigger-results.json",
+      "results",
+      (r) => r.passed
+    );
+    const find = (q) => old.find((o) => o.query === q.query);
+    const fresh = await pool(
+      qs.filter((q) => !find(q)),
       PARALLEL,
       (q) => inSandbox(dir, async (sb) => {
         const s2 = await claude(q.query, sb, ["--max-turns", "2"], ctx);
@@ -4016,7 +4229,8 @@ async function evalSkill(repo, skill, scope, ctx) {
         return { ...q, triggered, skills: s2.skills, passed: triggered === q.should_trigger };
       })
     );
-    writeJson(path31.join(evalsDir, "trigger-results.json"), { date, results });
+    const results = qs.flatMap((q) => find(q) ?? fresh.filter((f) => f.query === q.query));
+    writeJson(path32.join(evalsDir, "trigger-results.json"), { date, results });
     trigger = frac(results.map((r) => r.passed));
     ok &&= trigger.passed >= trigger.total - 1;
   }
@@ -4026,8 +4240,14 @@ async function evalSkill(repo, skill, scope, ctx) {
       ...cases.map((c) => ({ id: String(c.id), c, withSkill: true })),
       ...scope.isNew ? cases.map((c) => ({ id: `baseline-${c.id}`, c, withSkill: false })) : []
     ];
+    const old = kept(
+      "cases-results.json",
+      "runs",
+      (g) => g.passed || g.baseline
+    );
+    const find = (id) => old.find((g) => g.id === id);
     const done = await pool(
-      runs,
+      runs.filter((r) => !find(r.id)),
       PARALLEL,
       (r) => inSandbox(
         r.withSkill ? dir : null,
@@ -4040,7 +4260,7 @@ async function evalSkill(repo, skill, scope, ctx) {
         evalsDir
       )
     );
-    const judge = await inSandbox(
+    const judge = !done.length ? { text: '{"results":[]}' } : await inSandbox(
       null,
       (sb) => claude(
         [
@@ -4076,7 +4296,7 @@ ${r.answer}
     } catch {
       logError("eval", `judge sem JSON: ${judge.text.slice(0, 200)}`);
     }
-    const graded = done.map((r) => {
+    const fresh = done.map((r) => {
       const v = verdicts.find((x) => String(x.id) === r.id);
       return {
         id: r.id,
@@ -4087,7 +4307,8 @@ ${r.answer}
         answer: r.answer.slice(0, 2e3)
       };
     });
-    writeJson(path31.join(evalsDir, "cases-results.json"), { date, runs: graded });
+    const graded = runs.flatMap((r) => find(r.id) ?? fresh.filter((g) => g.id === r.id));
+    writeJson(path32.join(evalsDir, "cases-results.json"), { date, runs: graded });
     evals = frac(graded.filter((g) => !g.baseline).map((g) => g.passed));
     ok &&= evals.passed === evals.total;
     if (scope.isNew) {
@@ -4097,14 +4318,14 @@ ${r.answer}
   }
   return stampSkill(repo, skill, { passed: ok, trigger, evals, notes });
 }
-var import_node_child_process8, fs31, os5, path31, PARALLEL, TIMEOUT_MS, MAX_FILE, safeId2, frac;
+var import_node_child_process10, fs32, os5, path32, PARALLEL, TIMEOUT_MS, MAX_FILE, safeId2, frac;
 var init_run2 = __esm({
   "cli/src/eval/run.ts"() {
     "use strict";
-    import_node_child_process8 = require("node:child_process");
-    fs31 = __toESM(require("node:fs"));
+    import_node_child_process10 = require("node:child_process");
+    fs32 = __toESM(require("node:fs"));
     os5 = __toESM(require("node:os"));
-    path31 = __toESM(require("node:path"));
+    path32 = __toESM(require("node:path"));
     init_fsx();
     init_log();
     init_emit();
@@ -4124,14 +4345,14 @@ __export(eval_exports, {
 });
 async function run15(args) {
   const p = parseArgs(args);
-  const repo = path32.resolve(loadConfig().harnessRepo);
+  const repo = path33.resolve(loadConfig().harnessRepo);
   const tag = versionTags(repo).pop() ?? null;
   const all = listSkills(repo);
   let targets;
   if (p.flags.changed) targets = all;
   else {
     const want = p._[0]?.replace(/\\/g, "/").replace(/\/$/, "");
-    const hit = all.find((s2) => s2 === want || path32.posix.basename(s2) === want);
+    const hit = all.find((s2) => s2 === want || path33.posix.basename(s2) === want);
     if (!hit) {
       console.error(want ? `hx eval: skill n\xE3o encontrada: ${want}
 ${USAGE}` : USAGE);
@@ -4157,7 +4378,7 @@ ${USAGE}` : USAGE);
     console.log(
       `${skill}: ${[scope.trigger && "acionamento", scope.evals && "casos"].filter(Boolean).join(" + ")}...`
     );
-    const r = await evalSkill(repo, skill, scope, ctx);
+    const r = await evalSkill(repo, skill, scope, ctx, { failed: !!p.flags.failed });
     ok &&= r.passed;
     const f = (b2) => b2 ? `${b2.passed}/${b2.total}` : "-";
     console.log(
@@ -4167,21 +4388,22 @@ ${USAGE}` : USAGE);
   if (!ran) console.log("Nenhuma skill precisa de eval desde a \xFAltima vers\xE3o.");
   return ok ? 0 : 1;
 }
-var path32, USAGE;
+var path33, USAGE;
 var init_eval = __esm({
   "cli/src/commands/eval.ts"() {
     "use strict";
-    path32 = __toESM(require("node:path"));
+    path33 = __toESM(require("node:path"));
     init_args();
     init_config();
     init_context();
     init_run2();
     init_git();
     init_skills3();
-    USAGE = `uso: hx eval <skill> | --changed
+    USAGE = `uso: hx eval <skill> [--failed] | --changed
   Escopo desde a \xFAltima tag: descri\xE7\xE3o mudou -> trigger.json; corpo mudou -> evals.json;
   s\xF3 evals/ mudou -> nada; skill nova -> ambos + baseline sem skill.
-  <skill> expl\xEDcita sem mudan\xE7a roda ambos. Sonnet, 1 rodada por consulta, at\xE9 3 sess\xF5es em paralelo.`;
+  <skill> expl\xEDcita sem mudan\xE7a roda ambos. Sonnet, 1 rodada por consulta, at\xE9 3 sess\xF5es em paralelo.
+  --failed: roda s\xF3 o que falhou na \xFAltima rodada (mesma skill) e junta com o que passou.`;
   }
 });
 
@@ -4192,14 +4414,14 @@ __export(release_exports, {
   run: () => run16
 });
 function repoRoot() {
-  const repo = path33.resolve(loadConfig().harnessRepo);
-  if (!fs32.existsSync(path33.join(repo, ".claude-plugin", "plugin.json")))
+  const repo = path34.resolve(loadConfig().harnessRepo);
+  if (!fs33.existsSync(path34.join(repo, ".claude-plugin", "plugin.json")))
     throw new Error(`repo do harness n\xE3o encontrado em ${repo}`);
   return repo;
 }
 function runChecks(repo) {
   const cmd = process.env.HARNESS_RELEASE_CHECK || "npm run check";
-  const r = (0, import_node_child_process9.spawnSync)(cmd, { cwd: repo, shell: true, encoding: "utf8" });
+  const r = (0, import_node_child_process11.spawnSync)(cmd, { cwd: repo, shell: true, encoding: "utf8" });
   if (r.status !== 0) {
     const tail = `${r.stdout ?? ""}${r.stderr ?? ""}`.trim().split("\n").slice(-25).join("\n");
     throw new Error(`checagens falharam (${cmd}):
@@ -4224,19 +4446,19 @@ ${items.map((s2) => `- ${s2}`).join("\n")}
 ${block("Novidades", feats)}${block("Corre\xE7\xF5es", fixes)}${block("Outros", other)}`;
 }
 function writeChangelog(repo, section2) {
-  const file2 = path33.join(repo, "CHANGELOG.md");
+  const file2 = path34.join(repo, "CHANGELOG.md");
   const head = "# Changelog\n\nVers\xF5es do Main Harness (versionamento sem\xE2ntico; `0.y.z` at\xE9 a 1.0).\n\n";
-  const old = fs32.existsSync(file2) ? fs32.readFileSync(file2, "utf8") : head;
+  const old = fs33.existsSync(file2) ? fs33.readFileSync(file2, "utf8") : head;
   const i = old.indexOf("## [");
   const next = i < 0 ? old.trimEnd() + "\n\n" + section2 : old.slice(0, i) + section2 + old.slice(i);
-  fs32.writeFileSync(file2, next.trimEnd() + "\n");
+  fs33.writeFileSync(file2, next.trimEnd() + "\n");
 }
 function moveStable(repo, stable, tag) {
   if (samePathKey(repo) === samePathKey(stable))
     throw new Error("stableDir n\xE3o pode ser o repo do harness");
-  if (!fs32.existsSync(path33.join(stable, ".git"))) {
-    fs32.mkdirSync(path33.dirname(stable), { recursive: true });
-    git(path33.dirname(stable), ["clone", "-q", repo, stable]);
+  if (!fs33.existsSync(path34.join(stable, ".git"))) {
+    fs33.mkdirSync(path34.dirname(stable), { recursive: true });
+    git(path34.dirname(stable), ["clone", "-q", repo, stable]);
   }
   if (git(stable, ["status", "--porcelain"]))
     throw new Error(`${stable} tem altera\xE7\xF5es locais; ningu\xE9m deve editar a vers\xE3o est\xE1vel`);
@@ -4258,7 +4480,7 @@ function release(kind, skipChecks) {
     for (const g of bad) console.error(`  \u2717 ${g.skill}: ${g.reason}`);
     return 1;
   }
-  const manifestPath = path33.join(repo, ".claude-plugin", "plugin.json");
+  const manifestPath = path34.join(repo, ".claude-plugin", "plugin.json");
   const manifest = readJson(manifestPath, {});
   const version = bumpVersion(String(manifest.version ?? "0.0.0"), kind);
   const tag = `v${version}`;
@@ -4268,7 +4490,7 @@ function release(kind, skipChecks) {
   git(repo, ["add", "-A", "--", ".claude-plugin/plugin.json", "CHANGELOG.md"]);
   git(repo, ["commit", "-q", "-m", `chore(release): ${tag}`]);
   git(repo, ["tag", "-a", tag, "-m", `Main Harness ${tag}`]);
-  moveStable(repo, path33.resolve(cfg.stableDir), tag);
+  moveStable(repo, path34.resolve(cfg.stableDir), tag);
   emit({
     type: "harness.release",
     project: PROJECT,
@@ -4314,13 +4536,13 @@ function run16(args) {
   console.error("uso: hx release patch|minor|major | check | stamp <skill>");
   return 1;
 }
-var import_node_child_process9, fs32, path33, PROJECT;
+var import_node_child_process11, fs33, path34, PROJECT;
 var init_release = __esm({
   "cli/src/commands/release.ts"() {
     "use strict";
-    import_node_child_process9 = require("node:child_process");
-    fs32 = __toESM(require("node:fs"));
-    path33 = __toESM(require("node:path"));
+    import_node_child_process11 = require("node:child_process");
+    fs33 = __toESM(require("node:fs"));
+    path34 = __toESM(require("node:path"));
     init_setup();
     init_args();
     init_config();
@@ -4340,8 +4562,8 @@ __export(rollback_exports, {
   run: () => run17
 });
 function run17(_args) {
-  const stable = path34.resolve(loadConfig().stableDir);
-  if (!fs33.existsSync(path34.join(stable, ".git")))
+  const stable = path35.resolve(loadConfig().stableDir);
+  if (!fs34.existsSync(path35.join(stable, ".git")))
     throw new Error(`vers\xE3o est\xE1vel n\xE3o encontrada em ${stable}`);
   git(stable, ["fetch", "-q", "--tags", "origin"], true);
   const current = git(stable, ["describe", "--tags", "--exact-match", "HEAD"], true);
@@ -4359,12 +4581,12 @@ function run17(_args) {
   console.log("Os projetos voltam para ela no pr\xF3ximo chat (o session-start migra para tr\xE1s).");
   return 0;
 }
-var fs33, path34;
+var fs34, path35;
 var init_rollback = __esm({
   "cli/src/commands/rollback.ts"() {
     "use strict";
-    fs33 = __toESM(require("node:fs"));
-    path34 = __toESM(require("node:path"));
+    fs34 = __toESM(require("node:fs"));
+    path35 = __toESM(require("node:path"));
     init_config();
     init_emit();
     init_git();

@@ -25,6 +25,7 @@ O Dashboard IA estima de 2 a 7 vezes acima do real (soma real/planejada: S01 15%
 8. B024: `pre-bash` pergunta antes de `git commit` com `cli/src` no stage e bundle desatualizado.
 9. B026: Stop roda typecheck quando `cli/src` mudou.
 10. B027: `.claude/settings.json` libera comandos só de leitura.
+10b. B043 (pedido de Daniel durante a S04): a linha Total mostra o fim previsto enquanto a sprint está aberta.
 11. Release v0.5.0.
 
 ## Fora de escopo
@@ -50,6 +51,7 @@ O Dashboard IA estima de 2 a 7 vezes acima do real (soma real/planejada: S01 15%
 | B026 | Stop: se `git status` mostra `cli/src` alterado, roda `tsc --noEmit` (timeout de 60 s). Com erro, devolve as primeiras linhas para o agente corrigir. Só neste repo. |
 | B027 | Rodar a skill `fewer-permission-prompts` e liberar só comandos de leitura (`npm run *`, `git status`, `git diff`, `git log`), no Bash e no PowerShell. |
 | Evals | O corpo das skills `handoff` e `sprint-plan` muda: o `evals.json` de cada uma roda (ADR 0009) na T10, já com o `--failed` da T05 para repetir só o que falhar. |
+| B043 | Linha **Total**, coluna Fim, com a sprint aberta: `~HH:MM (previsto)` = início + Planejado do total + pausas já descontadas. Sprint fechada: fim real. Vai na T04 (mesmo arquivo). |
 | Reviewer | `model: opus` em T01, T02 e T03 (hooks). Sonnet no resto. |
 
 ## Critérios de aceite
@@ -87,7 +89,7 @@ O Dashboard IA estima de 2 a 7 vezes acima do real (soma real/planejada: S01 15%
 | T01 | B042 (causa + correção ou orientação), B041 (hook nega `cd /c/`), B024 (commit com bundle velho) no `pre-bash` | clone A | `cli/src/hooks/pre-bash.ts`, `cli/test/pre-bash-s04.test.ts` | — | 15 min |
 | T02 | B023: hook `pre-edit` | clone B | `cli/src/hooks/pre-edit.ts`, `cli/src/hooks/index.ts`, `hooks/hooks.json`, `cli/test/pre-edit.test.ts` | — | 10 min |
 | T03 | B026: Stop roda typecheck quando `cli/src` mudou | clone C | `cli/src/hooks/lifecycle.ts`, `cli/test/stop-typecheck.test.ts` | — | 10 min |
-| T04 | B035, B037, B040: tempo até a revisão, pausas, rodadas de ajuste | clone D | `cli/src/sprint/index.ts`, `cli/src/commands/sprint.ts`, `cli/src/commands/metrics.ts`, `cli/test/sprint.test.ts` | — | 20 min |
+| T04 | B035, B037, B040, B043: tempo até a revisão, pausas, rodadas de ajuste, fim previsto | clone D | `cli/src/sprint/index.ts`, `cli/src/commands/sprint.ts`, `cli/src/commands/metrics.ts`, `cli/test/sprint.test.ts` | — | 20 min |
 | T05 | B036: `hx eval --failed` | clone E | `cli/src/eval/run.ts`, `cli/src/commands/eval.ts`, `cli/test/eval.test.ts` | — | 15 min |
 | T06 | B025: `index.md` sem duplicadas (causa + limpeza) | clone F | `cli/src/repomap/index.ts`, `cli/test/repomap.test.ts`, `index.md` | — | 8 min |
 | T07 | B041: regra de ferramentas de arquivo nos prompts e no handoff (+ orientação do B042, se externo) | tech-lead | `agents/tech-lead.md`, `agents/reviewer.md`, `skills/handoff/SKILL.md` | T01 | 8 min |

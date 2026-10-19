@@ -4,7 +4,10 @@ import { afterEach, beforeEach, describe, expect, it } from "vitest";
 import { emit } from "../src/events/emit";
 import { validateEvent } from "../src/events/schema";
 import {
+  computeMetrics,
   fmtMin,
+  renderMetrics,
+  updateExecution,
   parseEstimate,
   parsePlan,
   planHash,
@@ -52,7 +55,7 @@ describe("plan parsing", () => {
     expect(totalLine(tasks, {})).toBe("| ⬜ | **Total** | 3 tarefas |  | 1 h 50 min |  |  |  |");
     const t1 = { start: "2026-10-15T02:05:00Z", end: "2026-10-15T02:25:00Z", duration_s: 1200 };
     expect(totalLine(tasks, { T01: t1 })).toBe(
-      "| 🔄 | **Total** | 3 tarefas |  | 1 h 50 min | 2026-10-14 23:05 |  |  |",
+      "| 🔄 | **Total** | 3 tarefas |  | 1 h 50 min | 2026-10-14 23:05 | ~2026-10-15 00:55 (previsto) |  |",
     );
     const all = {
       T01: t1,
@@ -61,6 +64,17 @@ describe("plan parsing", () => {
     };
     expect(totalLine(tasks, all)).toBe(
       "| ✅ | **Total** | 3 tarefas |  | 1 h 50 min | 2026-10-14 23:05 | 2026-10-15 01:00 | 1 h 55 min |",
+    );
+  });
+
+  it("total row forecast: start + planned + pauses so far, date only when the day changes", () => {
+    const tasks = parsePlan(TEMPLATE).tasks;
+    const pause45 = () => 45 * 60000;
+    expect(totalLine(tasks, { T01: { start: "2026-10-15T02:05:00Z" } }, pause45)).toContain(
+      "| 2026-10-14 23:05 | ~2026-10-15 01:40 (previsto) |  |",
+    );
+    expect(totalLine(tasks, { T01: { start: "2026-10-15T12:00:00Z" } })).toContain(
+      "| 2026-10-15 09:00 | ~10:50 (previsto) |  |",
     );
   });
 
@@ -211,13 +225,14 @@ describe("sprint commands (real bundle, project with spaces)", () => {
     expect(hx("sprint", "open", "S01").code).toBe(0);
 
     hx("task", "start", "T02", "--at", "2026-10-15T02:30:00Z");
-    hx("task", "done", "T02", "--at", "2026-10-15T03:45:00Z", "--agent", "tech-lead");
+    // gaps up to 30 min only: no pause (B037) in this flow
+    hx("task", "done", "T02", "--at", "2026-10-15T03:00:00Z", "--agent", "tech-lead");
     const noStart = hx(
       "task",
       "done",
       "T03",
       "--at",
-      "2026-10-15T03:50:00Z",
+      "2026-10-15T03:20:00Z",
       "--agent",
       "reviewer",
     );
@@ -227,7 +242,7 @@ describe("sprint commands (real bundle, project with spaces)", () => {
     const done = events().filter((e) => e.type === "task.done");
     expect(done.map((e) => [e.task, (e.data as { duration_s: number }).duration_s])).toEqual([
       ["T01", 1200],
-      ["T02", 4500],
+      ["T02", 1800],
       ["T03", 0],
     ]);
     expect(events().find((e) => e.type === "task.start")).toMatchObject({
@@ -267,16 +282,16 @@ describe("sprint commands (real bundle, project with spaces)", () => {
     expect(c.stderr).toBe("");
     expect(c.code).toBe(0);
     expect(c.stdout.split("\n")[0]).toBe(
-      "Sprint S01 fechada: 3/3 tarefas em 1 h 45 min (aguardou teste por 10 min)",
+      "Sprint S01 fechada: 3/3 tarefas em 1 h 15 min (aguardou teste por 40 min)",
     );
     expect(c.stdout).toContain("### Indicadores — S01");
     expect(c.stdout).toContain("| Reprovações do Reviewer | 1 |");
-    // sequential with gaps: wall clock (02:05 → 03:50) is longer than the sum
-    expect(c.stdout).toContain("| **Total** | 1 h 50 min | 1 h 35 min (soma) | | US$ 2.25 |");
+    // sequential with gaps: wall clock (02:05 → 03:20) is longer than the sum
+    expect(c.stdout).toContain("| **Total** | 1 h 50 min | 50 min (soma) | | US$ 2.25 |");
     expect(c.stdout).toContain(
-      "| Tempo de relógio (previsto · corrido) | 1 h 50 min · 1 h 45 min |",
+      "| Tempo de relógio (previsto · corrido) | 1 h 50 min · 1 h 15 min |",
     );
-    expect(c.stdout).toContain("| Soma das tarefas (planejada · real) | 1 h 50 min · 1 h 35 min |");
+    expect(c.stdout).toContain("| Soma das tarefas (planejada · real) | 1 h 50 min · 50 min |");
     const close = events().find((e) => e.type === "sprint.close");
     expect(close?.data).toEqual({ tasks_done: 3, tasks_total: 3, duration_s: 7200 });
     const m = events().find((e) => e.type === "sprint.metrics");
@@ -285,7 +300,7 @@ describe("sprint commands (real bundle, project with spaces)", () => {
       tasks_done: 3,
       planned_min: 110,
       planned_wall_min: 110,
-      actual_min: 95,
+      actual_min: 50,
       tokens_input: 300,
       tokens_output: 150,
       tokens_cache_write: 30,
@@ -295,7 +310,7 @@ describe("sprint commands (real bundle, project with spaces)", () => {
       review_rejections: 1,
       usd_by_agent: { "tech-lead": 2, reviewer: 0.25 },
       usd_by_task: { T01: 1.5, T02: 0.5, T03: 0.25 },
-      actual_min_by_task: { T01: 20, T02: 75, T03: 0 },
+      actual_min_by_task: { T01: 20, T02: 30, T03: 0 },
     });
     expect(hx("sprint", "status").code).toBe(1); // no active sprint anymore
   });
@@ -305,6 +320,14 @@ describe("sprint commands (real bundle, project with spaces)", () => {
     hx("sprint", "open", "S01", "--at", "2026-10-15T01:55:00Z");
     hx("task", "start", "T01", "--at", "2026-10-15T02:00:00Z");
     hx("task", "start", "T02", "--at", "2026-10-15T02:00:00Z");
+    // activity in the middle: 30-min gaps are work, not pause (B037)
+    emit({
+      project: "proj-teste",
+      sprint: "S01",
+      type: "handoff",
+      ts: "2026-10-15T02:30:00Z",
+      data: { mode: "manual", file: null },
+    });
     hx("task", "done", "T01", "--at", "2026-10-15T03:00:00Z");
     hx("task", "done", "T02", "--at", "2026-10-15T03:00:00Z");
     hx("task", "start", "T03", "--at", "2026-10-15T03:00:00Z");
@@ -336,5 +359,119 @@ describe("sprint commands (real bundle, project with spaces)", () => {
     const r = hx("task", "start", "T01");
     expect(r.code).toBe(1);
     expect(r.stderr).toContain("nenhuma sprint aberta");
+  });
+});
+
+describe("pauses, time to review and feedback rounds (B035, B037, B040)", () => {
+  let env: ReturnType<typeof isolateHome>;
+  let dir: string;
+  beforeEach(() => {
+    env = isolateHome();
+    dir = fakeProject();
+    fs.mkdirSync(path.join(dir, "docs", "sprints"), { recursive: true });
+  });
+  afterEach(() => {
+    env.cleanup();
+    rm(dir);
+  });
+
+  const at = (hm: string) => `2026-10-15T${hm}:00Z`;
+  const ev = (type: string, hm: string, data: Record<string, unknown>, task?: string) =>
+    emit({
+      project: "proj-teste",
+      sprint: "S01",
+      agent: "tech-lead",
+      task: task ?? null,
+      type: type as "usage",
+      ts: at(hm),
+      data,
+    });
+  const usage = (hm: string, usd = 0) =>
+    ev("usage", hm, {
+      model: "m",
+      input: 1,
+      output: 1,
+      cache_write: 0,
+      cache_read: 0,
+      usd,
+      message_id: `m-${hm}`,
+      transcript: "main",
+    });
+  const phase = (task: string, hm: string) => ev("task.phase", hm, { phase: "revisão" }, task);
+  const task = (id: string, start: string, end: string) => {
+    ev("task.start", start, {}, id);
+    return {
+      start: at(start),
+      end: at(end),
+      duration_s: (Date.parse(at(end)) - Date.parse(at(start))) / 1000,
+    };
+  };
+
+  it("leaves pauses over 30 min out, shows time to review and measures each feedback round", () => {
+    const t1 = task("T01", "02:00", "03:10");
+    usage("02:10");
+    usage("02:55"); // 45 min without events: pause
+    phase("T01", "03:00");
+    ev("task.done", "03:10", { duration_s: t1.duration_s }, "T01");
+    const t2 = task("T02", "03:10", "03:45");
+    usage("03:30"); // 20 min without events: not a pause
+    ev("task.done", "03:45", { duration_s: t2.duration_s }, "T02");
+    const t3 = task("T03", "03:45", "04:00");
+    ev("task.done", "04:00", { duration_s: t3.duration_s }, "T03");
+    ev("sprint.feedback", "04:10", { adjustments: 2 });
+    usage("04:20", 0.4);
+    ev("sprint.feedback", "04:30", { adjustments: 1 });
+    usage("04:40", 0.1);
+    ev("sprint.close", "04:50", { tasks_done: 3, tasks_total: 3, duration_s: 0 });
+
+    const plan = parsePlan(TEMPLATE);
+    const m = computeMetrics("proj-teste", "S01", plan);
+    expect(m).toMatchObject({
+      actual_min_by_task: { T01: 25, T02: 35, T03: 15 },
+      review_min_by_task: { T01: 15 },
+      pause_min: 45,
+      wall_min: 75,
+      feedback_rounds: 2,
+      feedback_min: 40,
+      feedback_usd: 0.5,
+    });
+    const md = renderMetrics("S01", plan, m);
+    expect(md).toContain("| T01 | 20 min | 25 min (revisão: 15 min) |");
+    expect(md).toMatch(/\| T02 \| [^|]+ \| 35 min \|/);
+    expect(md).toContain("| Pausas (mais de 30 min sem eventos, fora do corrido) | 45 min |");
+    expect(md).toContain(
+      "| Rodadas de ajuste (quantidade · tempo · custo) | 2 · 40 min · US$ 0.50 |",
+    );
+
+    updateExecution(dir, "S01", plan.tasks, (t) => taskLine(t), { T01: t1, T02: t2, T03: t3 });
+    const rel = fs.readFileSync(path.join(dir, "docs", "sprints", "S01-release.md"), "utf8");
+    expect(rel).toContain(
+      "| ✅ | T01 | Descrição curta | tech-lead | 20 min | 23:00 | 00:10 | 25 min (revisão: 15 min) |",
+    );
+    expect(rel).toMatch(/\| ✅ \| T02 \|.*\| 00:10 \| 00:45 \| 35 min \|/);
+    expect(rel).toContain("| ✅ | Ajuste 1 | 2 ajuste(s) |  |  | 01:10 | 01:30 | 20 min |");
+    expect(rel).toContain("| ✅ | Ajuste 2 | 1 ajuste(s) |  |  | 01:30 | 01:50 | 20 min |");
+    expect(rel).toContain(
+      "| ✅ | **Total** | 3 tarefas |  | 1 h 50 min | 2026-10-14 23:00 | 2026-10-15 01:00 | 1 h 15 min (pausas: 45 min) |",
+    );
+    fs.copyFileSync(
+      path.join(REPO_ROOT, "templates", "sprint-plan.md"),
+      path.join(dir, "docs", "sprints", "S01-plan.md"),
+    );
+    expect(renderTaskList(dir, "S01")).toContain("| ✅ | Ajuste 2 |");
+  });
+
+  it("open sprint: open round and forecast with the pauses so far", () => {
+    const t1 = task("T01", "02:00", "03:10");
+    usage("02:10");
+    usage("02:55");
+    ev("task.done", "03:10", { duration_s: t1.duration_s }, "T01");
+    ev("sprint.feedback", "03:20", { adjustments: 1 });
+    const plan = parsePlan(TEMPLATE);
+    updateExecution(dir, "S01", plan.tasks, (t) => taskLine(t), { T01: t1 });
+    const rel = fs.readFileSync(path.join(dir, "docs", "sprints", "S01-release.md"), "utf8");
+    expect(rel).toContain("| 🔄 | Ajuste 1 | 1 ajuste(s) |  |  | 00:20 |  |  |");
+    // 23:00 + 1 h 50 min + 45 min of pause
+    expect(rel).toContain("| 2026-10-14 23:00 | ~2026-10-15 01:35 (previsto) |  |");
   });
 });

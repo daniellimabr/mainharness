@@ -2,6 +2,7 @@
 import { createHash } from "node:crypto";
 import * as fs from "node:fs";
 import * as path from "node:path";
+import { resolveProject } from "../core/projects";
 import type { TaskTimes } from "../core/state";
 import { localDateTime, localHM } from "../core/time";
 import { readEvents } from "../events/emit";
@@ -68,7 +69,98 @@ export function updateExecution(
 ): void {
   const file = releasePath(projectRoot, sprintId);
   const text = fs.existsSync(file) ? fs.readFileSync(file, "utf8") : releaseStub(sprintId);
-  writePlan(file, text, writeExecution(text, tasks, lineFor, times));
+  const a = activity(resolveProject(projectRoot)?.id ?? "");
+  const line = (t: PlanTask) => {
+    const x = times[t.id];
+    if (!x?.start || !x.end) return lineFor(t);
+    const tt = taskTime(a, t.id, Date.parse(x.start), Date.parse(x.end));
+    return taskLine(t, { ...x, duration_s: tt.min * 60 }, tt.review);
+  };
+  const last = a.times.at(-1) ?? 0;
+  // forecast: pauses so far, up to the last recorded event
+  const pause = (from: number, to: number) => pauseMs(a.times, from, Math.min(to, last));
+  const rounds = feedbackRounds(a.evs.filter((e) => e.sprint === sprintId)).map((r) =>
+    roundLine(r, a),
+  );
+  writePlan(file, text, writeExecution(text, tasks, line, times, pause, rounds));
+}
+
+const PAUSE_MS = 30 * 60000;
+
+/** B037: total of the gaps longer than 30 min without any event, inside [from, to] (ms). */
+export function pauseMs(evTimes: number[], from: number, to: number): number {
+  if (!(to > from)) return 0;
+  const pts = [from, to, ...evTimes.filter((t) => t > from && t < to)].sort((x, y) => x - y);
+  let p = 0;
+  for (let i = 1; i < pts.length; i++) {
+    const gap = (pts[i] ?? 0) - (pts[i - 1] ?? 0);
+    if (gap > PAUSE_MS) p += gap;
+  }
+  return p;
+}
+
+interface Activity {
+  /** All events of the project, by time. */
+  evs: HarnessEvent[];
+  times: number[];
+}
+
+function activity(project: string): Activity {
+  const evs = readEvents((e) => e.project === project).sort(
+    (x, y) => Date.parse(x.ts) - Date.parse(y.ts),
+  );
+  return { evs, times: evs.map((e) => Date.parse(e.ts)) };
+}
+
+/** Task minutes net of pauses and, with a "revisão" phase (B035), minutes until it. */
+function taskTime(a: Activity, task: string, start: number, end: number) {
+  const net = (to: number) => (to - start - pauseMs(a.times, start, to)) / 60000;
+  const ph = a.evs.find(
+    (e) =>
+      e.type === "task.phase" &&
+      e.task === task &&
+      e.data.phase === "revisão" &&
+      Date.parse(e.ts) >= start &&
+      Date.parse(e.ts) <= end,
+  );
+  return { min: net(end), review: ph ? net(Date.parse(ph.ts)) : undefined };
+}
+
+export interface Round {
+  n: number;
+  adjustments: number;
+  start: string;
+  /** Next feedback or sprint close; undefined while open. */
+  end?: string;
+}
+
+/** B040: each "sprint feedback N" (N > 0) opens a round, closed by the next feedback or the close. */
+export function feedbackRounds(sprintEvs: HarnessEvent[]): Round[] {
+  const out: Round[] = [];
+  for (const e of sprintEvs) {
+    if (e.type !== "sprint.feedback" && e.type !== "sprint.close") continue;
+    const last = out.at(-1);
+    if (last && !last.end) last.end = e.ts;
+    const n = num(e.data.adjustments);
+    if (e.type === "sprint.feedback" && n > 0)
+      out.push({ n: out.length + 1, adjustments: n, start: e.ts });
+  }
+  return out;
+}
+
+/** Round minutes (net of pauses) and cost (usage inside it); an open round runs to the last event. */
+function roundStats(r: Round, a: Activity): { min: number; usd: number } {
+  const s = Date.parse(r.start);
+  const e = r.end ? Date.parse(r.end) : Math.max(s, a.times.at(-1) ?? s);
+  const usd = a.evs
+    .filter((x) => x.type === "usage" && Date.parse(x.ts) >= s && Date.parse(x.ts) < e)
+    .reduce((acc, x) => acc + num(x.data.usd), 0);
+  return { min: (e - s - pauseMs(a.times, s, e)) / 60000, usd };
+}
+
+function roundLine(r: Round, a: Activity): string {
+  const head = `| ${r.end ? DONE : DOING} | Ajuste ${r.n} | ${r.adjustments} ajuste(s) |  |  | ${localHM(r.start)} |`;
+  return r.end ? `${head} ${localHM(r.end)} | ${fmtMin(roundStats(r, a).min)} |` : `${head}  |  |`;
 }
 
 /** Path relative to the project, with forward slashes (for events). */
@@ -232,13 +324,15 @@ const EXEC_HEADER =
 const EXEC_NOTE = "Horários de Brasília (UTC−3). ✅ feita · 🔄 em andamento · ⬜ a fazer.";
 
 /** One execution table row for a task, from its recorded times. */
-export function taskLine(t: PlanTask, times?: TaskTimes): string {
+export function taskLine(t: PlanTask, times?: TaskTimes, reviewMin?: number): string {
   const title = t.title.replace(/\|/g, "/");
   const row = (status: string, start = "", end = "", dur = "") =>
     `| ${status} | ${t.id} | ${title} | ${t.agent} | ${fmtMin(t.planned_min)} | ${start} | ${end} | ${dur} |`;
   if (times?.end) {
     const start = times.start ?? times.end;
-    return row(DONE, localHM(start), localHM(times.end), fmtMin((times.duration_s ?? 0) / 60));
+    const review = reviewMin === undefined ? "" : ` (revisão: ${fmtMin(reviewMin)})`;
+    const dur = fmtMin((times.duration_s ?? 0) / 60) + review;
+    return row(DONE, localHM(start), localHM(times.end), dur);
   }
   if (times?.start)
     return row(times.phase ? `${DOING} ${times.phase}` : DOING, localHM(times.start));
@@ -248,8 +342,15 @@ export function taskLine(t: PlanTask, times?: TaskTimes): string {
 const TOTAL = "**Total**";
 const dateHM = (iso: string) => localDateTime(iso).slice(0, 16);
 
-/** Sprint total row: planned sum, first start, last end and wall-clock duration once all are done. */
-export function totalLine(tasks: PlanTask[], times: Record<string, TaskTimes>): string {
+/**
+ * Sprint total row: planned wall clock, first start, last end and wall clock net of pauses once all
+ * are done; before that, Fim is the forecast (start + planned + pauses so far).
+ */
+export function totalLine(
+  tasks: PlanTask[],
+  times: Record<string, TaskTimes>,
+  pause: (from: number, to: number) => number = () => 0,
+): string {
   const ts = tasks.map((t) => times[t.id] ?? {});
   const starts = ts.flatMap((x) => x.start ?? x.end ?? []).sort();
   const done = ts.every((x) => x.end);
@@ -261,9 +362,19 @@ export function totalLine(tasks: PlanTask[], times: Record<string, TaskTimes>): 
         .at(-1) ?? "")
     : "";
   const status = done ? DONE : start ? DOING : TODO;
-  const dur = end ? fmtMin((Date.parse(end) - Date.parse(start)) / 60000) : "";
+  const s = Date.parse(start);
+  let fim = "";
+  let dur = "";
+  if (end) {
+    const p = pause(s, Date.parse(end));
+    fim = dateHM(end);
+    dur = fmtMin((Date.parse(end) - s - p) / 60000) + (p ? ` (pausas: ${fmtMin(p / 60000)})` : "");
+  } else if (start) {
+    const f = dateHM(new Date(s + plannedWall(tasks) * 60000 + pause(s, Infinity)).toISOString());
+    fim = `~${f.slice(0, 10) === dateHM(start).slice(0, 10) ? f.slice(11) : f} (previsto)`;
+  }
   const planned = fmtMin(plannedWall(tasks));
-  return `| ${status} | ${TOTAL} | ${tasks.length} tarefas |  | ${planned} | ${start && dateHM(start)} | ${end && dateHM(end)} | ${dur} |`;
+  return `| ${status} | ${TOTAL} | ${tasks.length} tarefas |  | ${planned} | ${start && dateHM(start)} | ${fim} | ${dur} |`;
 }
 
 function execTable(lines: string[], total: string): string {
@@ -276,9 +387,12 @@ export function writeExecution(
   tasks: PlanTask[],
   lineFor: (t: PlanTask) => string,
   times: Record<string, TaskTimes> = {},
+  pause?: (from: number, to: number) => number,
+  rounds: string[] = [],
 ): string {
   const t = lf(text);
-  const block = `${EXEC_HEADING}\n\n${execTable(tasks.map(lineFor), totalLine(tasks, times))}\n\n`;
+  const lines = [...tasks.map(lineFor), ...rounds];
+  const block = `${EXEC_HEADING}\n\n${execTable(lines, totalLine(tasks, times, pause))}\n\n`;
   const sec = section(t, /^## Execução[^\n]*$/m);
   const out = sec
     ? t.slice(0, sec.start) + block + t.slice(sec.end)
@@ -303,13 +417,10 @@ export function renderTaskList(projectRoot: string, sprintId: string): string {
   });
   const done = plan.tasks.filter((t) => plan.execution[t.id]?.done).length;
   const rel = releasePath(projectRoot, sprintId);
-  const stored = fs.existsSync(rel)
-    ? lf(fs.readFileSync(rel, "utf8"))
-        .split("\n")
-        .find((l) => l.includes(`| ${TOTAL} |`))
-    : undefined;
-  const total = stored ?? totalLine(plan.tasks, {});
-  return `Sprint ${sprintId} — ${done}/${plan.tasks.length} feitas\n\n${execTable(lines, total)}`;
+  const stored = fs.existsSync(rel) ? lf(fs.readFileSync(rel, "utf8")).split("\n") : [];
+  const rounds = stored.filter((l) => /^\| \S+ \| Ajuste \d+ \|/.test(l));
+  const total = stored.find((l) => l.includes(`| ${TOTAL} |`)) ?? totalLine(plan.tasks, {});
+  return `Sprint ${sprintId} — ${done}/${plan.tasks.length} feitas\n\n${execTable([...lines, ...rounds], total)}`;
 }
 
 export interface SprintMetrics {
@@ -333,6 +444,14 @@ export interface SprintMetrics {
   usd_by_agent: Record<string, number>;
   usd_by_task: Record<string, number>;
   actual_min_by_task: Record<string, number>;
+  /** B037: gaps over 30 min without events, left out of wall_min and the task times. */
+  pause_min: number;
+  /** B035: minutes from start to the "revisão" phase, for tasks that had it. */
+  review_min_by_task: Record<string, number>;
+  /** B040: feedback rounds (count, time net of pauses, cost). */
+  feedback_rounds: number;
+  feedback_min: number;
+  feedback_usd: number;
 }
 
 const r1 = (x: number) => Math.round(x * 10) / 10;
@@ -341,12 +460,20 @@ const num = (v: unknown) => (typeof v === "number" && Number.isFinite(v) ? v : 0
 
 /** Sprint indicators from the project's events and the plan. */
 export function computeMetrics(project: string, sprintId: string, plan: Plan): SprintMetrics {
-  const evs: HarnessEvent[] = readEvents((e) => e.project === project && e.sprint === sprintId);
+  const a = activity(project);
+  const evs = a.evs.filter((e) => e.sprint === sprintId);
   const durations: Record<string, number> = {};
+  const review_min_by_task: Record<string, number> = {};
   for (const e of evs)
-    if (e.type === "task.done" && e.task) durations[e.task] = num(e.data.duration_s);
+    if (e.type === "task.done" && e.task) {
+      const end = Date.parse(e.ts);
+      const tt = taskTime(a, e.task, end - num(e.data.duration_s) * 1000, end);
+      durations[e.task] = tt.min * 60;
+      if (tt.review !== undefined) review_min_by_task[e.task] = r1(tt.review);
+    }
   const actual_min_by_task: Record<string, number> = {};
   for (const [k, s] of Object.entries(durations)) actual_min_by_task[k] = r1(s / 60);
+  const rounds = feedbackRounds(evs).map((r) => roundStats(r, a));
   const m: SprintMetrics = {
     tasks_total: plan.tasks.length,
     tasks_done: plan.tasks.filter((t) => t.id in durations).length,
@@ -366,6 +493,11 @@ export function computeMetrics(project: string, sprintId: string, plan: Plan): S
     usd_by_agent: {},
     usd_by_task: {},
     actual_min_by_task,
+    pause_min: 0,
+    review_min_by_task,
+    feedback_rounds: rounds.length,
+    feedback_min: r1(rounds.reduce((acc, r) => acc + r.min, 0)),
+    feedback_usd: r4(rounds.reduce((acc, r) => acc + r.usd, 0)),
   };
   for (const e of evs) {
     const d = e.data;
@@ -397,7 +529,11 @@ export function computeMetrics(project: string, sprintId: string, plan: Plan): S
   const ends = ts("task.done");
   const first = starts[0] ?? ends[0];
   const last = ends.at(-1);
-  if (first !== undefined && last !== undefined) m.wall_min = r1((last - first) / 60000);
+  if (first !== undefined && last !== undefined) {
+    const p = pauseMs(a.times, first, last);
+    m.pause_min = r1(p / 60000);
+    m.wall_min = r1((last - first - p) / 60000);
+  }
   return m;
 }
 
@@ -413,7 +549,10 @@ export function renderMetrics(sprintId: string, plan: Plan, m: SprintMetrics): s
         ? "—"
         : `${a - t.planned_min >= 0 ? "+" : "−"}${fmtMin(Math.abs(a - t.planned_min))}`;
     const cost = m.usd_by_task[t.id];
-    return `| ${t.id} | ${fmtMin(t.planned_min)} | ${a === undefined ? "—" : fmtMin(a)} | ${diff} | ${cost === undefined ? "—" : usd(cost)} |`;
+    const rev = m.review_min_by_task[t.id];
+    const real =
+      a === undefined ? "—" : fmtMin(a) + (rev === undefined ? "" : ` (revisão: ${fmtMin(rev)})`);
+    return `| ${t.id} | ${fmtMin(t.planned_min)} | ${real} | ${diff} | ${cost === undefined ? "—" : usd(cost)} |`;
   });
   const byAgent =
     Object.entries(m.usd_by_agent)
@@ -430,12 +569,14 @@ export function renderMetrics(sprintId: string, plan: Plan, m: SprintMetrics): s
     "| Indicador | Valor |",
     "|---|---|",
     `| Tempo de relógio (previsto · corrido) | ${fmtMin(m.planned_wall_min)} · ${fmtMin(m.wall_min)} |`,
+    `| Pausas (mais de 30 min sem eventos, fora do corrido) | ${fmtMin(m.pause_min)} |`,
     `| Soma das tarefas (planejada · real) | ${fmtMin(m.planned_min)} · ${fmtMin(m.actual_min)} |`,
     `| Tarefas feitas | ${m.tasks_done}/${m.tasks_total} |`,
     `| Tokens (entrada / saída / escrita em cache / leitura de cache) | ${tok(m.tokens_input)} / ${tok(m.tokens_output)} / ${tok(m.tokens_cache_write)} / ${tok(m.tokens_cache_read)} |`,
     `| Custo total | ${usd(m.usd)} |`,
     `| Custo por agente | ${byAgent} |`,
     `| Retrabalho (ajustes pedidos por Daniel) | ${m.rework} |`,
+    `| Rodadas de ajuste (quantidade · tempo · custo) | ${m.feedback_rounds} · ${fmtMin(m.feedback_min)} · ${usd(m.feedback_usd)} |`,
     `| Reprovações do Reviewer | ${m.review_rejections} |`,
     `| Alertas de contexto | ${m.context_alerts} |`,
     `| Handoffs | ${m.handoffs} |`,

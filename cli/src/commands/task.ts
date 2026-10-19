@@ -52,6 +52,7 @@ export function run(args: string[]): number {
   );
   const ev = { project: ctx.id, session: ctx.session, sprint, task: id, agent: ctx.agent, ts: at };
   if (sub === "phase") {
+    emit({ ...ev, type: "task.phase", data: { phase: times.phase ?? "" } });
     console.log(renderTaskList(ctx.root, sprint));
     return 0;
   }
