@@ -1,4 +1,5 @@
 // PreToolUse(Bash|PowerShell): denies destructive commands, asks before risky git operations.
+import { spawnSync } from "node:child_process";
 import * as fs from "node:fs";
 import * as os from "node:os";
 import * as path from "node:path";
@@ -287,7 +288,29 @@ function checkGit(args: string[], cwd: string, stable: string): Verdict | null {
     return { decision: "ask", reason: `git ${sub} . descarta alterações: confirme.` };
   if (sub === "rebase")
     return { decision: "ask", reason: "git rebase reescreve histórico: confirme." };
+  if (sub === "commit" && staleBundle(dir))
+    return { decision: "ask", reason: "bundle desatualizado: rode npm run build." };
   return null;
+}
+
+/** True when cli/src is staged and cli/dist/hx.js is older than the newest cli/src file. */
+function staleBundle(dir: string): boolean {
+  const git = (...a: string[]) =>
+    spawnSync("git", ["-C", dir, ...a], { encoding: "utf8" }).stdout?.trim() ?? "";
+  const top = git("rev-parse", "--show-toplevel");
+  if (!top) return false;
+  const src = path.join(top, "cli", "src");
+  let bundle: number;
+  try {
+    bundle = fs.statSync(path.join(top, "cli", "dist", "hx.js")).mtimeMs;
+  } catch {
+    return false;
+  }
+  const staged = git("diff", "--cached", "--name-only").split("\n");
+  if (!staged.some((f) => f.startsWith("cli/src/"))) return false;
+  return fs
+    .readdirSync(src, { recursive: true, encoding: "utf8" })
+    .some((f) => fs.statSync(path.join(src, f)).mtimeMs > bundle);
 }
 
 const COPIERS = new Set(["cp", "copy", "copy-item", "cpi", "robocopy", "xcopy", "rsync", "ln"]);
@@ -381,6 +404,11 @@ export function classifyCommand(
     }
     if (!v && ["cd", "set-location", "sl", "chdir", "pushd"].includes(cmd)) {
       const target = args.find((a) => !a.startsWith("-") && !/^\/d$/i.test(a));
+      if (target && /^\/(?:mnt\/|cygdrive\/)?[a-zA-Z]\//.test(target))
+        return {
+          decision: "deny",
+          reason: `Bloqueado: cd "${target}": use caminho relativo ou as ferramentas Read/Grep/Edit; o cwd já é o projeto.`,
+        };
       dir = (target === undefined ? os.homedir() : expandPath(target, dir)) ?? dir;
     }
     if (!v && cmd === "git") v = checkGit(args, dir, stable);
