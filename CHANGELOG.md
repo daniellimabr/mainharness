@@ -2,6 +2,27 @@
 
 Versões do Main Harness (versionamento semântico; `0.y.z` até a 1.0).
 
+## [0.5.0] - 2026-10-19
+
+### Outros
+
+- docs(T11): backlog B045-B048, S04 execution list
+- docs(T11): backlog S04 done; B044 auto mode blocks hx
+- chore(T09): allow read-only commands in project permissions (B027)
+- T10: real eval runs for handoff and sprint-plan; judge sees subagent prompts
+- T08: calibrated estimates in sprint-plan (B039)
+- T07: file-tool rule in agent prompts and handoff (B041, B042)
+- T04: sprint timing without pauses, time to review, feedback rounds, forecast end (B035, B037, B040, B043)
+- T06: repomap drops duplicate index.md entries (B025)
+- T05: hx eval --failed reruns only failed cases and queries (B036)
+- T03: Stop runs typecheck when cli/src changed (B026)
+- T02: pre-edit hook blocks edits to cli/dist/hx.js and harness-stable (B023)
+- T01: pre-bash denies cd to /c/ paths and asks on commit with stale bundle (B041, B024, B042)
+- docs(sprint): plan and approve S04
+- chore(inbox): move 12 requests to backlog
+- chore(harness): migrate to v0.4.0
+- docs: S03 release report and harness requests
+
 ## [0.4.0] - 2026-10-16
 
 ### Novidades
