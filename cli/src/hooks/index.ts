@@ -2,6 +2,7 @@
 import { preCompact, sessionEnd, stop, subagentStop } from "./lifecycle";
 import { postEdit } from "./post-edit";
 import { preBash } from "./pre-bash";
+import { preEdit } from "./pre-edit";
 import { type HookHandler, runHook } from "./runner";
 import { sessionStart } from "./session-start";
 
@@ -9,6 +10,7 @@ const HOOKS: Record<string, HookHandler> = {
   "session-start": sessionStart,
   "post-edit": postEdit,
   "pre-bash": preBash,
+  "pre-edit": preEdit,
   stop,
   "subagent-stop": subagentStop,
   "pre-compact": preCompact,
