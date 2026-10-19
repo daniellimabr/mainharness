@@ -118,6 +118,6 @@ A S03 fica fora da calibragem: ~3 h de pausa da sessão e a fila de revisão da 
 ## Aprovação
 
 - **Aprovado por:** Daniel
-- **Data/hora:** 2026-10-18 20:39:25 (horário de Brasília) — UTC 2026-10-18T23:39:25Z
-- **Hash SHA-256 do plano** (conteúdo antes desta seção, finais de linha normalizados para LF): `22ddb7ffceb7b905fc35e66072c63cd34255f01d26ee7533b9ac029011b5e0b5`
+- **Data/hora:** 2026-10-18 22:24:45 (horário de Brasília) — UTC 2026-10-19T01:24:45Z
+- **Hash SHA-256 do plano** (conteúdo antes desta seção, finais de linha normalizados para LF): `ceecb5fcaf2b5aacb2920c6f122a912a4f82f09c19b03a7a005eb5221c35e10d`
 - **Versão do harness:** 0.4.0

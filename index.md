@@ -6,6 +6,7 @@ Uma linha por arquivo: caminho e propósito. Mantido pelo hook `post-edit`.
 
 - `.claude-plugin/marketplace.json` — marketplace local `harness-stable` (o repo é o próprio plugin)
 - `.claude-plugin/plugin.json` — manifesto do plugin; fonte única da versão
+- `.claude/settings.json` — (sem descrição)
 - `.claude/skills/skill-creator/SKILL.md` — Create new skills, modify and improve existing skills, and measure skill performance. Use when users want to create a...
 - `.claude/skills/skill-creator/SOURCE.md` — Origem
 - `.gitignore` — arquivos fora do git
