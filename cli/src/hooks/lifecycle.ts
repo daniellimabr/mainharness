@@ -1,4 +1,6 @@
 // Stop, SubagentStop, PreCompact and SessionEnd: usage ingestion and the managed 250K context cycle.
+import { spawnSync } from "node:child_process";
+import * as fs from "node:fs";
 import * as path from "node:path";
 import { loadConfig } from "../core/config";
 import { logError } from "../core/log";
@@ -43,10 +45,40 @@ function tokensOf(input: HookInput): number | null {
 
 const time = (s: string | undefined) => (s ? Date.parse(s) : NaN);
 
+export type Exec = (cmd: string, args: string[]) => { status: number | null; stdout: string };
+
+function execIn(root: string): Exec {
+  return (cmd, args) => {
+    // Missing local TypeScript must not block the Stop.
+    if (cmd === process.execPath && !fs.existsSync(args[0] ?? ""))
+      return { status: null, stdout: "" };
+    const r = spawnSync(cmd, args, { cwd: root, encoding: "utf8", timeout: 60_000 });
+    return { status: r.status, stdout: r.stdout ?? "" };
+  };
+}
+
+/** tsc errors (first 20 lines) when cli/src changed in the harness repo; null otherwise. */
+export function typecheckReason(root: string, exec: Exec = execIn(root)): string | null {
+  if (!fs.existsSync(path.join(root, "cli", "tsconfig.json"))) return null;
+  const changed = exec("git", ["status", "--porcelain"])
+    .stdout.split("\n")
+    .some((l) => l.slice(3).replace(/^"/, "").startsWith("cli/src/"));
+  if (!changed) return null;
+  const tsc = path.join(root, "node_modules", "typescript", "bin", "tsc");
+  const r = exec(process.execPath, [tsc, "--noEmit", "-p", "cli"]);
+  if (!r.status) return null; // 0 = ok; null = timeout or tsc missing
+  const head = r.stdout.trim().split("\n").slice(0, 20).join("\n");
+  return `Erros de tipo em cli/src (tsc --noEmit -p cli). Corrija antes de parar:\n${head}`;
+}
+
 export function stop(input: HookInput): HookOutcome {
   const c = context(input);
   if (!c) return {};
   ingest(input, c);
+  if (!input.stop_hook_active) {
+    const reason = typecheckReason(c.p.root);
+    if (reason) return jsonOut({ decision: "block", reason });
+  }
   const cfg = loadConfig();
   if (cfg.contextStrategy !== "compact" || input.stop_hook_active) return {};
   const tokens = tokensOf(input);
