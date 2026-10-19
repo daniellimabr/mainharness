@@ -6,7 +6,26 @@
   "permissions": {
     "allow": [
       "Bash(hx *)",
-      "PowerShell(hx *)"
+      "PowerShell(hx *)",
+      "Bash(npm run *)",
+      "PowerShell(npm run *)",
+      "Bash(git status*)",
+      "PowerShell(git status*)",
+      "Bash(git diff*)",
+      "PowerShell(git diff*)",
+      "Bash(git log*)",
+      "PowerShell(git log*)",
+      "Bash(git show*)",
+      "PowerShell(git show*)",
+      "Bash(grep *)",
+      "Bash(head *)",
+      "Bash(tail *)",
+      "Bash(cat *)",
+      "Bash(ls*)",
+      "Bash(wc *)",
+      "PowerShell(Get-Content *)",
+      "PowerShell(Select-String *)",
+      "PowerShell(Get-ChildItem*)"
     ]
   },
   "enabledPlugins": {
