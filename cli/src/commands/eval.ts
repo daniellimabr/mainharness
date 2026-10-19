@@ -1,4 +1,4 @@
-// hx eval <skill>|--changed: runs a skill's evals with `claude -p` (Sonnet) and stamps results.json.
+// hx eval <skill> [--failed]|--changed: runs a skill's evals with `claude -p` (Sonnet) and stamps results.json.
 import * as path from "node:path";
 import { parseArgs } from "../core/args";
 import { loadConfig } from "../core/config";
@@ -7,10 +7,11 @@ import { evalSkill, type EvalContext } from "../eval/run";
 import { versionTags } from "../release/git";
 import { evalScope, listSkills } from "../release/skills";
 
-const USAGE = `uso: hx eval <skill> | --changed
+const USAGE = `uso: hx eval <skill> [--failed] | --changed
   Escopo desde a última tag: descrição mudou -> trigger.json; corpo mudou -> evals.json;
   só evals/ mudou -> nada; skill nova -> ambos + baseline sem skill.
-  <skill> explícita sem mudança roda ambos. Sonnet, 1 rodada por consulta, até 3 sessões em paralelo.`;
+  <skill> explícita sem mudança roda ambos. Sonnet, 1 rodada por consulta, até 3 sessões em paralelo.
+  --failed: roda só o que falhou na última rodada (mesma skill) e junta com o que passou.`;
 
 export async function run(args: string[]): Promise<number> {
   const p = parseArgs(args);
@@ -47,7 +48,7 @@ export async function run(args: string[]): Promise<number> {
     console.log(
       `${skill}: ${[scope.trigger && "acionamento", scope.evals && "casos"].filter(Boolean).join(" + ")}...`,
     );
-    const r = await evalSkill(repo, skill, scope, ctx);
+    const r = await evalSkill(repo, skill, scope, ctx, { failed: !!p.flags.failed });
     ok &&= r.passed;
     const f = (b?: { passed: number; total: number }) => (b ? `${b.passed}/${b.total}` : "-");
     console.log(

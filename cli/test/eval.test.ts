@@ -1,7 +1,7 @@
 // Tests for hx eval: change scope, release gate, stream parsing, pool limit, fake-claude end to end.
 import * as fs from "node:fs";
 import * as path from "node:path";
-import { afterEach, beforeEach, describe, expect, it } from "vitest";
+import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import { evalSkill, parseStream, pool } from "../src/eval/run";
 import { git } from "../src/release/git";
 import { checkSkills, evalScope, stampSkill } from "../src/release/skills";
@@ -247,5 +247,66 @@ describe("evalSkill (fake claude)", () => {
     process.env.FAKE_JUDGE = "não sei";
     const res = await evalSkill(repo, "skills/adr", evalScope(repo, "skills/adr", "v0.1.0"), ctx);
     expect(res).toMatchObject({ passed: false, evals: { passed: 0, total: 1 } });
+  });
+
+  describe("--failed", () => {
+    const usage = () => readEventsIn(iso.home).filter((e) => e.type === "usage").length;
+    const judge = (fail3: boolean) =>
+      (process.env.FAKE_JUDGE = JSON.stringify({
+        results: ["1", "2", "3"].map((id) => ({ id, passed: !(fail3 && id === "3") })),
+      }));
+    const run = (failed: boolean) =>
+      evalSkill(repo, "skills/adr", evalScope(repo, "skills/adr", "v0.1.0"), ctx, { failed });
+
+    beforeEach(async () => {
+      write("skills/adr/SKILL.md", MD("new", "body 2"));
+      write(
+        "skills/adr/evals/trigger.json",
+        JSON.stringify([
+          { query: "TRIGGER a", should_trigger: true },
+          { query: "b", should_trigger: true },
+        ]),
+      );
+      write(
+        "skills/adr/evals/evals.json",
+        JSON.stringify({
+          evals: [1, 2, 3].map((id) => ({ id, prompt: `p${id}`, expectations: ["y"] })),
+        }),
+      );
+      judge(true);
+      await run(false); // 2 trigger + 3 cases + 1 judge
+    });
+
+    it("reruns only failed cases and queries, merges with the passed ones", async () => {
+      expect(usage()).toBe(6);
+      judge(false);
+      const res = await run(true);
+      expect(usage()).toBe(6 + 3); // 1 query + 1 case + 1 judge
+      expect(res).toMatchObject({
+        trigger: { passed: 1, total: 2 },
+        evals: { passed: 3, total: 3 },
+      });
+      const cases = JSON.parse(
+        fs.readFileSync(path.join(repo, "skills/adr/evals/cases-results.json"), "utf8"),
+      ) as { runs: { id: string; passed: boolean }[] };
+      expect(cases.runs.map((r) => [r.id, r.passed])).toEqual([
+        ["1", true],
+        ["2", true],
+        ["3", true],
+      ]);
+      const tr = JSON.parse(
+        fs.readFileSync(path.join(repo, "skills/adr/evals/trigger-results.json"), "utf8"),
+      ) as { results: { query: string }[] };
+      expect(tr.results.map((r) => r.query)).toEqual(["TRIGGER a", "b"]);
+    });
+
+    it("skill changed since last run -> runs everything and warns", async () => {
+      write("skills/adr/ref.md", "ref 2");
+      const warn = vi.spyOn(console, "warn").mockImplementation(() => {});
+      await run(true);
+      expect(warn).toHaveBeenCalledWith("skill mudou desde a última rodada: rodando tudo");
+      warn.mockRestore();
+      expect(usage()).toBe(12);
+    });
   });
 });

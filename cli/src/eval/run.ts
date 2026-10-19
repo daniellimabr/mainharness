@@ -7,7 +7,7 @@ import * as path from "node:path";
 import { readJson, writeJson } from "../core/fsx";
 import { logError } from "../core/log";
 import { emit } from "../events/emit";
-import { type EvalScope, type SkillResults, stampSkill } from "../release/skills";
+import { type EvalScope, type SkillResults, skillHash, stampSkill } from "../release/skills";
 
 export const PARALLEL = 3;
 const TIMEOUT_MS = 10 * 60_000;
@@ -257,12 +257,14 @@ const frac = (xs: boolean[]) => ({ passed: xs.filter(Boolean).length, total: xs.
 /**
  * Runs the evals the scope asks for and stamps evals/results.json (keeping the block that did not
  * run). Trigger passes with at most 1 miss (single noisy run per query); cases must all pass.
+ * `failed`: rerun only what failed last time (same skill hash), merging with what passed.
  */
 export async function evalSkill(
   repo: string,
   skill: string,
   scope: EvalScope,
   ctx: EvalContext,
+  opts: { failed?: boolean } = {},
 ): Promise<SkillResults> {
   const dir = path.join(repo, skill);
   const name = path.basename(dir);
@@ -277,17 +279,35 @@ export async function evalSkill(
   let evals = prev?.evals;
   let ok = true;
   let notes: string | undefined;
+  const reuse = !!opts.failed && !!prev && prev.skillSha256 === skillHash(dir);
+  if (opts.failed && prev && !reuse)
+    console.warn("skill mudou desde a última rodada: rodando tudo");
+  // Previous results kept as-is (passed, or baseline: expected to fail, not worth rerunning).
+  const kept = <T>(file: string, key: string, keep: (r: T) => boolean): T[] =>
+    reuse
+      ? (readJson<Record<string, T[]>>(path.join(evalsDir, file), {})[key] ?? []).filter(keep)
+      : [];
 
   if (scope.trigger) {
     const qs = readJson<TriggerQuery[]>(need("trigger.json"), []);
-    // ponytail: max-turns 2 stops a triggered skill from doing the whole task; Skill is called first.
-    const results = await pool(qs, PARALLEL, (q) =>
-      inSandbox(dir, async (sb) => {
-        const s = await claude(q.query, sb, ["--max-turns", "2"], ctx);
-        const triggered = s.skills.includes(name);
-        return { ...q, triggered, skills: s.skills, passed: triggered === q.should_trigger };
-      }),
+    const old = kept<TriggerQuery & { passed: boolean }>(
+      "trigger-results.json",
+      "results",
+      (r) => r.passed,
     );
+    const find = (q: TriggerQuery) => old.find((o) => o.query === q.query);
+    // ponytail: max-turns 2 stops a triggered skill from doing the whole task; Skill is called first.
+    const fresh = await pool(
+      qs.filter((q) => !find(q)),
+      PARALLEL,
+      (q) =>
+        inSandbox(dir, async (sb) => {
+          const s = await claude(q.query, sb, ["--max-turns", "2"], ctx);
+          const triggered = s.skills.includes(name);
+          return { ...q, triggered, skills: s.skills, passed: triggered === q.should_trigger };
+        }),
+    );
+    const results = qs.flatMap((q) => find(q) ?? fresh.filter((f) => f.query === q.query));
     writeJson(path.join(evalsDir, "trigger-results.json"), { date, results });
     trigger = frac(results.map((r) => r.passed));
     ok &&= trigger.passed >= trigger.total - 1;
@@ -299,42 +319,53 @@ export async function evalSkill(
       ...cases.map((c) => ({ id: String(c.id), c, withSkill: true })),
       ...(scope.isNew ? cases.map((c) => ({ id: `baseline-${c.id}`, c, withSkill: false })) : []),
     ];
-    const done = await pool(runs, PARALLEL, (r) =>
-      inSandbox(
-        r.withSkill ? dir : null,
-        async (sb) => {
-          // Edits stay in the sandbox; Bash only for hx (isolated HARNESS_HOME), as skills call it.
-          const perms = ["--permission-mode", "acceptEdits", "--allowedTools", '"Bash(hx:*)"'];
-          const s = await claude(r.c.prompt, sb, perms, ctx);
-          return { ...r, answer: s.answer, skills: s.skills, files: outputs(sb) };
-        },
-        r.c.files,
-        evalsDir,
-      ),
+    const old = kept<{ id: string; passed: boolean; baseline: boolean }>(
+      "cases-results.json",
+      "runs",
+      (g) => g.passed || g.baseline,
+    );
+    const find = (id: string) => old.find((g) => g.id === id);
+    const done = await pool(
+      runs.filter((r) => !find(r.id)),
+      PARALLEL,
+      (r) =>
+        inSandbox(
+          r.withSkill ? dir : null,
+          async (sb) => {
+            // Edits stay in the sandbox; Bash only for hx (isolated HARNESS_HOME), as skills call it.
+            const perms = ["--permission-mode", "acceptEdits", "--allowedTools", '"Bash(hx:*)"'];
+            const s = await claude(r.c.prompt, sb, perms, ctx);
+            return { ...r, answer: s.answer, skills: s.skills, files: outputs(sb) };
+          },
+          r.c.files,
+          evalsDir,
+        ),
     );
     // One judge session grades every run (cheaper than one judge per case, independent of the run).
-    const judge = await inSandbox(null, (sb) =>
-      claude(
-        [
-          "You are grading skill eval runs. For each run, decide if EVERY expectation holds, using",
-          "only the run's final answer and files. Reply with JSON only:",
-          '{"results":[{"id":"<run id>","passed":true,"failed":["<expectation not met>"]}]}',
-          ...done.map((r) =>
+    const judge = !done.length
+      ? { text: '{"results":[]}' }
+      : await inSandbox(null, (sb) =>
+          claude(
             [
-              `<run id="${r.id}">`,
-              `<prompt>\n${r.c.prompt}\n</prompt>`,
-              `<expectations>\n${r.c.expectations.map((e) => `- ${e}`).join("\n")}\n</expectations>`,
-              `<answer>\n${r.answer}\n</answer>`,
-              ...r.files,
-              "</run>",
+              "You are grading skill eval runs. For each run, decide if EVERY expectation holds, using",
+              "only the run's final answer and files. Reply with JSON only:",
+              '{"results":[{"id":"<run id>","passed":true,"failed":["<expectation not met>"]}]}',
+              ...done.map((r) =>
+                [
+                  `<run id="${r.id}">`,
+                  `<prompt>\n${r.c.prompt}\n</prompt>`,
+                  `<expectations>\n${r.c.expectations.map((e) => `- ${e}`).join("\n")}\n</expectations>`,
+                  `<answer>\n${r.answer}\n</answer>`,
+                  ...r.files,
+                  "</run>",
+                ].join("\n"),
+              ),
             ].join("\n"),
+            sb,
+            ["--max-turns", "1"],
+            ctx,
           ),
-        ].join("\n"),
-        sb,
-        ["--max-turns", "1"],
-        ctx,
-      ),
-    );
+        );
     let verdicts: Verdict[] = [];
     try {
       const t = judge.text;
@@ -344,7 +375,7 @@ export async function evalSkill(
     } catch {
       logError("eval", `judge sem JSON: ${judge.text.slice(0, 200)}`);
     }
-    const graded = done.map((r) => {
+    const fresh = done.map((r) => {
       const v = verdicts.find((x) => String(x.id) === r.id);
       return {
         id: r.id,
@@ -355,6 +386,7 @@ export async function evalSkill(
         answer: r.answer.slice(0, 2000),
       };
     });
+    const graded = runs.flatMap((r) => find(r.id) ?? fresh.filter((g) => g.id === r.id));
     writeJson(path.join(evalsDir, "cases-results.json"), { date, runs: graded });
     evals = frac(graded.filter((g) => !g.baseline).map((g) => g.passed));
     ok &&= evals.passed === evals.total;
