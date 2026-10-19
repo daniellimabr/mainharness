@@ -57,6 +57,7 @@ Uma linha por arquivo: caminho e propósito. Mantido pelo hook `post-edit`.
 - `cli/src/hooks/lifecycle.ts` — Stop, SubagentStop, PreCompact and SessionEnd: usage ingestion and the managed 250K context cycle.
 - `cli/src/hooks/post-edit.ts` — PostToolUse(Write|Edit|MultiEdit): keeps index.md current, formats and lints the edited file.
 - `cli/src/hooks/pre-bash.ts` — PreToolUse(Bash|PowerShell): denies destructive commands, asks before risky git operations.
+- `cli/src/hooks/pre-edit.ts` — PreToolUse(Write|Edit|MultiEdit): denies edits to the built bundle and to the stable install.
 - `cli/src/hooks/runner.ts` — Shared hook plumbing: stdin JSON in, exit code + stdout/stderr out. Errors never break the session.
 - `cli/src/hooks/session-start.ts` — SessionStart: records the session, migrates the project if needed and injects a short context.
 - `cli/src/index.ts` — hx: single CLI of the Main Harness. Each command lives in its own module.
@@ -82,14 +83,16 @@ Uma linha por arquivo: caminho e propósito. Mantido pelo hook `post-edit`.
 - `cli/test/lint.test.ts` — testes de lint
 - `cli/test/migrate.test.ts` — testes de migrate
 - `cli/test/paths.test.ts` — testes de paths (HARNESS_HOME)
+- `cli/test/pre-bash-s04.test.ts` — pre-bash S04: cd to /c/... denied, stale bundle on commit asks, Remove-Item with spaces inside the repo allowed.
+- `cli/test/pre-edit.test.ts` — pre-edit hook: denies edits to cli/dist/hx.js and the stable dir.
 - `cli/test/release.test.ts` — testes de release
 - `cli/test/repomap.test.ts` — testes de repomap
 - `cli/test/review-security-recheck.test.ts` — Re-review of T13 fixes (commit 0aeaf25): remaining bypasses and false positives in pre-bash.
 - `cli/test/review-security.test.ts` — testes de segurança do pre-bash (achados do Reviewer)
-- `cli/test/review-security-recheck.test.ts` — testes de segurança do pre-bash (segunda revisão)
 - `cli/test/run.test.ts` — (sem descrição)
 - `cli/test/setup.test.ts` — (sem descrição)
 - `cli/test/sprint.test.ts` — testes de sprint
+- `cli/test/stop-typecheck.test.ts` — Stop hook typecheck: tsc runs only when cli/src changed and blocks with its first lines.
 - `cli/test/usage.test.ts` — testes de usage
 - `cli/tsconfig.json` — TypeScript estrito do CLI
 - `commands/continue.md` — Retoma a sprint a partir do último handoff (num chat novo)
@@ -116,6 +119,7 @@ Uma linha por arquivo: caminho e propósito. Mantido pelo hook `post-edit`.
 - `docs/sprints/S02-plan.md` — S02 — Sprint mais clara e mais segura (v0.3.0)
 - `docs/sprints/S02-release.md` — S02 — Release Report: Sprint mais clara e mais segura (v0.3.0)
 - `docs/sprints/S03-plan.md` — S03 — Arrumação antes do Dashboard (v0.4.0)
+- `docs/sprints/S04-plan.md` — S04 — Consertos e medição (v0.5.0)
 - `eslint.config.js` — ESLint flat config
 - `hooks/hooks.json` — hooks do plugin (forma exec chamando o hx)
 - `package-lock.json` — versões travadas das dependências de desenvolvimento

@@ -66,6 +66,22 @@ describe("ensureIndexEntry", () => {
     fs.unlinkSync(path.join(dir, "index.md"));
     expect(ensureIndexEntry(dir, put("y.ts", "// Y.\n"))).toBe(false);
   });
+
+  // B025: the hook adds a line, then a manual edit of index.md adds the same path again.
+  it("removes duplicate entries, including when index.md itself is edited", () => {
+    const f = put("b dir/r-x.ts", "// R.\n");
+    put("index.md", index);
+    ensureIndexEntry(dir, f);
+    const idx = path.join(dir, "index.md");
+    fs.writeFileSync(
+      idx,
+      fs.readFileSync(idx, "utf8").replace("- `d.ts`", "- `b dir/r-x.ts` — manual\n- `d.ts`"),
+    );
+    expect(ensureIndexEntry(dir, idx)).toBe(false);
+    expect(fs.readFileSync(idx, "utf8")).toBe(
+      "# Mapa\n\n## Arquivos\n\n- `b dir/r-x.ts` — R.\n- `b.ts` — b\n- `d.ts` — d\n\n## Outros\n\nnotas\n",
+    );
+  });
 });
 
 describe("buildRepoMap", () => {

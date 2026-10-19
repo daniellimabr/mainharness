@@ -71,15 +71,30 @@ function entryLine(root: string, rel: string): string {
   return `- \`${rel}\` — ${describeFile(path.join(root, rel))}`;
 }
 
-/** Adds `file` to <root>/index.md (section "## Arquivos", sorted) when not listed. Returns true when added. */
+/**
+ * Adds `file` to <root>/index.md (section "## Arquivos", sorted) when not listed. Returns true when added.
+ * Also drops repeated entries (keeps the first), since manual edits of index.md can re-add a path.
+ */
 export function ensureIndexEntry(root: string, file: string): boolean {
   const idx = path.join(root, "index.md");
   if (!fs.existsSync(idx)) return false;
   const rel = path.relative(root, file).split(path.sep).join("/");
-  if (!rel || rel.startsWith("..") || rel === "index.md" || isSkipped(rel)) return false;
-  const eol = fs.readFileSync(idx, "utf8").includes("\r\n") ? "\r\n" : "\n";
-  const lines = fs.readFileSync(idx, "utf8").split(/\r?\n/);
-  if (lines.some((l) => entryPath(l) === rel)) return false;
+  if (!rel || rel.startsWith("..") || isSkipped(rel)) return false;
+  const text = fs.readFileSync(idx, "utf8");
+  const eol = text.includes("\r\n") ? "\r\n" : "\n";
+  const seen = new Set<string>();
+  const lines = text.split(/\r?\n/).filter((l) => {
+    const p = entryPath(l);
+    if (p === null) return true;
+    if (seen.has(p)) return false;
+    seen.add(p);
+    return true;
+  });
+  const deduped = lines.join(eol) !== text;
+  if (rel === "index.md" || seen.has(rel)) {
+    if (deduped) writeFileAtomic(idx, lines.join(eol));
+    return false;
+  }
   const line = entryLine(root, rel);
   const head = lines.findIndex((l) => l.trim() === SECTION);
   if (head < 0) {
