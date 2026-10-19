@@ -29,6 +29,7 @@ Uma ou duas frases: o que precisa existir no fim e por quê.
 - `caminho/arquivo-a`
 - `caminho/arquivo-b`
 (Todo o resto: não toque. Precisa de outro? Avise o Tech Lead.)
+Ler, buscar e editar só com Read, Grep, Glob, Edit e Write. Terminal no Windows pelo PowerShell (`hx run ...`), sem `cd`; no Bash, sem `cd` e sem `/c/...`.
 
 ## Decisões já tomadas
 - Decisão e motivo em uma linha (ADR NNNN, se houver).
