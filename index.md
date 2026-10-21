@@ -12,6 +12,7 @@ Uma linha por arquivo: caminho e propósito. Mantido pelo hook `post-edit`.
 - `.gitignore` — arquivos fora do git
 - `.prettierignore` — arquivos fora do Prettier
 - `.prettierrc` — configuração do Prettier
+- `CHANGELOG.md` — Changelog
 - `CLAUDE.md` — regras deste repo para os agentes
 - `agents/reviewer.md` — Reviewer fixo do Main Harness. Use para revisar cada tarefa entregue da sprint antes de considerá-la pronta - lint e ...
 - `agents/tech-lead.md` — Tech Lead do Main Harness. Sessão principal de todo projeto conectado; também usado como clone para executar uma tare...
@@ -143,6 +144,7 @@ Uma linha por arquivo: caminho e propósito. Mantido pelo hook `post-edit`.
 - `docs/sprints/S06-plan.md` — S06 — Pendências do backlog: status line, tempos honestos e evals estáveis
 - `docs/sprints/S06-release.md` — S06 — Release Report
 - `docs/sprints/S07-plan.md` — S07 — % de uso no VS Code, fim da status line e tempos mais finos
+- `docs/sprints/S07-release.md` — S07 — Release Report
 - `eslint.config.js` — ESLint flat config
 - `hooks/hooks.json` — hooks do plugin (forma exec chamando o hx)
 - `package-lock.json` — versões travadas das dependências de desenvolvimento
