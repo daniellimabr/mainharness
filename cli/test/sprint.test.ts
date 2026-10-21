@@ -425,6 +425,7 @@ describe("pauses, time to review and feedback rounds (B035, B037, B040)", () => 
     const t1 = task("T01", "02:00", "03:10");
     usage("02:10");
     usage("02:55"); // 45 min without events: pause
+    phase("T01", "02:58"); // rejected delivery: the last one before done counts (B060)
     phase("T01", "03:00");
     ev("task.done", "03:10", { duration_s: t1.duration_s }, "T01");
     const t2 = task("T02", "03:10", "03:45");
@@ -441,8 +442,8 @@ describe("pauses, time to review and feedback rounds (B035, B037, B040)", () => 
     const plan = parsePlan(TEMPLATE);
     const m = computeMetrics("proj-teste", "S01", plan);
     expect(m).toMatchObject({
-      actual_min_by_task: { T01: 25, T02: 35, T03: 15 },
-      review_min_by_task: { T01: 15 },
+      actual_min_by_task: { T01: 15, T02: 35, T03: 15 },
+      review_min_by_task: { T01: 10 },
       pause_min: 45,
       wall_min: 75,
       feedback_rounds: 2,
@@ -450,7 +451,7 @@ describe("pauses, time to review and feedback rounds (B035, B037, B040)", () => 
       feedback_usd: 0.5,
     });
     const md = renderMetrics("S01", plan, m);
-    expect(md).toContain("| T01 | 20 min | 25 min (revisão: 15 min) |");
+    expect(md).toContain("| T01 | 20 min | 15 min (revisão: 10 min) |");
     expect(md).toMatch(/\| T02 \| [^|]+ \| 35 min \|/);
     expect(md).toContain("| Pausas (mais de 30 min sem eventos, fora do corrido) | 45 min |");
     expect(md).toContain(
@@ -460,7 +461,7 @@ describe("pauses, time to review and feedback rounds (B035, B037, B040)", () => 
     updateExecution(dir, "S01", plan.tasks, (t) => taskLine(t), { T01: t1, T02: t2, T03: t3 });
     const rel = fs.readFileSync(path.join(dir, "docs", "sprints", "S01-release.md"), "utf8");
     expect(rel).toContain(
-      "| ✅ | T01 | Descrição curta | tech-lead | 20 min | 23:00 | 00:10 | 25 min (revisão: 15 min) |",
+      "| ✅ | T01 | Descrição curta | tech-lead | 20 min | 23:00 | 00:10 | 15 min (revisão: 10 min) |",
     );
     expect(rel).toMatch(/\| ✅ \| T02 \|.*\| 00:10 \| 00:45 \| 35 min \|/);
     expect(rel).toContain("| ✅ | Ajuste 1 | 2 ajuste(s) |  |  | 01:10 | 01:30 | 20 min |");

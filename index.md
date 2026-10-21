@@ -37,6 +37,7 @@ Uma linha por arquivo: caminho e propósito. Mantido pelo hook `post-edit`.
 - `cli/src/commands/skills.ts` — hx skills [on|off <name>]: lists or toggles optional catalog skills in the current project (ADR 0005).
 - `cli/src/commands/sprint.ts` — hx sprint approve|open|status|feedback|close: sprint lifecycle on docs/sprints/SNN-plan.md.
 - `cli/src/commands/status.ts` — hx status --where <texto> --next <texto>: records where the project is and what comes next (project.status).
+- `cli/src/commands/statusline.ts` — hx statusline: Claude Code status line (stdin JSON). Records the usage limits and chat title.
 - `cli/src/commands/task.ts` — hx task start|done <id>: task times in state and in the "## Execução" table of SNN-release.md, plus events.
 - `cli/src/commands/usage.ts` — hx usage: ingests the project's Claude Code transcripts and prints tokens and US$ per agent/model.
 - `cli/src/core/args.ts` — Tiny argument parser: positionals + --flag value / --flag=value / --bool.
@@ -89,6 +90,7 @@ Uma linha por arquivo: caminho e propósito. Mantido pelo hook `post-edit`.
 - `cli/test/paths.test.ts` — testes de paths (HARNESS_HOME)
 - `cli/test/pre-bash-s04.test.ts` — pre-bash S04: cd to /c/... denied, stale bundle on commit asks, Remove-Item with spaces inside the repo allowed.
 - `cli/test/pre-bash-s05.test.ts` — pre-bash S05 (B046, B047): git --output, redirects and PowerShell writers follow the pre-edit rule.
+- `cli/test/pre-bash-s06.test.ts` — pre-bash S06 (B054): Tee-Object and git format-patch -o follow the pre-edit rule.
 - `cli/test/pre-edit.test.ts` — pre-edit hook: denies edits to cli/dist/hx.js and the stable dir.
 - `cli/test/probe-s05.test.ts` — (sem descrição)
 - `cli/test/release.test.ts` — testes de release
@@ -99,7 +101,9 @@ Uma linha por arquivo: caminho e propósito. Mantido pelo hook `post-edit`.
 - `cli/test/session-start-requests.test.ts` — session-start shows, once, the project's harness requests marked `feito (SNN)` in the harness backlog.
 - `cli/test/setup.test.ts` — (sem descrição)
 - `cli/test/sprint.test.ts` — testes de sprint
+- `cli/test/statusline.test.ts` — (sem descrição)
 - `cli/test/stop-typecheck.test.ts` — Stop hook typecheck: tsc runs only when cli/src changed and blocks with its first lines.
+- `cli/test/text-s06.test.ts` — S06 text fixes: hx status cleans where/next like the title (B057); session-start keeps `\|` in backlog items (B058).
 - `cli/test/turn-end.test.ts` — B045: the Stop hook emits turn.end only when it lets the agent stop.
 - `cli/test/usage.test.ts` — testes de usage
 - `cli/tsconfig.json` — TypeScript estrito do CLI
@@ -131,6 +135,7 @@ Uma linha por arquivo: caminho e propósito. Mantido pelo hook `post-edit`.
 - `docs/sprints/S04-release.md` — S04 — Release Report: Guardas, tempos e estimativa calibrada (v0.5.0)
 - `docs/sprints/S05-plan.md` — S05 — Eventos completos para o Dashboard e ciclo de pedidos fechado
 - `docs/sprints/S05-release.md` — Release Report — S05: Eventos completos para o Dashboard e ciclo de pedidos fechado
+- `docs/sprints/S06-plan.md` — S06 — Pendências do backlog: status line, tempos honestos e evals estáveis
 - `eslint.config.js` — ESLint flat config
 - `hooks/hooks.json` — hooks do plugin (forma exec chamando o hx)
 - `package-lock.json` — versões travadas das dependências de desenvolvimento
@@ -159,6 +164,7 @@ Uma linha por arquivo: caminho e propósito. Mantido pelo hook `post-edit`.
 - `skills/tdd-workflow/LICENSE` — licença MIT do ECC
 - `skills/tdd-workflow/SKILL.md` — Desenvolvimento guiado por testes nas tarefas da sprint: escrever o teste que falha primeiro, ver falhar (RED), imple...
 - `skills/tdd-workflow/SOURCE.md` — Origem
+- `skills/tdd-workflow/evals/evals.json` — (sem descrição)
 - `templates/CLAUDE.md` — {{name}}
 - `templates/adr.md` — ADR NNNN — Título curto da decisão
 - `templates/backlog.md` — Backlog — {{name}}

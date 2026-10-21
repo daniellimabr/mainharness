@@ -78,7 +78,7 @@ export function updateExecution(
     let review: number | undefined;
     for (const [s = "", e = ""] of passes) {
       const tt = taskTime(a, t.id, Date.parse(s), Date.parse(e));
-      if (review === undefined && tt.review !== undefined) review = min + tt.review;
+      if (tt.review !== undefined) review = (review ?? 0) + tt.review;
       min += tt.min;
     }
     return taskLine(t, { ...x, start: passes[0]?.[0], duration_s: min * 60 }, review);
@@ -139,18 +139,23 @@ function activity(project: string): Activity {
   return { evs, times: evs.map((e) => Date.parse(e.ts)) };
 }
 
-/** Task minutes net of pauses and, with a "revisão" phase (B035), minutes until it. */
+/** Task minutes net of pauses; with a "revisão" phase (B060), minutes until delivery plus the review after it. */
 function taskTime(a: Activity, task: string, start: number, end: number) {
   const net = (to: number) => (to - start - pauseMs(a.times, start, to)) / 60000;
-  const ph = a.evs.find(
-    (e) =>
-      e.type === "task.phase" &&
-      e.task === task &&
-      e.data.phase === "revisão" &&
-      Date.parse(e.ts) >= start &&
-      Date.parse(e.ts) <= end,
-  );
-  return { min: net(end), review: ph ? net(Date.parse(ph.ts)) : undefined };
+  // last delivery: fixes after a rejection are the clone's work, not review
+  const ph = [...a.evs]
+    .reverse()
+    .find(
+      (e) =>
+        e.type === "task.phase" &&
+        e.task === task &&
+        e.data.phase === "revisão" &&
+        Date.parse(e.ts) >= start &&
+        Date.parse(e.ts) <= end,
+    );
+  if (!ph) return { min: net(end), review: undefined };
+  const delivered = net(Date.parse(ph.ts));
+  return { min: delivered, review: net(end) - delivered };
 }
 
 export interface Round {
@@ -473,7 +478,7 @@ export interface SprintMetrics {
   actual_min_by_task: Record<string, number>;
   /** B037: gaps over 30 min without events, left out of wall_min and the task times. */
   pause_min: number;
-  /** B035: minutes from start to the "revisão" phase, for tasks that had it. */
+  /** B060: minutes from the last "revisão" phase (delivery) to done; actual_min_by_task stops at delivery. */
   review_min_by_task: Record<string, number>;
   /** B040: feedback rounds (count, time net of pauses, cost). */
   feedback_rounds: number;
@@ -523,8 +528,8 @@ export function computeMetrics(project: string, sprintId: string, plan: Plan): S
       const tt = taskTime(a, e.task, end - num(e.data.duration_s) * 1000, end);
       const prior = durations[e.task] ?? 0; // B053: a reopened task sums its passes
       durations[e.task] = prior + tt.min * 60;
-      if (tt.review !== undefined && !(e.task in review_min_by_task))
-        review_min_by_task[e.task] = r1(prior / 60 + tt.review);
+      if (tt.review !== undefined)
+        review_min_by_task[e.task] = r1((review_min_by_task[e.task] ?? 0) + tt.review);
     }
   const actual_min_by_task: Record<string, number> = {};
   for (const [k, s] of Object.entries(durations)) actual_min_by_task[k] = r1(s / 60);

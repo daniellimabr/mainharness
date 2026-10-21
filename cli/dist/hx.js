@@ -435,6 +435,11 @@ var init_schema = __esm({
       "agent.start": { agent_id: s() },
       "agent.end": { agent_id: s() },
       "project.status": { where: s(), next: s() },
+      statusline: {
+        five_hour: n({ nullable: true }),
+        seven_day: n({ nullable: true }),
+        title: s(opt)
+      },
       "sprint.approved": { plan: s(), sha256: s(), approved_at: s(), approver: s() },
       "sprint.open": { tasks: n() },
       "sprint.close": { tasks_done: n(), tasks_total: n(), duration_s: n() },
@@ -651,10 +656,10 @@ function ingestTranscripts(opts) {
     const { lines, offset } = readNew(file2, cache.offsets[key] ?? 0);
     const parsed = lines.map(parseAssistant);
     let keep = lines.length;
-    const tail = parsed.at(-1)?.message;
-    if (tail?.stop_reason === null) {
-      while (keep > 0 && parsed[keep - 1]?.message?.id === tail.id) keep--;
-    }
+    let t = parsed.length - 1;
+    while (t >= 0 && !parsed[t]) t--;
+    const tail = parsed[t]?.message;
+    if (tail?.stop_reason === null) keep = parsed.findIndex((o) => o?.message?.id === tail.id);
     cache.offsets[key] = offset - lines.slice(keep).reduce((n2, l) => n2 + Buffer.byteLength(l) + 1, 0);
     const last = /* @__PURE__ */ new Map();
     for (const o of parsed.slice(0, keep)) if (o) last.set(o.message?.id, o);
@@ -1429,7 +1434,8 @@ function checkGit(args, cwd, root, stable) {
   if (GIT_WRITES.has(sub) && isInside(dir, stable))
     return { decision: "deny", reason: `Bloqueado: ${stable} s\xF3 muda via hx release/rollback.` };
   for (let k = 0; k < rest.length; k++) {
-    const m = /^--outp(?:ut?)?(?:=(.*))?$/s.exec(rest[k]);
+    const a = rest[k];
+    const m = /^--outp(?:ut?)?(?:=(.*))?$/s.exec(a) ?? (sub === "format-patch" ? /^(?:-o|--output-d[a-z]*=?)(.+)?$/s.exec(a) : null);
     const w = m && checkWrite(m[1] ?? rest[++k] ?? "", dir, root, stable);
     if (w) return w;
   }
@@ -1655,6 +1661,7 @@ var init_pre_bash = __esm({
       "ni",
       "touch",
       "tee",
+      "tee-object",
       "out-file",
       "set-content",
       "sc",
@@ -1975,7 +1982,7 @@ function updateExecution(projectRoot, sprintId2, tasks, lineFor, times) {
     let review;
     for (const [s2 = "", e = ""] of passes) {
       const tt = taskTime(a, t.id, Date.parse(s2), Date.parse(e));
-      if (review === void 0 && tt.review !== void 0) review = min + tt.review;
+      if (tt.review !== void 0) review = (review ?? 0) + tt.review;
       min += tt.min;
     }
     return taskLine(t, { ...x, start: passes[0]?.[0], duration_s: min * 60 }, review);
@@ -2016,10 +2023,12 @@ function activity(project) {
 }
 function taskTime(a, task, start, end) {
   const net = (to) => (to - start - pauseMs(a.times, start, to)) / 6e4;
-  const ph = a.evs.find(
+  const ph = [...a.evs].reverse().find(
     (e) => e.type === "task.phase" && e.task === task && e.data.phase === "revis\xE3o" && Date.parse(e.ts) >= start && Date.parse(e.ts) <= end
   );
-  return { min: net(end), review: ph ? net(Date.parse(ph.ts)) : void 0 };
+  if (!ph) return { min: net(end), review: void 0 };
+  const delivered = net(Date.parse(ph.ts));
+  return { min: delivered, review: net(end) - delivered };
 }
 function feedbackRounds(sprintEvs) {
   const out = [];
@@ -2270,8 +2279,8 @@ function computeMetrics(project, sprintId2, plan) {
       const tt = taskTime(a, e.task, end - num(e.data.duration_s) * 1e3, end);
       const prior = durations[e.task] ?? 0;
       durations[e.task] = prior + tt.min * 60;
-      if (tt.review !== void 0 && !(e.task in review_min_by_task))
-        review_min_by_task[e.task] = r1(prior / 60 + tt.review);
+      if (tt.review !== void 0)
+        review_min_by_task[e.task] = r1((review_min_by_task[e.task] ?? 0) + tt.review);
     }
   const actual_min_by_task = {};
   for (const [k, s2] of Object.entries(durations)) actual_min_by_task[k] = r1(s2 / 60);
@@ -2422,10 +2431,13 @@ function migrationNote(root, from, to) {
     return `Migra\xE7\xE3o do harness ${from} \u2192 ${to} falhou; rode hx migrate.`;
   }
 }
+function safeText(t) {
+  return t.replace(/[\r\n\t{};<>`]/g, " ").slice(0, 200);
+}
 function title(input) {
   const t = input.session_title;
   if (typeof t !== "string") return {};
-  const safe = t.replace(/[\r\n\t{};<>`]/g, " ").slice(0, 200);
+  const safe = safeText(t);
   return safe.trim() ? { title: safe } : {};
 }
 function ownerOf(file2, ids) {
@@ -2441,7 +2453,7 @@ function doneRequests(projectId, version) {
   const lines = [];
   const ok = [];
   for (const row of fs17.readFileSync(file2, "utf8").split("\n")) {
-    const cells2 = row.split("|").map((c) => c.trim());
+    const cells2 = row.split(/(?<!\\)\|/).map((c) => c.replaceAll("\\|", "|").trim());
     const [, id = "", item = "", origin = ""] = cells2;
     const status = cells2[cells2.length - 2] ?? "";
     const inbox = /^inbox:\s*`?([\w.-]+\.md)/.exec(origin)?.[1];
@@ -2922,7 +2934,7 @@ function run6(args) {
     session: ctx.session,
     sprint: ctx.sprint,
     agent: ctx.agent,
-    data: { where, next }
+    data: { where: safeText(where), next: safeText(next) }
   });
   console.log("Status registrado.");
   return 0;
@@ -2933,15 +2945,86 @@ var init_status = __esm({
     init_args();
     init_context();
     init_emit();
+    init_session_start();
+  }
+});
+
+// cli/src/commands/statusline.ts
+var statusline_exports = {};
+__export(statusline_exports, {
+  run: () => run7,
+  statusline: () => statusline
+});
+function statusline(raw) {
+  let inp;
+  try {
+    const v = JSON.parse(raw);
+    if (typeof v !== "object" || v === null || Array.isArray(v)) return "hx";
+    inp = v;
+  } catch {
+    return "hx";
+  }
+  const five = pct(inp.rate_limits?.five_hour?.used_percentage);
+  const week = pct(inp.rate_limits?.seven_day?.used_percentage);
+  const chat = str(inp.session_name);
+  const name = chat ? safeText(chat) : void 0;
+  const title2 = name?.trim() ? name : void 0;
+  const p = resolveProject(str(inp.workspace?.current_dir) ?? str(inp.cwd) ?? process.cwd());
+  if (p) {
+    const session = str(inp.session_id);
+    const key = JSON.stringify([session, five, week, title2]);
+    const st = readState(p.id);
+    if (st.lastStatusline !== key) {
+      try {
+        emit({
+          type: "statusline",
+          project: p.id,
+          session,
+          sprint: st.activeSprint,
+          data: { five_hour: five, seven_day: week, ...title2 ? { title: title2 } : {} }
+        });
+        updateState(p.id, (s2) => {
+          s2.lastStatusline = key;
+        });
+      } catch {
+      }
+    }
+  }
+  const parts2 = [
+    title2,
+    five === null ? null : `5h ${Math.round(five)}%`,
+    week === null ? null : `sem ${Math.round(week)}%`
+  ].filter(Boolean);
+  return parts2.join(" \xB7 ") || "hx";
+}
+function run7(_args) {
+  try {
+    console.log(statusline(readStdin()));
+  } catch {
+    console.log("hx");
+  }
+  return 0;
+}
+var pct, str;
+var init_statusline = __esm({
+  "cli/src/commands/statusline.ts"() {
+    "use strict";
+    init_projects();
+    init_state();
+    init_emit();
+    init_runner();
+    init_session_start();
+    pct = (v) => typeof v === "number" && Number.isFinite(v) ? v : null;
+    str = (v) => typeof v === "string" && v ? v : null;
   }
 });
 
 // cli/src/commands/handoff.ts
 var handoff_exports = {};
 __export(handoff_exports, {
-  run: () => run7
+  run: () => run8
 });
-function run7(args) {
+function run8(args) {
   const p = parseArgs(args);
   const ctx = commandContext(process.cwd(), flagStr(p, "agent"));
   const last = readState(ctx.id).lastHandoff;
@@ -3016,9 +3099,9 @@ var init_handoff = __esm({
 // cli/src/commands/run.ts
 var run_exports = {};
 __export(run_exports, {
-  run: () => run8
+  run: () => run9
 });
-function run8(args) {
+function run9(args) {
   const parts2 = args[0] === "--" ? args.slice(1) : args;
   if (!parts2.length) {
     console.error("uso: hx run <comando>");
@@ -3062,9 +3145,9 @@ var init_run = __esm({
 // cli/src/commands/request.ts
 var request_exports = {};
 __export(request_exports, {
-  run: () => run9
+  run: () => run10
 });
-function run9(args) {
+function run10(args) {
   const p = parseArgs(args);
   const title2 = flagStr(p, "title");
   const need = flagStr(p, "need");
@@ -3131,9 +3214,9 @@ var init_request = __esm({
 // cli/src/commands/metrics.ts
 var metrics_exports = {};
 __export(metrics_exports, {
-  run: () => run10
+  run: () => run11
 });
-function run10(args) {
+function run11(args) {
   const p = parseArgs(args);
   const doEmit = boolFlag(p, "emit");
   const ctx = commandContext(process.cwd(), flagStr(p, "agent"));
@@ -3169,7 +3252,7 @@ var init_metrics = __esm({
 // cli/src/commands/usage.ts
 var usage_exports = {};
 __export(usage_exports, {
-  run: () => run11
+  run: () => run12
 });
 function add(t, d) {
   t.input += Number(d.input) || 0;
@@ -3199,7 +3282,7 @@ function summary(title2, evs) {
   }
   return out;
 }
-function run11(args) {
+function run12(args) {
   const p = parseArgs(args);
   let ctx;
   try {
@@ -3643,10 +3726,13 @@ var init_shim = __esm({
 var setup_exports = {};
 __export(setup_exports, {
   AUTO_MODE_RULE: () => AUTO_MODE_RULE,
+  STATUS_LINE: () => STATUS_LINE,
   disablePonytailBand: () => disablePonytailBand,
   ensureAutoModeRule: () => ensureAutoModeRule,
+  ensureStatusLine: () => ensureStatusLine,
   hasAutoModeRule: () => hasAutoModeRule,
-  run: () => run12,
+  hasStatusLine: () => hasStatusLine,
+  run: () => run13,
   userHomeVarSet: () => userHomeVarSet
 });
 function userHomeVarSet() {
@@ -3662,18 +3748,31 @@ function hasAutoModeRule() {
   const allow = readJson(path29.join(claudeHome(), "settings.json"), {})?.autoMode?.allow;
   return Array.isArray(allow) && allow.includes(AUTO_MODE_RULE);
 }
-function ensureAutoModeRule() {
-  const file2 = path29.join(claudeHome(), "settings.json");
-  const text = readText(file2)?.trim();
-  let st = {};
-  if (text) {
-    try {
-      st = JSON.parse(text);
-    } catch {
-      return "invalid";
-    }
+function loadSettings() {
+  const text = readText(settingsFile())?.trim();
+  if (!text) return {};
+  try {
+    const st = JSON.parse(text);
+    return isObj(st) ? st : null;
+  } catch {
+    return null;
   }
-  if (!isObj(st) || st.autoMode !== void 0 && !isObj(st.autoMode)) return "invalid";
+}
+function hasStatusLine() {
+  return loadSettings()?.statusLine !== void 0;
+}
+function ensureStatusLine() {
+  const st = loadSettings();
+  if (!st) return "invalid";
+  if (st.statusLine !== void 0) return "present";
+  st.statusLine = STATUS_LINE;
+  writeJson(settingsFile(), st);
+  return "added";
+}
+function ensureAutoModeRule() {
+  const file2 = settingsFile();
+  const st = loadSettings();
+  if (!st || st.autoMode !== void 0 && !isObj(st.autoMode)) return "invalid";
   if (st.autoMode?.allow !== void 0 && !Array.isArray(st.autoMode.allow)) return "invalid";
   const auto = st.autoMode ??= {};
   const allow = auto.allow ??= ["$defaults"];
@@ -3682,7 +3781,7 @@ function ensureAutoModeRule() {
   writeJson(file2, st);
   return "added";
 }
-function run12(args) {
+function run13(args) {
   const dry = parseArgs(args).flags["dry-run"] === true;
   const say = (msg) => console.log(dry ? `[simula\xE7\xE3o] ${msg}` : msg);
   if (fs28.existsSync(home.config())) say("config.json j\xE1 existe");
@@ -3721,6 +3820,8 @@ function run12(args) {
   say("liberando o hx no modo auto (autoMode.allow em ~/.claude/settings.json)");
   if (!dry && ensureAutoModeRule() === "invalid")
     console.error("settings.json do Claude ileg\xEDvel: corrija o JSON e rode hx setup de novo");
+  say("status line do hx (hx statusline) em ~/.claude/settings.json, se n\xE3o houver outra");
+  if (!dry && ensureStatusLine() === "present") say("status line j\xE1 existia: mantida");
   say(`instalando o comando hx em ${shimDir()} (aponta para ${cfg.stableDir})`);
   let restart = false;
   if (!dry) {
@@ -3736,7 +3837,7 @@ function run12(args) {
   );
   return 0;
 }
-var import_node_child_process8, fs28, os3, path29, PLACEHOLDER, AUTO_MODE_RULE, isObj;
+var import_node_child_process8, fs28, os3, path29, PLACEHOLDER, AUTO_MODE_RULE, isObj, settingsFile, STATUS_LINE;
 var init_setup2 = __esm({
   "cli/src/commands/setup.ts"() {
     "use strict";
@@ -3753,13 +3854,15 @@ var init_setup2 = __esm({
     PLACEHOLDER = "C:/harness-stable";
     AUTO_MODE_RULE = "Running the hx CLI (hx sprint, hx task, hx handoff, hx eval, hx review, hx usage) in any project is allowed: it is the Main Harness sprint tooling the user installed. hx run is allowed only when the wrapped command would be allowed on its own.";
     isObj = (v) => typeof v === "object" && v !== null && !Array.isArray(v);
+    settingsFile = () => path29.join(claudeHome(), "settings.json");
+    STATUS_LINE = { type: "command", command: "hx statusline" };
   }
 });
 
 // cli/src/commands/doctor.ts
 var doctor_exports = {};
 __export(doctor_exports, {
-  run: () => run13,
+  run: () => run14,
   runDoctor: () => runDoctor
 });
 function pythonVersion() {
@@ -3902,6 +4005,12 @@ function runDoctor(opts = {}) {
     "hx sem regra no modo auto (autoMode.allow do ~/.claude/settings.json): rode hx setup",
     true
   );
+  check(
+    hasStatusLine(),
+    "status line configurada",
+    "sem status line (o % do limite e o t\xEDtulo do chat n\xE3o s\xE3o gravados): rode hx setup",
+    true
+  );
   const root = opts.projectRoot ?? resolveProject(process.cwd())?.root ?? null;
   if ((root ?? process.cwd()).includes(" "))
     lines.push(
@@ -3975,7 +4084,7 @@ function runDoctor(opts = {}) {
   lines.push(problems ? `${problems} problema${problems > 1 ? "s" : ""}` : "Tudo certo");
   return { ok: problems === 0, lines };
 }
-function run13(_args) {
+function run14(_args) {
   const r = runDoctor();
   for (const l of r.lines) console.log(l);
   return r.ok ? 0 : 1;
@@ -4014,7 +4123,7 @@ var init_doctor = __esm({
 // cli/src/commands/attach.ts
 var attach_exports = {};
 __export(attach_exports, {
-  run: () => run14
+  run: () => run15
 });
 function indexMd(root, vars) {
   try {
@@ -4023,7 +4132,7 @@ function indexMd(root, vars) {
     return render("index.md", { ...vars, map: "" });
   }
 }
-function run14(args) {
+function run15(args) {
   const p = parseArgs(args);
   const root = path31.resolve(p._[0] ?? process.cwd());
   if (!fs30.existsSync(root) || !fs30.statSync(root).isDirectory()) {
@@ -4157,9 +4266,9 @@ var init_attach = __esm({
 // cli/src/commands/skills.ts
 var skills_exports = {};
 __export(skills_exports, {
-  run: () => run15
+  run: () => run16
 });
-function run15(args) {
+function run16(args) {
   const [action, name] = args;
   const p = resolveProject(process.cwd());
   if (!p) {
@@ -4371,6 +4480,9 @@ async function claude(prompt2, cwd, extra, ctx) {
   const args = ["-p", "--model", "sonnet", "--output-format", "stream-json", "--verbose"];
   const env = { ...process.env, HARNESS_HOME: path33.join(cwd, ".hx-home") };
   delete env.CLAUDECODE;
+  delete env.HARNESS_REPO;
+  delete env.HARNESS_STABLE_DIR;
+  delete env.HARNESS_INBOX;
   const s2 = await new Promise((resolve14, reject) => {
     const child = (0, import_node_child_process10.spawn)([bin, ...args, "--setting-sources", "project", ...extra].join(" "), {
       cwd,
@@ -4489,6 +4601,10 @@ async function evalSkill(repo, skill, scope, ctx, opts = {}) {
   }
   if (scope.evals) {
     const cases = readJson(need("evals.json"), { evals: [] }).evals;
+    for (const c of cases.filter(needsFixtures))
+      console.warn(
+        `${skill}: caso ${c.id} sem files, mas o prompt pressup\xF5e repo conectado/sprint/relat\xF3rio (evals/files*/.hx-home/config.json)`
+      );
     const runs = [
       ...cases.map((c) => ({ id: String(c.id), c, withSkill: true })),
       ...scope.isNew ? cases.map((c) => ({ id: `baseline-${c.id}`, c, withSkill: false })) : []
@@ -4571,7 +4687,7 @@ ${r.answer}
   }
   return stampSkill(repo, skill, { passed: ok, trigger, evals, notes });
 }
-var import_node_child_process10, fs32, os5, path33, PARALLEL, TIMEOUT_MS, MAX_FILE, safeId2, frac;
+var import_node_child_process10, fs32, os5, path33, PARALLEL, TIMEOUT_MS, MAX_FILE, safeId2, ASSUMES_REPO, needsFixtures, frac;
 var init_run2 = __esm({
   "cli/src/eval/run.ts"() {
     "use strict";
@@ -4587,6 +4703,8 @@ var init_run2 = __esm({
     TIMEOUT_MS = 10 * 6e4;
     MAX_FILE = 2e4;
     safeId2 = (s2) => s2.replace(/[^A-Za-z0-9._:@-]/g, "-").slice(0, 128);
+    ASSUMES_REPO = /\bsprint\b|\bS\d{2}\b|release report|repo conectado|\bhx /i;
+    needsFixtures = (c) => !c.files?.length && ASSUMES_REPO.test(c.prompt);
     frac = (xs) => ({ passed: xs.filter(Boolean).length, total: xs.length });
   }
 });
@@ -4594,9 +4712,9 @@ var init_run2 = __esm({
 // cli/src/commands/eval.ts
 var eval_exports = {};
 __export(eval_exports, {
-  run: () => run16
+  run: () => run17
 });
-async function run16(args) {
+async function run17(args) {
   const p = parseArgs(args);
   const repo = path34.resolve(loadConfig().harnessRepo);
   const tag = versionTags(repo).pop() ?? null;
@@ -4664,7 +4782,7 @@ var init_eval = __esm({
 var release_exports = {};
 __export(release_exports, {
   moveStable: () => moveStable,
-  run: () => run17
+  run: () => run18
 });
 function repoRoot() {
   const repo = path35.resolve(loadConfig().harnessRepo);
@@ -4763,7 +4881,7 @@ function release(kind, skipChecks) {
   console.log(updatePlugins(readProjects().map((p) => p.path)));
   return 0;
 }
-function run17(args) {
+function run18(args) {
   const p = parseArgs(args);
   const [sub, target] = p._;
   if (sub === "check") {
@@ -4821,9 +4939,9 @@ var init_release = __esm({
 // cli/src/commands/rollback.ts
 var rollback_exports = {};
 __export(rollback_exports, {
-  run: () => run18
+  run: () => run19
 });
-function run18(_args) {
+function run19(_args) {
   const stable = path36.resolve(loadConfig().stableDir);
   if (!fs34.existsSync(path36.join(stable, ".git")))
     throw new Error(`vers\xE3o est\xE1vel n\xE3o encontrada em ${stable}`);
@@ -4863,6 +4981,7 @@ var COMMANDS = {
   sprint: () => Promise.resolve().then(() => (init_sprint2(), sprint_exports)),
   review: () => Promise.resolve().then(() => (init_review(), review_exports)),
   status: () => Promise.resolve().then(() => (init_status(), status_exports)),
+  statusline: () => Promise.resolve().then(() => (init_statusline(), statusline_exports)),
   handoff: () => Promise.resolve().then(() => (init_handoff(), handoff_exports)),
   run: () => Promise.resolve().then(() => (init_run(), run_exports)),
   request: () => Promise.resolve().then(() => (init_request(), request_exports)),
@@ -4891,6 +5010,7 @@ var HELP = `hx <command> [args]
   task phase <id> <fase>      fase da tarefa em andamento (testes, c\xF3digo, revis\xE3o, commit)
   sprint open|close|approve|feedback|status <id>
   review pass|fail <task>     resultado da revis\xE3o
+  statusline                  status line do Claude Code (stdin JSON)
   status --where t --next t   registra onde o projeto est\xE1 e o pr\xF3ximo passo
   handoff [--show|--consume]  grava (stdin)/mostra o handoff
   run <cmd...>                roda e mostra s\xF3 falhas e resumo

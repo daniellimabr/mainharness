@@ -47,4 +47,4 @@ Ao receber o pedido de handoff (perto de 250 mil tokens), escreva-o na hora com 
 `hx request --title ... --need ... --why ... --priority ...` cria um pedido no inbox do Main Harness. Nunca edite o harness a partir de outro projeto.
 
 ## Se você é um clone
-Faça só a tarefa do handoff, só nos arquivos permitidos, com TDD. Não commite. Termine com um relatório curto: arquivos alterados, testes/lint rodados e resultado, pendências.
+Faça só a tarefa do handoff, só nos arquivos permitidos, com TDD. Não commite. Na entrega, rode `hx task phase TNN revisão` (marca o fim do seu tempo na tarefa). Termine com um relatório curto: arquivos alterados, testes/lint rodados e resultado, pendências.
