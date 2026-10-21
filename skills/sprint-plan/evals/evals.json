@@ -68,6 +68,28 @@
         "files-new/src/api/orders.ts",
         "files-new/src/web/OrdersPage.tsx"
       ]
+    },
+    {
+      "id": 5,
+      "prompt": "Vamos planejar a S04: só o B003, paginação na lista de pedidos. Decisões: 50 por página, paginação no servidor (?page=), botões Anterior/Próxima na OrdersPage. As sprints S01 a S03 estão fechadas; o hx metrics deste ambiente não tem eventos, então os indicadores de cada uma estão nos Release Reports em docs/sprints/. Sem mais perguntas: escreve o plano.",
+      "expected_output": "Cria docs/sprints/S04-plan.md com o fator calculado só das sprints com fase revisão (S01 e S02), deixando a S03 fora com o motivo.",
+      "expectations": [
+        "Cria docs/sprints/S04-plan.md com a tabela de tarefas",
+        "O histórico/fator usa S01 e S02 e deixa a S03 fora da média, dizendo que ela não tem a fase revisão registrada (mede até o done)",
+        "O fator da soma é real ÷ planejada, com a soma real até a entrega: S01 0,5 e S02 0,5, média 0,5",
+        "O fator de relógio é corrido ÷ previsto: S01 0,5 e S02 0,6, média 0,55",
+        "Planejado de cada tarefa = bruta × fator da soma, e não roda 'hx sprint approve S04' antes do ok de Daniel"
+      ],
+      "files": [
+        "files-new/.claude/harness.json",
+        "files-history/docs/backlog.md",
+        "files-history/docs/sprints/S01-release.md",
+        "files-history/docs/sprints/S02-release.md",
+        "files-history/docs/sprints/S03-release.md",
+        "files-new/package.json",
+        "files-new/src/api/orders.ts",
+        "files-new/src/web/OrdersPage.tsx"
+      ]
     }
   ]
 }

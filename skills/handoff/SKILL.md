@@ -35,7 +35,7 @@ Ler, buscar e editar só com Read, Grep, Glob, Edit e Write. Terminal no Windows
 - Decisão e motivo em uma linha (ADR NNNN, se houver).
 
 ## Critério de pronto
-- Teste/comando que prova (ex.: `hx run npm run check` sem erros nem avisos).
+- Teste/comando que prova: lint e tipos zerados (ex.: `hx run npm run check` e `hx run npx tsc --noEmit -p cli`, ou o `tsc` do projeto; lint sozinho não pega erro de tipo).
 
 ## Próximos passos
 1. Passo concreto e pequeno.

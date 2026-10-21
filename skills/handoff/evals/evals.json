@@ -26,6 +26,7 @@
       "expectations": [
         "Lista exatamente os dois arquivos permitidos e diz para não tocar em mais nada",
         "Inclui critério de pronto executável (testes e lint sem erros nem avisos)",
+        "O critério de pronto também pede a checagem de tipos com tsc (ex.: 'hx run npx tsc --noEmit -p cli'), além do lint",
         "Pede um relatório curto de volta ao Tech Lead",
         "Fica com no máximo ~40 linhas"
       ],
