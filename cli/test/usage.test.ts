@@ -1,6 +1,6 @@
 import * as fs from "node:fs";
 import * as path from "node:path";
-import { afterEach, beforeEach, describe, expect, it } from "vitest";
+import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import { DEFAULT_CONFIG } from "../src/core/config";
 import { readEvents } from "../src/events/emit";
 import { validateEvent } from "../src/events/schema";
@@ -134,32 +134,37 @@ describe("ingestSession", () => {
       expect(outputs()).toEqual([208]);
     });
 
-    it("emits the last part when another line follows it", () => {
+    it("waits for the last part when a user line sits between parts", () => {
       ingest();
       fs.appendFileSync(main, part(8, null) + part(120, null) + '{"type":"user"}\n');
+      expect(ingest().events).toBe(0);
+      fs.appendFileSync(main, part(208, "tool_use"));
       expect(ingest().events).toBe(1);
-      expect(outputs()).toEqual([120]);
+      expect(ingest().events).toBe(0);
+      expect(outputs()).toEqual([208]);
     });
   });
 
-  it("second ingest of a 5 MB transcript is fast", () => {
+  it("second ingest of a 5 MB transcript reads only the new bytes", () => {
     const big = path.join(dir, "big.jsonl");
-    const rows: string[] = [];
-    for (let i = 0; rows.join("\n").length < 5_000_000 && i < 100000; i++) {
-      rows.push(
-        JSON.stringify({
-          type: "user",
-          message: { role: "user", content: "x".repeat(500) },
-        }),
-      );
-    }
-    fs.writeFileSync(big, rows.join("\n") + "\n");
+    const row = JSON.stringify({
+      type: "user",
+      message: { role: "user", content: "x".repeat(500) },
+    });
+    fs.writeFileSync(big, `${row}\n`.repeat(Math.ceil(5_000_000 / (row.length + 1))));
     const opts = { transcriptPath: big, sessionId: "big", project: "proj-teste", sprint: null };
     ingestSession(opts);
-    const t = performance.now();
-    ingestSession(opts);
-    expect(performance.now() - t).toBeLessThan(300);
-  });
+    // counts bytes, not time: stays stable on a busy machine (B062)
+    fs.appendFileSync(big, '{"type":"user","message":{"role":"user","content":"y"}}\n');
+    const alloc = vi.spyOn(Buffer, "alloc");
+    try {
+      expect(ingestSession(opts).events).toBe(0);
+      expect(alloc).toHaveBeenCalled();
+      expect(Math.max(...alloc.mock.calls.map((c) => c[0]))).toBeLessThan(1024);
+    } finally {
+      alloc.mockRestore();
+    }
+  }, 120_000);
 });
 
 describe("currentContextTokens", () => {

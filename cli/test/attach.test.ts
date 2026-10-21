@@ -148,7 +148,7 @@ describe("hx attach", () => {
       true,
     );
     expect(runHx(["skills", "on", "nao-existe"], { cwd: dir, env }).code).toBe(1);
-  });
+  }, 180_000); // ~8 hx/git processes: generous so a busy machine does not time out (B062)
 
   it("non-web project: nothing copied, web false, lint not applied", () => {
     const dir = mkProject("Py Tool", { "main.py": "print('oi')\n" });

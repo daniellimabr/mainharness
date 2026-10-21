@@ -108,12 +108,13 @@ function ingestTranscripts(opts: IngestOptions): HarnessEvent[] {
     const { lines, offset } = readNew(file, cache.offsets[key] ?? 0);
     const parsed = lines.map(parseAssistant);
     // A streamed message writes one line per part (same id, growing output_tokens); only the
-    // last part has stop_reason set. A trailing message still streaming is re-read next time.
+    // last part has stop_reason set. A trailing message still streaming is re-read next time,
+    // from its first part, even with other lines (e.g. `user`) between its parts.
     let keep = lines.length;
-    const tail = parsed.at(-1)?.message;
-    if (tail?.stop_reason === null) {
-      while (keep > 0 && parsed[keep - 1]?.message?.id === tail.id) keep--;
-    }
+    let t = parsed.length - 1;
+    while (t >= 0 && !parsed[t]) t--;
+    const tail = parsed[t]?.message;
+    if (tail?.stop_reason === null) keep = parsed.findIndex((o) => o?.message?.id === tail.id);
     cache.offsets[key] =
       offset - lines.slice(keep).reduce((n, l) => n + Buffer.byteLength(l) + 1, 0);
     const last = new Map<string, AssistantLine>();
