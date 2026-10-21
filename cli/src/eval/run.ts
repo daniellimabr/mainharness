@@ -156,6 +156,10 @@ async function claude(prompt: string, cwd: string, extra: string[], ctx: EvalCon
   // hx calls made by the session write to a throwaway home, never the real ~/.harness.
   const env: NodeJS.ProcessEnv = { ...process.env, HARNESS_HOME: path.join(cwd, ".hx-home") };
   delete env.CLAUDECODE;
+  // The sandbox must never inherit the real harness paths.
+  delete env.HARNESS_REPO;
+  delete env.HARNESS_STABLE_DIR;
+  delete env.HARNESS_INBOX;
   const s = await new Promise<Session>((resolve, reject) => {
     const child = spawn([bin, ...args, "--setting-sources", "project", ...extra].join(" "), {
       cwd,
@@ -264,6 +268,13 @@ interface Verdict {
   failed?: string[];
 }
 
+// shortcut: keyword heuristic, misses paraphrases; upgrade if audits find false negatives.
+const ASSUMES_REPO = /\bsprint\b|\bS\d{2}\b|release report|repo conectado|\bhx /i;
+
+/** Case without fixtures whose prompt assumes a connected repo, a sprint or a report. */
+export const needsFixtures = (c: { prompt: string; files?: string[] }): boolean =>
+  !c.files?.length && ASSUMES_REPO.test(c.prompt);
+
 const frac = (xs: boolean[]) => ({ passed: xs.filter(Boolean).length, total: xs.length });
 
 /**
@@ -327,6 +338,10 @@ export async function evalSkill(
 
   if (scope.evals) {
     const cases = readJson<{ evals: EvalCase[] }>(need("evals.json"), { evals: [] }).evals;
+    for (const c of cases.filter(needsFixtures))
+      console.warn(
+        `${skill}: caso ${c.id} sem files, mas o prompt pressupõe repo conectado/sprint/relatório (evals/files*/.hx-home/config.json)`,
+      );
     const runs = [
       ...cases.map((c) => ({ id: String(c.id), c, withSkill: true })),
       ...(scope.isNew ? cases.map((c) => ({ id: `baseline-${c.id}`, c, withSkill: false })) : []),

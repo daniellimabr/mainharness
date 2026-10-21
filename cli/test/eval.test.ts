@@ -2,7 +2,7 @@
 import * as fs from "node:fs";
 import * as path from "node:path";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
-import { evalSkill, parseStream, pool } from "../src/eval/run";
+import { evalSkill, needsFixtures, parseStream, pool } from "../src/eval/run";
 import { git } from "../src/release/git";
 import { checkSkills, evalScope, stampSkill } from "../src/release/skills";
 import { isolateHome, readEventsIn, rm, tempDir } from "./helpers";
@@ -37,7 +37,7 @@ let p = ""; process.stdin.on("data", d => p += d).on("end", () => {
   }
   const judge = p.includes("grading skill eval runs");
   if (!judge && process.argv.includes("acceptEdits")) fs.writeFileSync("out.md", "# ADR\\nDecisão: X");
-  out.push({ type: "result", result: judge ? process.env.FAKE_JUDGE : "ok fixture=" + fs.existsSync("docs/adr/0003-x.md") + " hx=" + process.argv.includes("Bash(hx:*)") + " home=" + (process.env.HARNESS_HOME || "").startsWith(process.cwd()), session_id: "s-" + process.pid,
+  out.push({ type: "result", result: judge ? process.env.FAKE_JUDGE : "ok fixture=" + fs.existsSync("docs/adr/0003-x.md") + " hx=" + process.argv.includes("Bash(hx:*)") + " home=" + (process.env.HARNESS_HOME || "").startsWith(process.cwd()) + " leak=" + ["HARNESS_REPO", "HARNESS_STABLE_DIR", "HARNESS_INBOX"].some(k => k in process.env), session_id: "s-" + process.pid,
     total_cost_usd: 0.01, usage: { input_tokens: 10, output_tokens: 5 },
     modelUsage: { "claude-sonnet-4-5": { inputTokens: 10, outputTokens: 5, cacheReadInputTokens: 2, cacheCreationInputTokens: 1, costUSD: 0.01 } } });
   process.stdout.write(out.map(o => JSON.stringify(o)).join("\\n") + "\\n");
@@ -236,10 +236,41 @@ describe("evalSkill (fake claude)", () => {
       }),
     );
     process.env.FAKE_JUDGE = JSON.stringify({ results: [{ id: "1", passed: true }] });
-    await evalSkill(repo, "skills/adr", evalScope(repo, "skills/adr", "v0.1.0"), ctx);
+    const keys = ["HARNESS_REPO", "HARNESS_STABLE_DIR", "HARNESS_INBOX"];
+    for (const k of keys) process.env[k] = "C:/real";
+    try {
+      await evalSkill(repo, "skills/adr", evalScope(repo, "skills/adr", "v0.1.0"), ctx);
+    } finally {
+      for (const k of keys) Reflect.deleteProperty(process.env, k);
+    }
     const cases = fs.readFileSync(path.join(repo, "skills/adr/evals/cases-results.json"), "utf8");
-    expect(cases).toContain("ok fixture=true hx=true home=true");
+    expect(cases).toContain("ok fixture=true hx=true home=true leak=false");
     expect(cases).not.toMatch(/~1/);
+  });
+
+  it("warns (without failing) on a case that assumes a connected repo but has no files", async () => {
+    write("skills/adr/SKILL.md", MD("old", "body 4"));
+    write(
+      "skills/adr/evals/evals.json",
+      JSON.stringify({
+        evals: [
+          { id: 1, prompt: "feche a sprint S05", expectations: ["y"] },
+          { id: 2, prompt: "registre a decisão", expectations: ["y"] },
+        ],
+      }),
+    );
+    process.env.FAKE_JUDGE = JSON.stringify({
+      results: [
+        { id: "1", passed: true },
+        { id: "2", passed: true },
+      ],
+    });
+    const warn = vi.spyOn(console, "warn").mockImplementation(() => {});
+    const res = await evalSkill(repo, "skills/adr", evalScope(repo, "skills/adr", "v0.1.0"), ctx);
+    const msgs = warn.mock.calls.map((c) => String(c[0]));
+    warn.mockRestore();
+    expect(res.passed).toBe(true);
+    expect(msgs.filter((m) => /sem files/.test(m))).toEqual([expect.stringMatching(/caso 1\b/)]);
   });
 
   it("missing judge verdict fails the case", async () => {
@@ -315,5 +346,20 @@ describe("evalSkill (fake claude)", () => {
       warn.mockRestore();
       expect(usage()).toBe(12);
     });
+  });
+});
+
+describe("needsFixtures", () => {
+  it.each([
+    ["feche a sprint", true],
+    ["planeje a S07", true],
+    ["escreva o Release Report", true],
+    ["no repo conectado, rode", true],
+    ["rode hx status", true],
+    ["registre a decisão sobre o banco", false],
+    ["escreva um PRD de login", false],
+  ])("%s -> %s", (prompt, want) => {
+    expect(needsFixtures({ prompt })).toBe(want);
+    expect(needsFixtures({ prompt, files: ["files/x.md"] })).toBe(false);
   });
 });
