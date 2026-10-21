@@ -2,6 +2,33 @@
 
 Versões do Main Harness (versionamento semântico; `0.y.z` até a 1.0).
 
+## [0.6.0] - 2026-10-21
+
+### Novidades
+
+- feat(metrics): wait for Daniel apart from work time (T06)
+- feat(session-start): show the project's done harness requests once (T09)
+- feat(setup): write hx auto mode rule to user settings; doctor checks it (T04)
+- feat(release): run claude plugin validate before publishing (T08)
+- feat(events): agent, prompt, project.status events and chat title; Stop typecheck only in harness repo (T01)
+
+### Correções
+
+- fix(sprint): reopened task sums its passes (T05)
+- fix(pre-bash): treat --output= and redirections to protected paths as writes (T03)
+- fix(usage): record final output_tokens per message id (T02)
+
+### Outros
+
+- docs(T11): release-report eval fixtures, backlog S05 done and follow-ups
+- test(sprint-plan): eval results (T10)
+- docs(sprint-plan): clock forecast by critical path and no wave-review task (T07)
+- docs(sprint): S05 plan approved
+- chore(inbox): move 5 requests to backlog
+- chore(harness): migrate to v0.5.0
+- chore(index): S04 docs
+- docs: S04 release report
+
 ## [0.5.0] - 2026-10-19
 
 ### Outros
