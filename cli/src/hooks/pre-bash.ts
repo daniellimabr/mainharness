@@ -205,6 +205,7 @@ const FILE_WRITERS = new Set([
   "ni",
   "touch",
   "tee",
+  "tee-object",
   "out-file",
   "set-content",
   "sc",
@@ -263,7 +264,10 @@ function checkGit(args: string[], cwd: string, root: string, stable: string): Ve
     return { decision: "deny", reason: `Bloqueado: ${stable} só muda via hx release/rollback.` };
   for (let k = 0; k < rest.length; k++) {
     // git diff/log/show --output=<file> (git accepts the abbreviation --outp)
-    const m = /^--outp(?:ut?)?(?:=(.*))?$/s.exec(rest[k] as string);
+    const a = rest[k] as string;
+    const m =
+      /^--outp(?:ut?)?(?:=(.*))?$/s.exec(a) ??
+      (sub === "format-patch" ? /^(?:-o|--output-d[a-z]*=?)(.+)?$/s.exec(a) : null);
     const w = m && checkWrite(m[1] ?? rest[++k] ?? "", dir, root, stable);
     if (w) return w;
   }
