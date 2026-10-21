@@ -27,9 +27,14 @@ export function preEdit(input: HookInput): HookOutcome {
   } catch {
     // invalid HARNESS_HOME: fall back to defaults and keep guarding (never fail open)
   }
-  const abs = path.resolve(cwd, file);
-  if (isInside(abs, stable)) return deny(`Bloqueado: nunca edite ${stable} (só via hx release).`);
+  const reason = writeBlocked(path.resolve(cwd, file), root, stable);
+  return reason ? deny(reason) : {};
+}
+
+/** Why writing the absolute path `abs` is blocked, or null. Shared with pre-bash. */
+export function writeBlocked(abs: string, root: string, stable: string): string | null {
+  if (isInside(abs, stable)) return `Bloqueado: nunca edite ${stable} (só via hx release).`;
   if (samePathKey(abs) === samePathKey(path.join(root, "cli", "dist", "hx.js")))
-    return deny("Bloqueado: cli/dist/hx.js é gerado; edite cli/src e rode npm run build.");
-  return {};
+    return "Bloqueado: cli/dist/hx.js é gerado; edite cli/src e rode npm run build.";
+  return null;
 }

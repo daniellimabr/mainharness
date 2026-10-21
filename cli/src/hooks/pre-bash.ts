@@ -6,6 +6,7 @@ import * as path from "node:path";
 import { DEFAULT_CONFIG, loadConfig } from "../core/config";
 import { isInside, samePathKey } from "../core/fsx";
 import { resolveProject } from "../core/projects";
+import { writeBlocked } from "./pre-edit";
 import { jsonOut, type HookInput, type HookOutcome } from "./runner";
 
 export interface Verdict {
@@ -71,9 +72,11 @@ export function splitCommand(cmd: string): Segment[] {
         inWord = false;
       } else endWord();
       while (cmd[i + 1] === ">") i++;
+      if (c === ">" && cmd[i + 1] === "|") i++; // >| (noclobber override)
       if (cmd[i + 1] === "&") {
         i++;
-        next = "skip"; // fd duplication like 2>&1
+        // 2>&1 / >&- duplicate a descriptor; >&file writes to the file
+        next = c === ">" && !/[\d-]/.test(cmd[i + 1] ?? "") ? "redirect" : "skip";
       } else next = c === ">" ? "redirect" : "skip";
       continue;
     }
@@ -238,7 +241,14 @@ function currentBranch(dir: string): string | null {
   }
 }
 
-function checkGit(args: string[], cwd: string, stable: string): Verdict | null {
+/** Writing to `t` follows the pre-edit rule (stable dir, cli/dist/hx.js). Unknown variables pass. */
+function checkWrite(t: string, dir: string, root: string, stable: string): Verdict | null {
+  const abs = expandPath(t, dir);
+  const reason = abs === null ? null : writeBlocked(abs, root, stable);
+  return reason ? { decision: "deny", reason } : null;
+}
+
+function checkGit(args: string[], cwd: string, root: string, stable: string): Verdict | null {
   let dir = cwd;
   let i = 0;
   while (i < args.length && (args[i] as string).startsWith("-")) {
@@ -251,6 +261,12 @@ function checkGit(args: string[], cwd: string, stable: string): Verdict | null {
   const rest = args.slice(i + 1);
   if (GIT_WRITES.has(sub) && isInside(dir, stable))
     return { decision: "deny", reason: `Bloqueado: ${stable} só muda via hx release/rollback.` };
+  for (let k = 0; k < rest.length; k++) {
+    // git diff/log/show --output=<file> (git accepts the abbreviation --outp)
+    const m = /^--outp(?:ut?)?(?:=(.*))?$/s.exec(rest[k] as string);
+    const w = m && checkWrite(m[1] ?? rest[++k] ?? "", dir, root, stable);
+    if (w) return w;
+  }
   if (sub === "push") {
     if (rest.some((a) => a.startsWith("--force") || /^-[a-zA-Z]*f[a-zA-Z]*$/.test(a)))
       return { decision: "deny", reason: "Bloqueado: git push forçado." };
@@ -370,11 +386,7 @@ export function classifyCommand(
     const args = words.slice(1);
     let v: Verdict | null = null;
 
-    for (const r of seg.redirects) {
-      const abs = expandPath(r, dir);
-      if (abs && isInside(abs, stable))
-        v = { decision: "deny", reason: `Bloqueado: ${stable} só muda via hx release/rollback.` };
-    }
+    for (const r of seg.redirects) v ??= checkWrite(r, dir, root, stable);
     if (!v) {
       const inner =
         cmd === "hx" && args[0] === "run" ? args.slice(1).join(" ") : innerCommand(cmd, args);
@@ -411,7 +423,7 @@ export function classifyCommand(
         };
       dir = (target === undefined ? os.homedir() : expandPath(target, dir)) ?? dir;
     }
-    if (!v && cmd === "git") v = checkGit(args, dir, stable);
+    if (!v && cmd === "git") v = checkGit(args, dir, root, stable);
     if (!v) {
       const targets = recursiveTargets(cmd, args);
       if (targets?.length === 0 && cmd !== "rm") v = UNCHECKABLE; // target from the pipeline
@@ -427,13 +439,12 @@ export function classifyCommand(
     if (!v && cmd === "dd" && args.some((a) => a.startsWith("of=/dev/")))
       v = { decision: "deny", reason: "Bloqueado: dd escrevendo em dispositivo." };
     if (!v && FILE_WRITERS.has(cmd)) {
-      const pos = args.filter((a) => !a.startsWith("-") && !/^\/[a-zA-Z]$/.test(a));
+      const pos = args
+        .map((a) => a.replace(/^-(file|literal)?path:/i, "")) // -FilePath:x
+        .filter((a) => !a.startsWith("-") && !/^\/[a-zA-Z]$/.test(a));
       const checked = COPIERS.has(cmd) ? pos.slice(cmd === "robocopy" ? 1 : -1).slice(0, 1) : pos;
-      const hit = checked.some((a) => {
-        const abs = expandPath(a, dir);
-        return abs !== null && isInside(abs, stable);
-      });
-      if (hit || isInside(dir, stable))
+      for (const a of checked) v ??= checkWrite(a, dir, root, stable);
+      if (isInside(dir, stable))
         v = { decision: "deny", reason: `Bloqueado: ${stable} só muda via hx release/rollback.` };
     }
     if (v?.decision === "deny") return v;
