@@ -151,6 +151,22 @@ describe("hx release / rollback", () => {
     expect(types).toEqual(["harness.release", "harness.release", "harness.rollback"]);
   }, 90_000);
 
+  it("warns about commits without a conventional prefix but still releases", () => {
+    stampOk("skills/adr");
+    stampOk("skills/optional/web");
+    commit("test: skill evals");
+    expect(runHx(["release", "minor"], { cwd: repo, env }).code).toBe(0);
+    for (const [i, msg] of ["feat: a", "S07/T01: b", "fix(x)!: c"].entries()) {
+      write(`f${i}.txt`, msg);
+      commit(msg);
+    }
+    const r = runHx(["release", "patch"], { cwd: repo, env });
+    expect(r.code).toBe(0);
+    expect(r.stderr).toMatch(/Aviso: commits sem prefixo[\s\S]*- S07\/T01: b/);
+    expect(r.stderr).not.toMatch(/feat: a|fix\(x\)/);
+    expect(git(repo, ["tag"])).toMatch(/v0\.1\.1/);
+  }, 60_000);
+
   it("stops before publishing when claude plugin validate fails", () => {
     stampOk("skills/adr");
     stampOk("skills/optional/web");

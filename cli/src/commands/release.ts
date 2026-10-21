@@ -40,11 +40,24 @@ function validatePlugin(repo: string): void {
   if (!r.ok) throw new Error(`claude plugin validate falhou:\n${r.out}`);
 }
 
-function changelogSection(repo: string, version: string, prev: string | null): string {
+function subjectsSince(repo: string, prev: string | null): string[] {
   const range = prev ? [`${prev}..HEAD`] : [];
-  const subjects = git(repo, ["log", "--format=%s", ...range], true)
+  return git(repo, ["log", "--format=%s", ...range], true)
     .split("\n")
     .filter((s) => s && !s.startsWith("chore(release)"));
+}
+
+/** Warns (never blocks) about commits outside the conventional prefixes. */
+function warnBadSubjects(subjects: string[]): void {
+  const bad = subjects.filter(
+    (s) => !/^(feat|fix|docs|chore|refactor|test)(\([^)]*\))?!?:/.test(s),
+  );
+  if (!bad.length) return;
+  console.error("Aviso: commits sem prefixo (feat|fix|docs|chore|refactor|test):");
+  for (const s of bad) console.error(`  - ${s}`);
+}
+
+function changelogSection(version: string, subjects: string[]): string {
   const group = (re: RegExp) => subjects.filter((s) => re.test(s));
   const feats = group(/^feat/);
   const fixes = group(/^fix/);
@@ -103,7 +116,9 @@ function release(kind: "patch" | "minor" | "major", skipChecks: boolean): number
   const tag = `v${version}`;
   manifest.version = version;
   writeJson(manifestPath, manifest);
-  writeChangelog(repo, changelogSection(repo, version, prev));
+  const subjects = subjectsSince(repo, prev);
+  warnBadSubjects(subjects);
+  writeChangelog(repo, changelogSection(version, subjects));
 
   git(repo, ["add", "-A", "--", ".claude-plugin/plugin.json", "CHANGELOG.md"]);
   git(repo, ["commit", "-q", "-m", `chore(release): ${tag}`]);
