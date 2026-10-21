@@ -73,16 +73,43 @@ export function updateExecution(
   const line = (t: PlanTask) => {
     const x = times[t.id];
     if (!x?.start || !x.end) return lineFor(t);
-    const tt = taskTime(a, t.id, Date.parse(x.start), Date.parse(x.end));
-    return taskLine(t, { ...x, duration_s: tt.min * 60 }, tt.review);
+    const passes = [...earlierPasses(a, sprintId, t.id, x.start), [x.start, x.end]];
+    let min = 0;
+    let review: number | undefined;
+    for (const [s = "", e = ""] of passes) {
+      const tt = taskTime(a, t.id, Date.parse(s), Date.parse(e));
+      if (review === undefined && tt.review !== undefined) review = min + tt.review;
+      min += tt.min;
+    }
+    return taskLine(t, { ...x, start: passes[0]?.[0], duration_s: min * 60 }, review);
   };
+  // Total row starts at each task's first pass
+  const firstTimes = Object.fromEntries(
+    Object.entries(times).map(([id, x]) => [
+      id,
+      x.start ? { ...x, start: earlierPasses(a, sprintId, id, x.start)[0]?.[0] ?? x.start } : x,
+    ]),
+  );
   const last = a.times.at(-1) ?? 0;
   // forecast: pauses so far, up to the last recorded event
   const pause = (from: number, to: number) => pauseMs(a.times, from, Math.min(to, last));
   const rounds = feedbackRounds(a.evs.filter((e) => e.sprint === sprintId)).map((r) =>
     roundLine(r, a),
   );
-  writePlan(file, text, writeExecution(text, tasks, line, times, pause, rounds));
+  writePlan(file, text, writeExecution(text, tasks, line, firstTimes, pause, rounds));
+}
+
+/** B053: [start, end] of a task's passes closed before `before` (state keeps only the current one). */
+function earlierPasses(a: Activity, sprint: string, task: string, before: string): string[][] {
+  return a.evs
+    .filter(
+      (e) =>
+        e.type === "task.done" &&
+        e.sprint === sprint &&
+        e.task === task &&
+        Date.parse(e.ts) < Date.parse(before),
+    )
+    .map((e) => [new Date(Date.parse(e.ts) - num(e.data.duration_s) * 1000).toISOString(), e.ts]);
 }
 
 const PAUSE_MS = 30 * 60000;
@@ -468,8 +495,10 @@ export function computeMetrics(project: string, sprintId: string, plan: Plan): S
     if (e.type === "task.done" && e.task) {
       const end = Date.parse(e.ts);
       const tt = taskTime(a, e.task, end - num(e.data.duration_s) * 1000, end);
-      durations[e.task] = tt.min * 60;
-      if (tt.review !== undefined) review_min_by_task[e.task] = r1(tt.review);
+      const prior = durations[e.task] ?? 0; // B053: a reopened task sums its passes
+      durations[e.task] = prior + tt.min * 60;
+      if (tt.review !== undefined && !(e.task in review_min_by_task))
+        review_min_by_task[e.task] = r1(prior / 60 + tt.review);
     }
   const actual_min_by_task: Record<string, number> = {};
   for (const [k, s] of Object.entries(durations)) actual_min_by_task[k] = r1(s / 60);

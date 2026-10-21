@@ -474,4 +474,20 @@ describe("pauses, time to review and feedback rounds (B035, B037, B040)", () => 
     // 23:00 + 1 h 50 min + 45 min of pause
     expect(rel).toContain("| 2026-10-14 23:00 | ~2026-10-15 01:35 (previsto) |  |");
   });
+
+  it("reopened task sums its passes (B053)", () => {
+    const p1 = task("T01", "10:00", "10:06");
+    ev("task.done", "10:06", { duration_s: p1.duration_s }, "T01");
+    usage("10:30"); // no pause between the passes: the gap must still be left out
+    const p2 = task("T01", "11:00", "11:04");
+    const plan = parsePlan(TEMPLATE);
+    // hx task done rewrites the table before emitting its task.done
+    updateExecution(dir, "S01", plan.tasks, (t) => taskLine(t), { T01: p2 });
+    const rel = fs.readFileSync(path.join(dir, "docs", "sprints", "S01-release.md"), "utf8");
+    expect(rel).toContain(
+      "| ✅ | T01 | Descrição curta | tech-lead | 20 min | 07:00 | 08:04 | 10 min |",
+    );
+    ev("task.done", "11:04", { duration_s: p2.duration_s }, "T01");
+    expect(computeMetrics("proj-teste", "S01", plan).actual_min_by_task).toEqual({ T01: 10 });
+  });
 });
