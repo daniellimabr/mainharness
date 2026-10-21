@@ -26,7 +26,8 @@ Nada de código antes do plano aprovado por Daniel. O plano é o contrato da spr
    - **Fator:** por sprint, relógio = corrido ÷ previsto e soma = real ÷ planejada. O fator padrão é a média das duas sprints. Sprint com pausa longa ou fila de revisão distorcida fica fora da média, com o motivo escrito. Sem histórico: fator 1, e diga isso.
    - Preencha a coluna **Depende de** de cada tarefa (`—` quando não depende): o `hx` calcula o tempo previsto da sprint pelo caminho mais longo dessas dependências, e esse é o total "Planejado" da lista.
    - Estime cada tarefa pela mais parecida do histórico e cite a de referência (ex.: "como S01/T03"). Essa é a **Bruta**; **Planejado** = bruta × fator (é o que vira indicador).
-   - **Total estimado:** soma calibrada (e a bruta) e o relógio separado em tempo de agente e espera por Daniel (teste e ajustes).
+   - **Total estimado:** soma calibrada (e a bruta) e o relógio separado em tempo de agente e espera por Daniel (teste e ajustes). Relógio de agente = caminho mais longo das dependências (em tempo bruto) × fator **relógio**, nunca a soma das tarefas: em paralelo, a soma não diz quanto tempo passa.
+   - **Revisão não é tarefa.** O Reviewer revisa cada onda dentro das tarefas entregues (o tempo dele entra nelas e nos `hx review`). Não crie linha "revisão da onda" na tabela: ela infla o planejado com 0 min real. Só a revisão final, junto com a release, é tarefa.
 8. **Status:** `aguardando aprovação`. Não preencha a seção "Aprovação" à mão.
 
 ## Aprovação
@@ -44,6 +45,7 @@ Qualquer alteração acima da seção "Aprovação" invalida o hash. Explique a 
 
 - [ ] Todo critério de aceite tem teste ou verificação no plano.
 - [ ] Nenhum arquivo aparece em duas tarefas que rodam juntas.
-- [ ] Tarefa de revisão do Reviewer no fim.
+- [ ] Só uma tarefa de revisão: a final, com a release (nenhuma "revisão da onda").
+- [ ] Relógio previsto = caminho mais longo × fator relógio.
 - [ ] "Lint e tipos: zero erros e zero avisos" está nos critérios.
 - [ ] Itens que não couberam foram para o backlog (`hx request` se for do harness).

@@ -10,7 +10,8 @@
         "Os critérios de aceite incluem 'Lint e tipos: zero erros e zero avisos'",
         "A tabela tem as colunas Id, Tarefa, Agente, Arquivos, Bruta e Planejado",
         "Nenhum arquivo aparece em duas tarefas que rodam em paralelo",
-        "Há uma tarefa final de revisão do reviewer",
+        "Há uma tarefa final de revisão do reviewer e nenhuma tarefa de 'revisão da onda' (ou revisão intermediária)",
+        "O relógio previsto vem do caminho mais longo das dependências vezes o fator de relógio, não da soma das tarefas",
         "Pede o ok de Daniel e não roda 'hx sprint approve S01' antes dele"
       ],
       "files": [

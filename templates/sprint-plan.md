@@ -33,7 +33,9 @@ O que fica para depois (vai para o backlog).
 |---|---|---|---|---|---|---|
 | T01 | Descrição curta | tech-lead | `caminho/arquivo` | — | 40 min | 20 min |
 | T02 | Descrição curta | tech-lead | `caminho/arquivo` | T01 | 2 h | 1 h |
-| T03 | Revisão: lint e tipos zerados, testes, critérios de aceite | reviewer | (só leitura) | T02 | 1 h | 30 min |
+| T03 | Revisão final e release: lint e tipos zerados, testes, critérios de aceite | tech-lead + reviewer | `CHANGELOG.md` | T02 | 1 h | 30 min |
+
+**Ondas:** quais tarefas rodam juntas. O Reviewer revisa cada onda dentro das tarefas (sem linha própria na tabela).
 
 **Histórico (hx metrics):**
 
@@ -43,7 +45,7 @@ O que fica para depois (vai para o backlog).
 
 Fator: relógio X%, soma Y%; média = fator padrão. Sprint fora da média: motivo. (Sem histórico: fator 1.)
 
-**Total estimado:** soma calibrada (bruta). Relógio: tempo de agente + espera por Daniel (teste e ajustes), à parte.
+**Total estimado:** soma calibrada (bruta). Relógio: caminho mais longo × fator relógio (tempo de agente) + espera por Daniel (teste e ajustes), à parte.
 
 ## Aprovação
 
