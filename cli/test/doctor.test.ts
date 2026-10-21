@@ -150,6 +150,17 @@ describe("runDoctor", () => {
     expect(line(runDoctor({ projectRoot: proj }).lines, "modo auto")).toMatch(/^✓/);
   });
 
+  it("warns when there is no status line, and passes once there is one", () => {
+    expect(line(runDoctor({ projectRoot: proj }).lines, "status line")).toMatch(
+      /^⚠ .*status line.*hx setup/,
+    );
+    fs.writeFileSync(
+      path.join(claude, "settings.json"),
+      JSON.stringify({ statusLine: { type: "command", command: "other" } }),
+    );
+    expect(line(runDoctor({ projectRoot: proj }).lines, "status line")).toMatch(/^✓/);
+  });
+
   it("warns when the user HOME is missing in the registry", () => {
     fs.writeFileSync(path.join(claude, ".ponytail-band"), "off");
     const r = runDoctor({ projectRoot: proj, homeVarSet: () => false });

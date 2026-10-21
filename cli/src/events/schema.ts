@@ -24,6 +24,11 @@ export const DATA_SCHEMAS = {
   "agent.start": { agent_id: s() },
   "agent.end": { agent_id: s() },
   "project.status": { where: s(), next: s() },
+  statusline: {
+    five_hour: n({ nullable: true }),
+    seven_day: n({ nullable: true }),
+    title: s(opt),
+  },
   "sprint.approved": { plan: s(), sha256: s(), approved_at: s(), approver: s() },
   "sprint.open": { tasks: n() },
   "sprint.close": { tasks_done: n(), tasks_total: n(), duration_s: n() },

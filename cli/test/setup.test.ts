@@ -6,7 +6,10 @@ import {
   AUTO_MODE_RULE,
   disablePonytailBand,
   ensureAutoModeRule,
+  ensureStatusLine,
   hasAutoModeRule,
+  hasStatusLine,
+  STATUS_LINE,
 } from "../src/commands/setup";
 import { rm, tempDir } from "./helpers";
 
@@ -73,6 +76,33 @@ describe("ensureAutoModeRule", () => {
   it("does not allow arbitrary hx run commands", () => {
     expect(AUTO_MODE_RULE).toMatch(/hx run is allowed only when the wrapped command/);
     expect(AUTO_MODE_RULE).not.toMatch(/hx release/);
+  });
+});
+
+describe("ensureStatusLine", () => {
+  const settings = () => path.join(claude, "settings.json");
+  const read = () => JSON.parse(fs.readFileSync(settings(), "utf8"));
+
+  it("adds hx statusline when there is none, keeping other keys, and is idempotent", () => {
+    fs.writeFileSync(settings(), JSON.stringify({ model: "opus" }));
+    expect(hasStatusLine()).toBe(false);
+    expect(ensureStatusLine()).toBe("added");
+    expect(ensureStatusLine()).toBe("present");
+    expect(read()).toEqual({ model: "opus", statusLine: STATUS_LINE });
+    expect(hasStatusLine()).toBe(true);
+  });
+
+  it("never overwrites an existing status line", () => {
+    const mine = { type: "command", command: "my-line" };
+    fs.writeFileSync(settings(), JSON.stringify({ statusLine: mine }));
+    expect(ensureStatusLine()).toBe("present");
+    expect(read()).toEqual({ statusLine: mine });
+  });
+
+  it("refuses to touch an unreadable settings.json", () => {
+    fs.writeFileSync(settings(), "{ broken");
+    expect(ensureStatusLine()).toBe("invalid");
+    expect(fs.readFileSync(settings(), "utf8")).toBe("{ broken");
   });
 });
 

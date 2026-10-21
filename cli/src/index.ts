@@ -9,6 +9,7 @@ const COMMANDS: Record<string, () => Promise<{ run: Run }>> = {
   sprint: () => import("./commands/sprint"),
   review: () => import("./commands/review"),
   status: () => import("./commands/status"),
+  statusline: () => import("./commands/statusline"),
   handoff: () => import("./commands/handoff"),
   run: () => import("./commands/run"),
   request: () => import("./commands/request"),
@@ -38,6 +39,7 @@ const HELP = `hx <command> [args]
   task phase <id> <fase>      fase da tarefa em andamento (testes, código, revisão, commit)
   sprint open|close|approve|feedback|status <id>
   review pass|fail <task>     resultado da revisão
+  statusline                  status line do Claude Code (stdin JSON)
   status --where t --next t   registra onde o projeto está e o próximo passo
   handoff [--show|--consume]  grava (stdin)/mostra o handoff
   run <cmd...>                roda e mostra só falhas e resumo

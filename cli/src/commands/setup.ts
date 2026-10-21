@@ -50,19 +50,41 @@ export function hasAutoModeRule(): boolean {
   return Array.isArray(allow) && allow.includes(AUTO_MODE_RULE);
 }
 
+const settingsFile = () => path.join(claudeHome(), "settings.json");
+
+/** The user's settings.json ({} when missing or empty); null when it is not a JSON object. */
+function loadSettings(): Settings | null {
+  const text = readText(settingsFile())?.trim();
+  if (!text) return {};
+  try {
+    const st: unknown = JSON.parse(text);
+    return isObj(st) ? (st as Settings) : null;
+  } catch {
+    return null; // never overwrite a settings.json we cannot parse
+  }
+}
+
+export const STATUS_LINE = { type: "command", command: "hx statusline" };
+
+export function hasStatusLine(): boolean {
+  return loadSettings()?.statusLine !== undefined;
+}
+
+/** Sets statusLine to hx statusline only when the user has none (never overwrites). */
+export function ensureStatusLine(): "added" | "present" | "invalid" {
+  const st = loadSettings();
+  if (!st) return "invalid";
+  if (st.statusLine !== undefined) return "present";
+  st.statusLine = STATUS_LINE;
+  writeJson(settingsFile(), st);
+  return "added";
+}
+
 /** Adds AUTO_MODE_RULE to autoMode.allow of the user's settings.json, keeping everything else. */
 export function ensureAutoModeRule(): "added" | "present" | "invalid" {
-  const file = path.join(claudeHome(), "settings.json");
-  const text = readText(file)?.trim();
-  let st: Settings = {};
-  if (text) {
-    try {
-      st = JSON.parse(text) as Settings;
-    } catch {
-      return "invalid"; // never overwrite a settings.json we cannot parse
-    }
-  }
-  if (!isObj(st) || (st.autoMode !== undefined && !isObj(st.autoMode))) return "invalid";
+  const file = settingsFile();
+  const st = loadSettings();
+  if (!st || (st.autoMode !== undefined && !isObj(st.autoMode))) return "invalid";
   if (st.autoMode?.allow !== undefined && !Array.isArray(st.autoMode.allow)) return "invalid";
   const auto = (st.autoMode ??= {});
   // "$defaults" keeps Claude Code's built-in rules when we create the list.
@@ -115,6 +137,8 @@ export function run(args: string[]): number {
   say("liberando o hx no modo auto (autoMode.allow em ~/.claude/settings.json)");
   if (!dry && ensureAutoModeRule() === "invalid")
     console.error("settings.json do Claude ilegível: corrija o JSON e rode hx setup de novo");
+  say("status line do hx (hx statusline) em ~/.claude/settings.json, se não houver outra");
+  if (!dry && ensureStatusLine() === "present") say("status line já existia: mantida");
   say(`instalando o comando hx em ${shimDir()} (aponta para ${cfg.stableDir})`);
   let restart = false;
   if (!dry) {
