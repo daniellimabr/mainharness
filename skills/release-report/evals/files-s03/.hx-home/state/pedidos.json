@@ -1,0 +1,17 @@
+{
+  "activeSprint": "S03",
+  "session": "sess-S03",
+  "tasks": {
+    "T01": {
+      "start": "2026-10-20T12:00:00Z",
+      "end": "2026-10-20T12:35:00Z",
+      "duration_s": 2100
+    },
+    "T02": {
+      "start": "2026-10-20T12:40:00Z",
+      "end": "2026-10-20T13:20:00Z",
+      "duration_s": 2400
+    }
+  },
+  "sprintOpenedAt": "2026-10-20T11:50:00Z"
+}

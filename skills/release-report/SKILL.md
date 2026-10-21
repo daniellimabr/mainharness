@@ -16,9 +16,9 @@ Fecha o ciclo: a sprint termina com números e com melhorias para o harness, nã
 ## Passos
 
 1. Rode `hx sprint close SNN`. Ele imprime os indicadores e grava `sprint.close` e `sprint.metrics`. Para só rever os números: `hx metrics SNN`.
-2. `docs/sprints/SNN-release.md` já existe: o `hx` grava nele a seção `## Execução` (tabela de tarefas, horário de Brasília). Complete-o com as demais seções de `${CLAUDE_PLUGIN_ROOT}/templates/release-report.md`, **sem alterar a tabela de Execução**. Se o arquivo não existir, copie o template.
+2. `docs/sprints/SNN-release.md` já existe: o `hx` grava nele a seção `## Execução` (tabela de tarefas, horário de Brasília). Complete-o com as demais seções de `${CLAUDE_PLUGIN_ROOT}/templates/release-report.md`, **sem alterar a tabela de Execução**. Se o arquivo não existir, copie o template. Seções, nesta ordem: Resumo da entrega, Execução, Observações por tarefa, Indicadores, Revisão, Retorno de Daniel, Retrospectiva (com Comparação e Melhorias do harness).
 3. **Resumo da entrega:** 3 a 5 linhas para Daniel, sem jargão.
-4. **Observações por tarefa:** só o que a tabela não mostra (ex.: reprovada uma vez por falta de teste).
+4. **Observações por tarefa:** só o que a tabela não mostra (ex.: reprovada uma vez por falta de teste). Não repita duração, desvio do planejado nem agente: tarefa sem nada além da tabela fica fora da lista. Nenhuma tarefa com observação: escreva "Nada além da tabela."
 5. **Indicadores:** cole o bloco do `hx sprint close`. Garanta que apareçam:
    - tempo planejado × real (total e por tarefa);
    - espera por Daniel × trabalho (linha "Espera por Daniel"): na retrospectiva, separe o que foi lentidão do agente do que foi espera;

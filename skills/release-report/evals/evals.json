@@ -3,7 +3,7 @@
   "evals": [
     {
       "id": 1,
-      "prompt": "A S01 terminou, Daniel aprovou a entrega. O docs/sprints/S01-release.md já existe com a seção Execução (tabela de tarefas gravada pelo hx). Fecha a sprint e faz o Release Report.",
+      "prompt": "A S01 terminou, Daniel aprovou a entrega. O docs/sprints/S01-release.md já existe com a seção Execução (tabela de tarefas gravada pelo hx). A T02 foi reprovada uma vez pelo Reviewer por falta de teste. Fecha a sprint e faz o Release Report.",
       "expected_output": "Roda hx sprint close S01 e completa o S01-release.md existente com as seções do template e os indicadores colados, sem alterar a tabela de Execução.",
       "expectations": [
         "Executa 'hx sprint close S01'",
@@ -13,6 +13,15 @@
         "O relatório contém os indicadores: tempo planejado x real, tokens e US$, retrabalho, reprovações, alertas de contexto e handoffs",
         "Diz que não há sprint anterior para comparar, ou compara com o S00-release.md se ele existir",
         "Tem Resumo da entrega, Execução, Observações por tarefa, Indicadores, Revisão, Retorno de Daniel e Retrospectiva"
+      ],
+      "files": [
+        "files-s01/.claude/harness.json",
+        "files-s01/.hx-home/config.json",
+        "files-s01/.hx-home/events/2026-10-14.jsonl",
+        "files-s01/.hx-home/state/pedidos.json",
+        "files-s01/docs/sprints/S01-plan.md",
+        "files-s01/docs/sprints/S01-release.md",
+        "files-s01/templates/release-report.md"
       ]
     },
     {
@@ -24,17 +33,44 @@
         "Roda 'hx request' com --title, --need, --why, --priority e --example",
         "O --why do pedido cita os números das reprovações",
         "O relatório referencia o arquivo criado no inbox"
+      ],
+      "files": [
+        "files-s02/.claude/harness.json",
+        "files-s02/.hx-home/config.json",
+        "files-s02/.hx-home/events/2026-10-14.jsonl",
+        "files-s02/.hx-home/events/2026-10-16.jsonl",
+        "files-s02/.hx-home/state/pedidos.json",
+        "files-s02/docs/sprints/S01-plan.md",
+        "files-s02/docs/sprints/S01-release.md",
+        "files-s02/docs/sprints/S02-plan.md",
+        "files-s02/docs/sprints/S02-release.md",
+        "files-s02/templates/release-report.md"
       ]
     },
     {
       "id": 3,
-      "prompt": "Fecha a S03 e publica a versão 0.2.0 do harness.",
-      "expected_output": "Fecha a sprint, gera o relatório e atualiza o CHANGELOG via hx release.",
+      "prompt": "Fecha a S03 e publica a nova versão do harness (é uma minor).",
+      "expected_output": "Fecha a sprint, gera o relatório e roda hx release minor (que atualiza o CHANGELOG); se o comando falhar, relata o erro.",
       "expectations": [
         "Executa 'hx sprint close S03'",
-        "Executa 'hx release' (patch, minor ou major) para publicar a versão e atualizar o CHANGELOG.md",
+        "Roda 'hx release minor' para publicar a versão; se o comando falhar, relata o erro sem inventar versão nem editar o CHANGELOG.md à mão",
         "Completa docs/sprints/S03-release.md mantendo a tabela de Execução gravada pelo hx (ou copia o template se o arquivo não existir)",
         "Não inclui código nem trechos de prompts no relatório"
+      ],
+      "files": [
+        "files-s03/.claude/harness.json",
+        "files-s03/.hx-home/config.json",
+        "files-s03/.hx-home/events/2026-10-14.jsonl",
+        "files-s03/.hx-home/events/2026-10-16.jsonl",
+        "files-s03/.hx-home/events/2026-10-20.jsonl",
+        "files-s03/.hx-home/state/pedidos.json",
+        "files-s03/docs/sprints/S01-plan.md",
+        "files-s03/docs/sprints/S01-release.md",
+        "files-s03/docs/sprints/S02-plan.md",
+        "files-s03/docs/sprints/S02-release.md",
+        "files-s03/docs/sprints/S03-plan.md",
+        "files-s03/docs/sprints/S03-release.md",
+        "files-s03/templates/release-report.md"
       ]
     }
   ]

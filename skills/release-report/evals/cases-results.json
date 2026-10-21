@@ -1,0 +1,35 @@
+{
+  "date": "2026-10-21T11:59:13.451Z",
+  "runs": [
+    {
+      "id": "1",
+      "baseline": false,
+      "passed": true,
+      "failed": [],
+      "skills": [
+        "release-report"
+      ],
+      "answer": "Estou procurando o template do relatório e rodando as métricas da S01 de novo.\n\nCorrigindo uma data que escrevi sem base no pedido (o hx não informa o início da espera).\n\nA S01 está fechada (`hx sprint close S01` rodou) e o Release Report está em `docs/sprints/S01-release.md`. A tabela de Execução ficou como o hx gravou. Mudei só o cabeçalho, tirando a nota \"Sprint em andamento\", que já não valia.\n\n**Números do hx:**\n- **Entrega:** as 3 tarefas foram feitas, em 2 h 10 min corridos contra 1 h 15 min previstos.\n- **Custo:** US$ 3.74 estimados (Tech Lead US$ 3.20, Reviewer US$ 0.54).\n- **Retrabalho de Daniel:** 0.\n- **Reviewer:** 1 reprovação (T02, falta de teste).\n- **Alertas de contexto:** 1.\n- **Handoffs:** 1.\n\nSem dado ou fora do que o hx entrega:\n- **Espera por Daniel:** o bloco do hx não traz a linha \"Espera por Daniel\". O close disse \"aguardou teste por 165 h 50 min\", que vai de 14/10 até o fechamento de hoje e não mede lentidão de ninguém. Registrei isso no relatório sem separar espera de trabalho.\n- **Tokens:** aparecem só no total. Por tarefa e por agente, ficou \"sem dado\".\n- **Lint e tipos:** o hx não registra o resultado da checagem. Anotei como sem dado e não afirmei zero erros.\n- **Critério de teste:** marquei como atendido ao final, só pelas três aprovações do Reviewer.\n- **Template:** não consegui ler o template, porque o acesso a `~/.harness` não foi liberado. Montei as seções na ordem da skill.\n\n**Comparação:** não há sprint anterior, então a S01 vira a base da S02.\n\n**Pedidos ao harness** (os dois estão na pasta `inbox/`, linkados no relatório):\n- Aviso de teste ausente antes de pedir revisão.\n- Indicadores por tarefa e \"Espera por Daniel\" no `hx sprint close`.\n\nNum dos pedidos eu tinha escrito datas que o hx não informa; corrigi o texto do arquivo para 14/10 (fim da sprint) e 21/10 (fechamento).\n\nNão rodei `hx release` nem mexi no CHANGELOG, porque a sprint não publica versão do harness. Também não há melhoria de projeto registrada em `docs/backlog."
+    },
+    {
+      "id": "2",
+      "baseline": false,
+      "passed": true,
+      "failed": [],
+      "skills": [
+        "release-report"
+      ],
+      "answer": "A retrospectiva da S02 está escrita em `docs/sprints/S02-release.md`, com a tabela de Execução intacta. Abri 4 pedidos de melhoria do harness com `hx request`. Não rodei `hx release`, porque a sprint não publica versão do harness, então o CHANGELOG ficou como estava.\n\n**Erro meu:** rodei `hx sprint close --help` só para ver as opções, e o comando fechou a sprint de verdade. O evento `sprint.close` foi gravado em 21/10 às 11:59 UTC. Eu ia fechar a sprint de qualquer jeito, então mantive o fechamento. Também abri um pedido para `--help` não fechar a sprint.\n\n**S02 contra S01:**\n\n| | S01 | S02 |\n|---|---|---|\n| Planejado × real | 1 h 45 min × 2 h | 2 h 25 min × 3 h 25 min |\n| Custo estimado | US$ 3.74 | US$ 8.02 |\n| Reprovações do Reviewer | 1 | 3 |\n| Ajustes pedidos por Daniel | 1 | 0 |\n\n- **Reprovações:** T01, T03 e T04 foram reprovadas por falta de teste e passaram na segunda rodada. São as mesmas três que estouraram o tempo (+20, +15 e +25 min). A T02 passou de primeira.\n- **Contexto:** houve 1 alerta de contexto (231K de 250K tokens) e 1 handoff, igual à S01.\n\n**Pedidos criados em `inbox/`:**\n1. **[alta]** Bloquear a conclusão da tarefa quando ela não tem teste. Citei 4 reprovações em 7 tarefas nas duas sprints.\n2. **[média]** Coluna de teste no plano, com o tempo de escrever o teste dentro da estimativa.\n3. **[média]** `--help` do `hx sprint close` não pode fechar a sprint.\n4. **[baixa]** Fazer o handoff antes de o contexto chegar a 231K.\n\n**Falta confirmar com você:**\n- **Espera por Daniel:** o `hx` não gravou a linha de \"Espera por Daniel\" nesta sprint, então o relatório diz \"sem dado\". A mensagem \"aguardou teste por 116 h 20 min\" é o intervalo entre 16/10 e o fechamento em 21/10, não lentidão do agente.\n- **Ajustes:** o retorno está registrado como 0 ajustes. Não sei se você já viu a entrega, então confirme e rode `hx sprint feedback <n>` se houve algum ajuste."
+    },
+    {
+      "id": "3",
+      "baseline": false,
+      "passed": true,
+      "failed": [],
+      "skills": [
+        "release-report"
+      ],
+      "answer": "Fechei a S03 no `hx`. Agora leio os relatórios das sprints S01 e S02 para a comparação e depois completo o relatório da S03.\n\nAgora escrevo o relatório, mantendo a tabela de Execução intacta.\n\nA S03 está fechada e o relatório está escrito, mas **não publiquei a versão minor**. O `hx release minor` falhou com \"repo do harness não encontrado\". Esta pasta é um projeto, não o repositório do harness, e o `hx` só publica de dentro do repo do harness.\n\n**S03 fechada**\n- As 2 tarefas ficaram prontas. O tempo real foi igual ao planejado (1 h 15 min) e o custo estimado foi de US$ 2,46.\n- Não houve reprovação do Reviewer, retrabalho, alerta de contexto nem handoff.\n- Daniel levou 22 h 40 min para testar. Isso foi espera, não lentidão do agente.\n- O relatório está em `docs/sprints/S03-release.md`, com a tabela de Execução intacta e a comparação com S01 e S02. Tudo caiu em relação à S02: reprovações foram de 3 para 0, retrabalho de 2 para 0 e custo de US$ 8,02 para US$ 2,46.\n- Abri um pedido para o harness: `inbox/2026-10-21-pedidos-hx-metrics-deve-sempre-imprimir-a-linha-espera-por-daniel.md`. O `hx` não imprimiu a linha \"Espera por Daniel\" na tabela de indicadores da S03, só a frase de fechamento.\n- Não consegui confirmar pelo `hx` cada critério de aceite nem o \"lint e tipos: zero\". Escrevi no relatório que não há esse dado, e a única base é que não houve reprovação.\n- Não rodei `hx review pass` nem `hx sprint feedback` antes de fechar. O `hx sprint close` aceitou o fechamento mesmo assim.\n\n**Para publicar a minor**\n- Me diga onde fica o repo do harness, ou rode `hx release minor` de dentro dele. O `CHANGELOG.md` não existe neste projeto, então só o release no repo do harness vai criá-lo e atualizá-lo.\n- O `hx doctor` também avisou que os plugins do harness não estão ativos neste projeto e que as flags `ENABLE_STOP_REVIEW` e `ENABLE_COMMIT_REVIEW` precisam ser \"0\". Ambos se resolvem com `/attach`. Isso não bloqueia o fechamento da S03, mas vale conferir antes de publicar."
+    }
+  ]
+}
