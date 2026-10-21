@@ -369,39 +369,47 @@ export async function evalSkill(
         ),
     );
     // One judge session grades every run (cheaper than one judge per case, independent of the run).
-    const judge = !done.length
-      ? { text: '{"results":[]}' }
-      : await inSandbox(null, (sb) =>
-          claude(
-            [
-              "You are grading skill eval runs. For each run, decide if EVERY expectation holds, using",
-              "only the run's final answer and files. Reply with JSON only:",
-              '{"results":[{"id":"<run id>","passed":true,"failed":["<expectation not met>"]}]}',
-              ...done.map((r) =>
-                [
-                  `<run id="${r.id}">`,
-                  `<prompt>\n${r.c.prompt}\n</prompt>`,
-                  `<expectations>\n${r.c.expectations.map((e) => `- ${e}`).join("\n")}\n</expectations>`,
-                  `<answer>\n${r.answer}\n</answer>`,
-                  ...r.files,
-                  "</run>",
-                ].join("\n"),
-              ),
-            ].join("\n"),
-            sb,
-            ["--max-turns", "1"],
-            ctx,
-          ),
+    const judge = async (rs: typeof done): Promise<Verdict[]> => {
+      if (!rs.length) return [];
+      const { text } = await inSandbox(null, (sb) =>
+        claude(
+          [
+            "You are grading skill eval runs. For each run, decide if EVERY expectation holds, using",
+            "only the run's final answer and files. Reply with JSON only:",
+            '{"results":[{"id":"<run id>","passed":true,"failed":["<expectation not met>"]}]}',
+            ...rs.map((r) =>
+              [
+                `<run id="${r.id}">`,
+                `<prompt>\n${r.c.prompt}\n</prompt>`,
+                `<expectations>\n${r.c.expectations.map((e) => `- ${e}`).join("\n")}\n</expectations>`,
+                `<answer>\n${r.answer}\n</answer>`,
+                ...r.files,
+                "</run>",
+              ].join("\n"),
+            ),
+          ].join("\n"),
+          sb,
+          ["--max-turns", "1"],
+          ctx,
+        ),
+      );
+      try {
+        return (
+          (
+            JSON.parse(text.slice(text.indexOf("{"), text.lastIndexOf("}") + 1)) as {
+              results?: Verdict[];
+            }
+          ).results ?? []
         );
-    let verdicts: Verdict[] = [];
-    try {
-      const t = judge.text;
-      verdicts = (
-        JSON.parse(t.slice(t.indexOf("{"), t.lastIndexOf("}") + 1)) as { results: Verdict[] }
-      ).results;
-    } catch {
-      logError("eval", `judge sem JSON: ${judge.text.slice(0, 200)}`);
-    }
+      } catch {
+        logError("eval", `judge sem JSON: ${text.slice(0, 200)}`);
+        return [];
+      }
+    };
+    const graded1 = await judge(done);
+    const has = (vs: Verdict[], id: string) => vs.some((x) => String(x.id) === id);
+    // Retry once, judge only: runs left without a verdict (bad JSON or omitted id).
+    const verdicts = [...graded1, ...(await judge(done.filter((r) => !has(graded1, r.id))))];
     const fresh = done.map((r) => {
       const v = verdicts.find((x) => String(x.id) === r.id);
       return {

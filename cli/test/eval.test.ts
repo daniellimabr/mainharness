@@ -37,7 +37,10 @@ let p = ""; process.stdin.on("data", d => p += d).on("end", () => {
   }
   const judge = p.includes("grading skill eval runs");
   if (!judge && process.argv.includes("acceptEdits")) fs.writeFileSync("out.md", "# ADR\\nDecisão: X");
-  out.push({ type: "result", result: judge ? process.env.FAKE_JUDGE : "ok fixture=" + fs.existsSync("docs/adr/0003-x.md") + " hx=" + process.argv.includes("Bash(hx:*)") + " home=" + (process.env.HARNESS_HOME || "").startsWith(process.cwd()) + " leak=" + ["HARNESS_REPO", "HARNESS_STABLE_DIR", "HARNESS_INBOX"].some(k => k in process.env), session_id: "s-" + process.pid,
+  // FAKE_JUDGE_LOG: logs each judge prompt; from the 2nd judge call on, answers FAKE_JUDGE2.
+  const log = process.env.FAKE_JUDGE_LOG, again = judge && log && fs.existsSync(log);
+  if (judge && log) fs.appendFileSync(log, JSON.stringify(p) + "\\n");
+  out.push({ type: "result", result: judge ? (again ? process.env.FAKE_JUDGE2 : process.env.FAKE_JUDGE) :"ok fixture=" + fs.existsSync("docs/adr/0003-x.md") + " hx=" + process.argv.includes("Bash(hx:*)") + " home=" + (process.env.HARNESS_HOME || "").startsWith(process.cwd()) + " leak=" + ["HARNESS_REPO", "HARNESS_STABLE_DIR", "HARNESS_INBOX"].some(k => k in process.env), session_id: "s-" + process.pid,
     total_cost_usd: 0.01, usage: { input_tokens: 10, output_tokens: 5 },
     modelUsage: { "claude-sonnet-4-5": { inputTokens: 10, outputTokens: 5, cacheReadInputTokens: 2, cacheCreationInputTokens: 1, costUSD: 0.01 } } });
   process.stdout.write(out.map(o => JSON.stringify(o)).join("\\n") + "\\n");
@@ -61,6 +64,8 @@ beforeEach(() => {
 afterEach(() => {
   delete process.env.HX_CLAUDE_BIN;
   delete process.env.FAKE_JUDGE;
+  delete process.env.FAKE_JUDGE2;
+  delete process.env.FAKE_JUDGE_LOG;
   iso.cleanup();
   rm(repo);
 });
@@ -285,6 +290,70 @@ describe("evalSkill (fake claude)", () => {
     process.env.FAKE_JUDGE = "não sei";
     const res = await evalSkill(repo, "skills/adr", evalScope(repo, "skills/adr", "v0.1.0"), ctx);
     expect(res).toMatchObject({ passed: false, evals: { passed: 0, total: 1 } });
+  });
+
+  describe("judge retry", () => {
+    const usage = () => readEventsIn(iso.home).filter((e) => e.type === "usage").length;
+    const judgeCalls = () =>
+      fs
+        .readFileSync(process.env.FAKE_JUDGE_LOG ?? "", "utf8")
+        .trim()
+        .split("\n")
+        .map((l) => JSON.parse(l) as string);
+    const run = () => evalSkill(repo, "skills/adr", evalScope(repo, "skills/adr", "v0.1.0"), ctx);
+    const failed = () =>
+      (
+        JSON.parse(
+          fs.readFileSync(path.join(repo, "skills/adr/evals/cases-results.json"), "utf8"),
+        ) as { runs: { id: string; failed: string[] }[] }
+      ).runs;
+
+    beforeEach(() => {
+      write("skills/adr/SKILL.md", MD("old", "body 2"));
+      write(
+        "skills/adr/evals/evals.json",
+        JSON.stringify({
+          evals: [1, 2].map((id) => ({ id, prompt: `p${id}`, expectations: ["y"] })),
+        }),
+      );
+      process.env.FAKE_JUDGE_LOG = path.join(iso.home, "judge.log");
+    });
+
+    it("bad JSON then valid: verdict from the 2nd judge call, cases run once", async () => {
+      process.env.FAKE_JUDGE = "não sei";
+      process.env.FAKE_JUDGE2 = JSON.stringify({
+        results: [
+          { id: "1", passed: true },
+          { id: "2", passed: true },
+        ],
+      });
+      const res = await run();
+      expect(res).toMatchObject({ passed: true, evals: { passed: 2, total: 2 } });
+      expect(judgeCalls()).toHaveLength(2);
+      expect(usage()).toBe(2 + 2); // 2 cases + 2 judge
+    });
+
+    it("judge fails twice: sem veredito do juiz", async () => {
+      process.env.FAKE_JUDGE = "não sei";
+      process.env.FAKE_JUDGE2 = "ainda não";
+      const res = await run();
+      expect(res).toMatchObject({ passed: false, evals: { passed: 0, total: 2 } });
+      expect(judgeCalls()).toHaveLength(2);
+      expect(failed().map((r) => r.failed)).toEqual([
+        ["sem veredito do juiz"],
+        ["sem veredito do juiz"],
+      ]);
+    });
+
+    it("judge omits a case: 2nd call only with that case", async () => {
+      process.env.FAKE_JUDGE = JSON.stringify({ results: [{ id: "1", passed: true }] });
+      process.env.FAKE_JUDGE2 = JSON.stringify({ results: [{ id: "2", passed: true }] });
+      const res = await run();
+      expect(res).toMatchObject({ passed: true, evals: { passed: 2, total: 2 } });
+      const [, second] = judgeCalls();
+      expect(second).toContain('<run id="2">');
+      expect(second).not.toContain('<run id="1">');
+    });
   });
 
   describe("--failed", () => {
