@@ -6,10 +6,8 @@ import {
   AUTO_MODE_RULE,
   disablePonytailBand,
   ensureAutoModeRule,
-  ensureStatusLine,
   hasAutoModeRule,
-  hasStatusLine,
-  STATUS_LINE,
+  removeStatusLine,
 } from "../src/commands/setup";
 import { rm, tempDir } from "./helpers";
 
@@ -79,29 +77,29 @@ describe("ensureAutoModeRule", () => {
   });
 });
 
-describe("ensureStatusLine", () => {
+describe("removeStatusLine", () => {
   const settings = () => path.join(claude, "settings.json");
   const read = () => JSON.parse(fs.readFileSync(settings(), "utf8"));
 
-  it("adds hx statusline when there is none, keeping other keys, and is idempotent", () => {
-    fs.writeFileSync(settings(), JSON.stringify({ model: "opus" }));
-    expect(hasStatusLine()).toBe(false);
-    expect(ensureStatusLine()).toBe("added");
-    expect(ensureStatusLine()).toBe("present");
-    expect(read()).toEqual({ model: "opus", statusLine: STATUS_LINE });
-    expect(hasStatusLine()).toBe(true);
+  it("removes the old hx statusline, keeping other keys", () => {
+    const hx = { type: "command", command: "hx statusline" };
+    fs.writeFileSync(settings(), JSON.stringify({ model: "opus", statusLine: hx }));
+    expect(removeStatusLine()).toBe(true);
+    expect(read()).toEqual({ model: "opus" });
   });
 
-  it("never overwrites an existing status line", () => {
+  it("keeps any other status line", () => {
     const mine = { type: "command", command: "my-line" };
     fs.writeFileSync(settings(), JSON.stringify({ statusLine: mine }));
-    expect(ensureStatusLine()).toBe("present");
+    expect(removeStatusLine()).toBe(false);
     expect(read()).toEqual({ statusLine: mine });
   });
 
-  it("refuses to touch an unreadable settings.json", () => {
+  it("does not touch a missing or unreadable settings.json", () => {
+    expect(removeStatusLine()).toBe(false);
+    expect(fs.existsSync(settings())).toBe(false);
     fs.writeFileSync(settings(), "{ broken");
-    expect(ensureStatusLine()).toBe("invalid");
+    expect(removeStatusLine()).toBe(false);
     expect(fs.readFileSync(settings(), "utf8")).toBe("{ broken");
   });
 });

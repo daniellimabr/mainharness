@@ -150,15 +150,8 @@ describe("runDoctor", () => {
     expect(line(runDoctor({ projectRoot: proj }).lines, "modo auto")).toMatch(/^✓/);
   });
 
-  it("warns when there is no status line, and passes once there is one", () => {
-    expect(line(runDoctor({ projectRoot: proj }).lines, "status line")).toMatch(
-      /^⚠ .*status line.*hx setup/,
-    );
-    fs.writeFileSync(
-      path.join(claude, "settings.json"),
-      JSON.stringify({ statusLine: { type: "command", command: "other" } }),
-    );
-    expect(line(runDoctor({ projectRoot: proj }).lines, "status line")).toMatch(/^✓/);
+  it("has no status line check", () => {
+    expect(line(runDoctor({ projectRoot: proj }).lines, "status line")).toBe("");
   });
 
   it("warns when the user HOME is missing in the registry", () => {

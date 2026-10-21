@@ -64,20 +64,14 @@ function loadSettings(): Settings | null {
   }
 }
 
-export const STATUS_LINE = { type: "command", command: "hx statusline" };
-
-export function hasStatusLine(): boolean {
-  return loadSettings()?.statusLine !== undefined;
-}
-
-/** Sets statusLine to hx statusline only when the user has none (never overwrites). */
-export function ensureStatusLine(): "added" | "present" | "invalid" {
+/** Removes the statusLine older hx setups wrote (hx statusline is gone); any other one stays. */
+export function removeStatusLine(): boolean {
   const st = loadSettings();
-  if (!st) return "invalid";
-  if (st.statusLine !== undefined) return "present";
-  st.statusLine = STATUS_LINE;
+  const hx = JSON.stringify({ type: "command", command: "hx statusline" });
+  if (!st || JSON.stringify(st.statusLine) !== hx) return false;
+  delete st.statusLine;
   writeJson(settingsFile(), st);
-  return "added";
+  return true;
 }
 
 /** Adds AUTO_MODE_RULE to autoMode.allow of the user's settings.json, keeping everything else. */
@@ -137,8 +131,7 @@ export function run(args: string[]): number {
   say("liberando o hx no modo auto (autoMode.allow em ~/.claude/settings.json)");
   if (!dry && ensureAutoModeRule() === "invalid")
     console.error("settings.json do Claude ilegível: corrija o JSON e rode hx setup de novo");
-  say("status line do hx (hx statusline) em ~/.claude/settings.json, se não houver outra");
-  if (!dry && ensureStatusLine() === "present") say("status line já existia: mantida");
+  if (!dry && removeStatusLine()) say("status line antiga do hx (hx statusline) removida");
   say(`instalando o comando hx em ${shimDir()} (aponta para ${cfg.stableDir})`);
   let restart = false;
   if (!dry) {

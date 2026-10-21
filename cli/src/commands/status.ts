@@ -2,7 +2,7 @@
 import { flagStr, parseArgs } from "../core/args";
 import { commandContext } from "../core/context";
 import { emit } from "../events/emit";
-import { safeText } from "../hooks/session-start";
+import { safeText } from "../core/text";
 
 export function run(args: string[]): number {
   const p = parseArgs(args);

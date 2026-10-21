@@ -4,6 +4,7 @@ import * as path from "node:path";
 import { migrateProject } from "../commands/migrate";
 import { ensureConfig, loadConfig } from "../core/config";
 import { logError } from "../core/log";
+import { safeText } from "../core/text";
 import { readProjects, resolveProject } from "../core/projects";
 import { type ProjectState, readState, updateState } from "../core/state";
 import { compareVersions, harnessVersion } from "../core/version";
@@ -27,11 +28,6 @@ function migrationNote(root: string, from: string, to: string): string {
     logError("hook session-start migrate", err);
     return `Migração do harness ${from} → ${to} falhou; rode hx migrate.`;
   }
-}
-
-/** Free text made safe for an event string field (no content-like chars, max 200). */
-export function safeText(t: string): string {
-  return t.replace(/[\r\n\t{};<>`]/g, " ").slice(0, 200);
 }
 
 /** Chat title (only sent when set by /rename or --name), made safe for the event schema. */
