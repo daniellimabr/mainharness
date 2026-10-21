@@ -26,7 +26,7 @@ interface AssistantLine {
   type?: string;
   isSidechain?: boolean;
   timestamp?: string;
-  message?: { id?: string; model?: string; usage?: TranscriptUsage };
+  message?: { id?: string; model?: string; stop_reason?: string | null; usage?: TranscriptUsage };
 }
 
 interface Cache {
@@ -106,10 +106,19 @@ function ingestTranscripts(opts: IngestOptions): HarnessEvent[] {
 
   for (const { key, file, agent } of files) {
     const { lines, offset } = readNew(file, cache.offsets[key] ?? 0);
-    cache.offsets[key] = offset;
-    for (const line of lines) {
-      const o = parseAssistant(line);
-      if (!o) continue;
+    const parsed = lines.map(parseAssistant);
+    // A streamed message writes one line per part (same id, growing output_tokens); only the
+    // last part has stop_reason set. A trailing message still streaming is re-read next time.
+    let keep = lines.length;
+    const tail = parsed.at(-1)?.message;
+    if (tail?.stop_reason === null) {
+      while (keep > 0 && parsed[keep - 1]?.message?.id === tail.id) keep--;
+    }
+    cache.offsets[key] =
+      offset - lines.slice(keep).reduce((n, l) => n + Buffer.byteLength(l) + 1, 0);
+    const last = new Map<string, AssistantLine>();
+    for (const o of parsed.slice(0, keep)) if (o) last.set(o.message?.id as string, o);
+    for (const o of last.values()) {
       const m = o.message as Required<NonNullable<AssistantLine["message"]>>;
       if (seen.has(m.id)) continue;
       seen.add(m.id);

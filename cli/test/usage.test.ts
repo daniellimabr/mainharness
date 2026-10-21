@@ -100,6 +100,48 @@ describe("ingestSession", () => {
     expect(usageEvents()).toHaveLength(7);
   });
 
+  describe("streamed message (same id, growing output)", () => {
+    const part = (output: number, stop: string | null) =>
+      JSON.stringify({
+        type: "assistant",
+        timestamp: "2026-10-15T12:00:00.000Z",
+        message: {
+          id: "msg_stream",
+          model: "claude-opus-5-5",
+          stop_reason: stop,
+          usage: { input_tokens: 1, output_tokens: output },
+        },
+      }) + "\n";
+    const outputs = () =>
+      usageEvents()
+        .filter((e) => e.data.message_id === "msg_stream")
+        .map((e) => e.data.output);
+
+    it("records the final output when all parts arrive in one read", () => {
+      ingest();
+      fs.appendFileSync(main, part(8, null) + part(120, null) + part(208, "tool_use"));
+      expect(ingest().events).toBe(1);
+      expect(outputs()).toEqual([208]);
+    });
+
+    it("waits for the last part when the message spans two reads", () => {
+      ingest();
+      fs.appendFileSync(main, part(8, null) + part(120, null));
+      expect(ingest().events).toBe(0);
+      fs.appendFileSync(main, part(208, "tool_use"));
+      expect(ingest().events).toBe(1);
+      expect(ingest().events).toBe(0);
+      expect(outputs()).toEqual([208]);
+    });
+
+    it("emits the last part when another line follows it", () => {
+      ingest();
+      fs.appendFileSync(main, part(8, null) + part(120, null) + '{"type":"user"}\n');
+      expect(ingest().events).toBe(1);
+      expect(outputs()).toEqual([120]);
+    });
+  });
+
   it("second ingest of a 5 MB transcript is fast", () => {
     const big = path.join(dir, "big.jsonl");
     const rows: string[] = [];
