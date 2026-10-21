@@ -338,8 +338,22 @@ describe("sprint commands (real bundle, project with spaces)", () => {
       "| Tempo de relógio (previsto · corrido) | 1 h 50 min · 1 h 30 min |",
     );
     expect(r.stdout).toContain("| Soma das tarefas (planejada · real) | 1 h 50 min · 2 h 30 min |");
+    for (const [type, ts] of [
+      ["turn.end", "03:10"],
+      ["prompt", "03:15"],
+    ] as const)
+      emit({
+        project: "proj-teste",
+        sprint: "S01",
+        session: "s1",
+        type,
+        ts: `2026-10-15T${ts}:00Z`,
+        data: {},
+      });
     const c = hx("sprint", "close", "S01", "--at", "2026-10-15T03:30:40Z");
-    expect(c.stdout.split("\n")[0]).toBe("Sprint S01 fechada: 3/3 tarefas em 1 h 30 min");
+    expect(c.stdout.split("\n")[0]).toBe(
+      "Sprint S01 fechada: 3/3 tarefas em 1 h 30 min · trabalho 1 h 25 min, espera por Daniel 5 min",
+    );
   });
 
   it("close refuses pending tasks unless --force", () => {
@@ -473,6 +487,30 @@ describe("pauses, time to review and feedback rounds (B035, B037, B040)", () => 
     expect(rel).toContain("| 🔄 | Ajuste 1 | 1 ajuste(s) |  |  | 00:20 |  |  |");
     // 23:00 + 1 h 50 min + 45 min of pause
     expect(rel).toContain("| 2026-10-14 23:00 | ~2026-10-15 01:35 (previsto) |  |");
+  });
+
+  it("separates the wait for Daniel from the work (B045)", () => {
+    const turn = (type: "turn.end" | "prompt", hm: string, session = "s1") =>
+      emit({ project: "proj-teste", sprint: "S01", session, type, ts: at(hm), data: {} });
+    const t1 = task("T01", "10:00", "11:20");
+    turn("turn.end", "10:10");
+    turn("prompt", "10:15"); // 5 min wait
+    turn("prompt", "10:16", "s2"); // no turn.end before it: no wait
+    usage("10:20");
+    turn("turn.end", "10:25");
+    turn("turn.end", "10:30"); // only the last turn end before the prompt counts
+    turn("prompt", "11:10"); // 40 min wait, also a pause: not taken twice from the work
+    usage("11:15");
+    ev("task.done", "11:20", { duration_s: t1.duration_s }, "T01");
+    turn("turn.end", "11:22", "s2");
+    turn("prompt", "11:30", "s2"); // 8 min after the last task: wait, but out of the work
+    turn("turn.end", "11:40"); // no prompt yet: no wait
+    const plan = parsePlan(TEMPLATE);
+    const m = computeMetrics("proj-teste", "S01", plan);
+    expect(m).toMatchObject({ wall_min: 40, pause_min: 40, wait_min: 53, work_min: 35 });
+    expect(renderMetrics("S01", plan, m)).toContain(
+      "| Espera por Daniel (fim da vez do agente até o próximo comando) · trabalho (corrido sem as esperas dentro dele) | 53 min · 35 min |",
+    );
   });
 
   it("reopened task sums its passes (B053)", () => {

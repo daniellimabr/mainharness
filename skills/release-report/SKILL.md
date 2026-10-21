@@ -21,6 +21,7 @@ Fecha o ciclo: a sprint termina com números e com melhorias para o harness, nã
 4. **Observações por tarefa:** só o que a tabela não mostra (ex.: reprovada uma vez por falta de teste).
 5. **Indicadores:** cole o bloco do `hx sprint close`. Garanta que apareçam:
    - tempo planejado × real (total e por tarefa);
+   - espera por Daniel × trabalho (linha "Espera por Daniel"): na retrospectiva, separe o que foi lentidão do agente do que foi espera;
    - tokens e US$ por tarefa e por agente (valores **estimados**: a assinatura não cobra por token);
    - retrabalho (ajustes de Daniel), reprovações do Reviewer;
    - alertas de contexto (250K) e handoffs.

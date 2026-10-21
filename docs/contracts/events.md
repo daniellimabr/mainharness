@@ -46,6 +46,7 @@ Notação: `?` = campo opcional (pode faltar); `| null` = pode ser `null`. Núme
 | `session.start` | `source` texto; `model?` texto \| null; `title?` texto (desde a v0.6.0) | Início de um chat (`startup`, `resume`, `compact`...). `title` só vem quando o chat tem nome dado por `/rename` ou `--name` (o Claude Code não envia o título automático ao hook); caracteres proibidos viram espaço |
 | `session.end` | `reason` texto | Fim do chat |
 | `prompt` | nenhum (`{}`) | Cada comando de Daniel (hook `UserPromptSubmit`). Só horário e sessão: **o texto do prompt nunca é gravado** |
+| `turn.end` | nenhum (`{}`) | Fim da vez do agente (hook `Stop`), só quando o Stop deixa parar (não quando bloqueia). Do último `turn.end` até o próximo `prompt` da mesma sessão é espera por Daniel (desde a v0.6.0) |
 | `agent.start` | `agent_id` texto | Subagente começou (hook `SubagentStart`). `agent` do envelope = tipo do agente (ex.: `main-harness:reviewer`; `null` se vazio); `task` = a tarefa em andamento quando há exatamente uma, senão `null` |
 | `agent.end` | `agent_id` texto | Subagente terminou (hook `SubagentStop`); mesmo envelope do `agent.start` |
 | `project.status` | `where` texto; `next` texto | `hx status --where <onde estamos> --next <próximo passo>` (opcional, quem quiser registra) |
@@ -53,7 +54,7 @@ Notação: `?` = campo opcional (pode faltar); `| null` = pode ser `null`. Núme
 | `sprint.open` | `tasks` número | `hx sprint open` |
 | `sprint.close` | `tasks_done` número; `tasks_total` número; `duration_s` número | `hx sprint close` |
 | `sprint.feedback` | `adjustments` número | `hx sprint feedback <n>` (ajustes pedidos por Daniel) |
-| `sprint.metrics` | `tasks_total`, `tasks_done`, `planned_min`, `actual_min`, `tokens_input`, `tokens_output`, `tokens_cache_write`, `tokens_cache_read`, `usd`, `rework`, `review_rejections`, `context_alerts`, `handoffs` (todos número); `wall_min?` número (tempo corrido: 1º `task.start` ao último `task.done`) e `planned_wall_min?` número (relógio previsto: caminho mais longo pela coluna "Depende de"; sem a coluna, a soma), desde a v0.3.0; `usd_by_agent`, `usd_by_task`, `actual_min_by_task` (objeto chave → número) | Fechamento da sprint |
+| `sprint.metrics` | `tasks_total`, `tasks_done`, `planned_min`, `actual_min`, `tokens_input`, `tokens_output`, `tokens_cache_write`, `tokens_cache_read`, `usd`, `rework`, `review_rejections`, `context_alerts`, `handoffs` (todos número); `wall_min?` número (tempo corrido: 1º `task.start` ao último `task.done`) e `planned_wall_min?` número (relógio previsto: caminho mais longo pela coluna "Depende de"; sem a coluna, a soma), desde a v0.3.0; `usd_by_agent`, `usd_by_task`, `actual_min_by_task` (objeto chave → número); `wait_min?` número (espera por Daniel: soma dos intervalos `turn.end` → `prompt` seguinte da mesma sessão, sobreposições unidas) e `work_min?` número (`wall_min` menos as esperas dentro dele que já não eram pausa), desde a v0.6.0 | Fechamento da sprint |
 | `task.start` | `planned_min?` número | `hx task start` |
 | `task.phase` | `phase` texto (`testes`, `código`, `revisão`, `commit`) | `hx task phase <id> <fase>` (tarefa em andamento) |
 | `task.done` | `duration_s` número; `planned_min?` número | `hx task done` |

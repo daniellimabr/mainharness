@@ -479,6 +479,32 @@ export interface SprintMetrics {
   feedback_rounds: number;
   feedback_min: number;
   feedback_usd: number;
+  /** B045: turn.end → next prompt of the same session (overlaps merged). */
+  wait_min: number;
+  /** B045: wall_min minus the waits inside it that are not already pauses. */
+  work_min: number;
+}
+
+/** B045: wait intervals [turn end, next prompt] per session, overlaps merged, sorted. */
+function waitIntervals(evs: HarnessEvent[]): number[][] {
+  const out: number[][] = [];
+  const turnEnd = new Map<string | null, number>();
+  for (const e of evs) {
+    if (e.type === "turn.end") turnEnd.set(e.session, Date.parse(e.ts));
+    else if (e.type === "prompt") {
+      const t = turnEnd.get(e.session);
+      if (t !== undefined) out.push([t, Date.parse(e.ts)]);
+      turnEnd.delete(e.session);
+    }
+  }
+  out.sort((x, y) => (x[0] ?? 0) - (y[0] ?? 0));
+  const merged: number[][] = [];
+  for (const [s = 0, e = 0] of out) {
+    const prev = merged.at(-1);
+    if (prev && s <= (prev[1] ?? 0)) prev[1] = Math.max(prev[1] ?? 0, e);
+    else merged.push([s, e]);
+  }
+  return merged;
 }
 
 const r1 = (x: number) => Math.round(x * 10) / 10;
@@ -527,7 +553,11 @@ export function computeMetrics(project: string, sprintId: string, plan: Plan): S
     feedback_rounds: rounds.length,
     feedback_min: r1(rounds.reduce((acc, r) => acc + r.min, 0)),
     feedback_usd: r4(rounds.reduce((acc, r) => acc + r.usd, 0)),
+    wait_min: 0,
+    work_min: 0,
   };
+  const waits = waitIntervals(evs);
+  m.wait_min = r1(waits.reduce((acc, [s = 0, e = 0]) => acc + e - s, 0) / 60000);
   for (const e of evs) {
     const d = e.data;
     if (e.type === "usage") {
@@ -562,6 +592,13 @@ export function computeMetrics(project: string, sprintId: string, plan: Plan): S
     const p = pauseMs(a.times, first, last);
     m.pause_min = r1(p / 60000);
     m.wall_min = r1((last - first - p) / 60000);
+    let busy = 0; // waits inside the wall clock, net of what pauses already took out
+    for (const [ws = 0, we = 0] of waits) {
+      const s = Math.max(ws, first);
+      const e = Math.min(we, last);
+      if (e > s) busy += e - s - pauseMs(a.times, s, e);
+    }
+    m.work_min = r1((last - first - p - busy) / 60000);
   }
   return m;
 }
@@ -599,6 +636,7 @@ export function renderMetrics(sprintId: string, plan: Plan, m: SprintMetrics): s
     "|---|---|",
     `| Tempo de relógio (previsto · corrido) | ${fmtMin(m.planned_wall_min)} · ${fmtMin(m.wall_min)} |`,
     `| Pausas (mais de 30 min sem eventos, fora do corrido) | ${fmtMin(m.pause_min)} |`,
+    `| Espera por Daniel (fim da vez do agente até o próximo comando) · trabalho (corrido sem as esperas dentro dele) | ${fmtMin(m.wait_min)} · ${fmtMin(m.work_min)} |`,
     `| Soma das tarefas (planejada · real) | ${fmtMin(m.planned_min)} · ${fmtMin(m.actual_min)} |`,
     `| Tarefas feitas | ${m.tasks_done}/${m.tasks_total} |`,
     `| Tokens (entrada / saída / escrita em cache / leitura de cache) | ${tok(m.tokens_input)} / ${tok(m.tokens_output)} / ${tok(m.tokens_cache_write)} / ${tok(m.tokens_cache_read)} |`,

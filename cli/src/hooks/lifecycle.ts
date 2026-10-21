@@ -76,17 +76,32 @@ export function stop(input: HookInput): HookOutcome {
   const c = context(input);
   if (!c) return {};
   ingest(input, c);
+  const block = stopBlock(input, c);
+  if (block) return jsonOut({ decision: "block", ...block });
+  // B045: the agent's turn really ended: the wait for Daniel starts here
+  emit({
+    type: "turn.end",
+    project: c.p.id,
+    session: c.session,
+    sprint: c.st.activeSprint,
+    data: {},
+  });
+  return {};
+}
+
+/** Reason (and message) to keep the agent going; null lets it stop. */
+function stopBlock(input: HookInput, c: Ctx): { reason: string; systemMessage?: string } | null {
   const cfg = loadConfig();
   // Typecheck only in the harness repo itself, not in projects that happen to have cli/.
   if (!input.stop_hook_active && path.relative(c.p.root, cfg.harnessRepo) === "") {
     const reason = typecheckReason(c.p.root);
-    if (reason) return jsonOut({ decision: "block", reason });
+    if (reason) return { reason };
   }
-  if (cfg.contextStrategy !== "compact" || input.stop_hook_active) return {};
+  if (cfg.contextStrategy !== "compact" || input.stop_hook_active) return null;
   const tokens = tokensOf(input);
-  if (tokens === null || tokens < cfg.handoffAt) return {};
+  if (tokens === null || tokens < cfg.handoffAt) return null;
   const alerted = c.st.lastContextAlertAt;
-  if (alerted && !(time(alerted) < time(c.st.lastCompactAt))) return {};
+  if (alerted && !(time(alerted) < time(c.st.lastCompactAt))) return null;
   emit({
     type: "alert.context",
     project: c.p.id,
@@ -98,15 +113,14 @@ export function stop(input: HookInput): HookOutcome {
     s.lastContextAlertAt = new Date().toISOString();
   });
   const k = (n: number) => Math.round(n / 1000);
-  return jsonOut({
-    decision: "block",
+  return {
     reason:
       `Contexto em ${k(tokens)} mil tokens (limite ${k(cfg.contextLimit)} mil). ` +
       "Escreva agora o handoff com `hx handoff` (objetivo, tarefa atual, arquivos tocados, " +
       "decisões, próximos passos) e continue a tarefa.",
     systemMessage:
       "Contexto perto do limite: handoff pedido; a compactação automática vai liberar espaço.",
-  });
+  };
 }
 
 /** The task in progress when exactly one is; null when none or several (parallel clones). */

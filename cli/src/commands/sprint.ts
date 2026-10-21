@@ -159,8 +159,11 @@ function close(ctx: CommandContext, p: Parsed, id: string, force: boolean): numb
   const wait = (Date.parse(at) - lastDone) / 60000; // Infinity when no task is done: no wait shown
   const paused = m.pause_min ? ` (pausas: ${fmtMin(m.pause_min)})` : "";
   const waited = wait >= 1 && Number.isFinite(wait) ? ` (aguardou teste por ${fmtMin(wait)})` : "";
+  const work = m.wait_min
+    ? ` · trabalho ${fmtMin(m.work_min)}, espera por Daniel ${fmtMin(m.wait_min)}`
+    : "";
   console.log(
-    `Sprint ${id} fechada: ${done}/${plan.tasks.length} tarefas em ${fmtMin(m.wall_min)}${paused}${waited}\n\n${renderMetrics(id, plan, m)}`,
+    `Sprint ${id} fechada: ${done}/${plan.tasks.length} tarefas em ${fmtMin(m.wall_min)}${paused}${waited}${work}\n\n${renderMetrics(id, plan, m)}`,
   );
   return 0;
 }

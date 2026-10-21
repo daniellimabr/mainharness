@@ -19,7 +19,7 @@ O que mudou para Daniel, em linguagem simples (3 a 5 linhas).
 
 ## Indicadores
 
-<!-- Cole aqui o bloco impresso por `hx sprint close SNN` (ou `hx metrics SNN`). -->
+<!-- Cole aqui o bloco impresso por `hx sprint close SNN` (ou `hx metrics SNN`), com a linha "Espera por Daniel" (espera · trabalho). -->
 
 ## Revisão
 

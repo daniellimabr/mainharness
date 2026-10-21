@@ -100,6 +100,7 @@ Uma linha por arquivo: caminho e propósito. Mantido pelo hook `post-edit`.
 - `cli/test/setup.test.ts` — (sem descrição)
 - `cli/test/sprint.test.ts` — testes de sprint
 - `cli/test/stop-typecheck.test.ts` — Stop hook typecheck: tsc runs only when cli/src changed and blocks with its first lines.
+- `cli/test/turn-end.test.ts` — B045: the Stop hook emits turn.end only when it lets the agent stop.
 - `cli/test/usage.test.ts` — testes de usage
 - `cli/tsconfig.json` — TypeScript estrito do CLI
 - `commands/continue.md` — Retoma a sprint a partir do último handoff (num chat novo)
