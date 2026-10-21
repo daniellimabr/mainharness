@@ -106,6 +106,17 @@ describe("ensureAutoModeRule", () => {
     expect(read().autoMode.allow).toEqual(["$defaults", AUTO_MODE_RULE]);
     expect(autoModeRuleState()).toBe("current");
   });
+
+  it("drops every older copy, even beside the current rule", () => {
+    const older = "Running the hx CLI (hx sprint) in any project is allowed.";
+    fs.writeFileSync(
+      settings(),
+      JSON.stringify({ autoMode: { allow: ["$defaults", AUTO_MODE_RULE, "x", older] } }),
+    );
+    expect(autoModeRuleState()).toBe("outdated");
+    expect(ensureAutoModeRule()).toBe("added");
+    expect(read().autoMode.allow).toEqual(["$defaults", AUTO_MODE_RULE, "x"]);
+  });
 });
 
 describe("removeStatusLine", () => {

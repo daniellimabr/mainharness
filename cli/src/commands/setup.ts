@@ -49,11 +49,11 @@ const isObj = (v: unknown): v is Record<string, unknown> =>
 export function autoModeRuleState(): "current" | "outdated" | "missing" {
   const allow = readJson<Settings>(path.join(claudeHome(), "settings.json"), {})?.autoMode?.allow;
   if (!Array.isArray(allow)) return "missing";
-  if (allow.includes(AUTO_MODE_RULE)) return "current";
-  return allow.some((r) => typeof r === "string" && r.startsWith(RULE_PREFIX))
-    ? "outdated"
-    : "missing";
+  if (allow.some((r) => isHxRule(r) && r !== AUTO_MODE_RULE)) return "outdated";
+  return allow.includes(AUTO_MODE_RULE) ? "current" : "missing";
 }
+
+const isHxRule = (r: unknown) => typeof r === "string" && r.startsWith(RULE_PREFIX);
 
 const settingsFile = () => path.join(claudeHome(), "settings.json");
 
@@ -88,11 +88,13 @@ export function ensureAutoModeRule(): "added" | "present" | "invalid" {
   const auto = (st.autoMode ??= {});
   // "$defaults" keeps Claude Code's built-in rules when we create the list.
   const allow = (auto.allow ??= ["$defaults"]);
-  if (allow.includes(AUTO_MODE_RULE)) return "present";
-  // An older wording of the rule is replaced in place, not kept beside the new one.
-  const old = allow.findIndex((r) => typeof r === "string" && r.startsWith(RULE_PREFIX));
-  if (old >= 0) allow[old] = AUTO_MODE_RULE;
-  else allow.push(AUTO_MODE_RULE);
+  const stale = allow.some((r) => isHxRule(r) && r !== AUTO_MODE_RULE);
+  if (!stale && allow.includes(AUTO_MODE_RULE)) return "present";
+  // Older wordings (any number of them) give way to one current rule, at the first one's place.
+  const first = allow.findIndex(isHxRule);
+  const kept = allow.filter((r) => !isHxRule(r));
+  kept.splice(first < 0 ? kept.length : first, 0, AUTO_MODE_RULE);
+  auto.allow = kept;
   writeJson(file, st);
   return "added";
 }
