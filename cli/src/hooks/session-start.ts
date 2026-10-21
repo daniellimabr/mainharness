@@ -1,10 +1,11 @@
 // SessionStart: records the session, migrates the project if needed and injects a short context.
 import * as fs from "node:fs";
+import * as path from "node:path";
 import { migrateProject } from "../commands/migrate";
-import { ensureConfig } from "../core/config";
+import { ensureConfig, loadConfig } from "../core/config";
 import { logError } from "../core/log";
-import { resolveProject } from "../core/projects";
-import { updateState } from "../core/state";
+import { readProjects, resolveProject } from "../core/projects";
+import { type ProjectState, readState, updateState } from "../core/state";
 import { compareVersions, harnessVersion } from "../core/version";
 import { emit } from "../events/emit";
 import { summarizeIndex } from "../repomap/index";
@@ -12,6 +13,9 @@ import { renderTaskList } from "../sprint/index";
 import { jsonOut, type HookInput, type HookOutcome } from "./runner";
 
 const HANDOFF_MAX = 4000;
+
+/** Backlog ids already shown to this project (kept in its state file). */
+type Shown = ProjectState & { shownRequests?: string[] };
 
 function migrationNote(root: string, from: string, to: string): string {
   if (compareVersions(to, from) === 0) return "";
@@ -31,6 +35,45 @@ function title(input: HookInput): { title?: string } {
   if (typeof t !== "string") return {};
   const safe = t.replace(/[\r\n\t{};<>`]/g, " ").slice(0, 200);
   return safe.trim() ? { title: safe } : {};
+}
+
+/** Owner project of an inbox file `AAAA-MM-DD-<project>-<slug>.md`: the longest known id that fits. */
+function ownerOf(file: string, ids: string[]): string | undefined {
+  return ids
+    .filter(
+      (id) => /^[a-z0-9-]+$/.test(id) && new RegExp(`^\\d{4}-\\d{2}-\\d{2}-${id}-`).test(file),
+    )
+    .sort((a, b) => b.length - a.length)[0];
+}
+
+/**
+ * The project's requests marked `feito (SNN)` in the harness backlog, shown once per id.
+ * The backlog is external input: only plain, size-limited text comes out of it.
+ */
+function doneRequests(projectId: string, version: string): string {
+  const file = path.join(loadConfig().harnessRepo, "docs", "backlog.md");
+  if (!fs.existsSync(file)) return "";
+  const ids = [...new Set([projectId, ...readProjects().map((e) => e.id)])];
+  const shown = new Set((readState(projectId) as Shown).shownRequests ?? []);
+  const lines: string[] = [];
+  const ok: string[] = [];
+  for (const row of fs.readFileSync(file, "utf8").split("\n")) {
+    const cells = row.split("|").map((c) => c.trim());
+    const [, id = "", item = "", origin = ""] = cells;
+    const status = cells[cells.length - 2] ?? "";
+    const inbox = /^inbox:\s*`?([\w.-]+\.md)/.exec(origin)?.[1];
+    if (!/^B\d+$/.test(id) || !/^feito \(S\d+\)$/.test(status) || shown.has(id)) continue;
+    if (!inbox || ownerOf(inbox, ids) !== projectId) continue;
+    ok.push(id);
+    const text = item.replace(/[\p{Cc}`]/gu, " ").slice(0, 160);
+    lines.push(`- ${id} (${status}): ${text}`);
+  }
+  if (!ok.length) return "";
+  updateState(projectId, (s) => {
+    (s as Shown).shownRequests = [...shown, ...ok];
+  });
+  // Backlog is oldest first: keep the 10 newest so a first run with old history still shows this sprint's.
+  return `Pedidos deste projeto atendidos no harness (versão ${version}):\n${lines.slice(-10).join("\n")}`;
 }
 
 export function sessionStart(input: HookInput): HookOutcome {
@@ -53,6 +96,13 @@ export function sessionStart(input: HookInput): HookOutcome {
     sprint: state.activeSprint,
     data: { source, model: typeof input.model === "string" ? input.model : null, ...title(input) },
   });
+
+  try {
+    const done = doneRequests(p.id, version);
+    if (done) parts.push(done);
+  } catch (err) {
+    logError("hook session-start requests", err);
+  }
 
   const index = summarizeIndex(p.root);
   if (index) parts.push(index);
