@@ -11,7 +11,7 @@ import { resolveProject } from "../core/projects";
 import { hxOnPath } from "../core/shim";
 import { compareVersions } from "../core/version";
 import { pendingResumes } from "./resume";
-import { hasAutoModeRule, userHomeVarSet } from "./setup";
+import { autoModeRuleState, userHomeVarSet } from "./setup";
 
 const TIMEOUT = 5000;
 const SKILLS = [
@@ -188,10 +188,13 @@ export function runDoctor(opts: { projectRoot?: string; homeVarSet?: () => boole
       "⚠ painel do ponytail ligado: rode hx setup e reinicie o VS Code. O Task board desliga em /plugin → ponytail → Task board (o hx não mexe na config do plugin)",
     );
 
+  const rule = autoModeRuleState();
   check(
-    hasAutoModeRule(),
+    rule === "current",
     "hx liberado no modo auto",
-    "hx sem regra no modo auto (autoMode.allow do ~/.claude/settings.json): rode hx setup",
+    rule === "outdated"
+      ? "regra do hx no modo auto desatualizada: rode hx setup"
+      : "hx sem regra no modo auto (autoMode.allow do ~/.claude/settings.json): rode hx setup",
     true,
   );
 

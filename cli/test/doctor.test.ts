@@ -150,6 +150,16 @@ describe("runDoctor", () => {
     expect(line(runDoctor({ projectRoot: proj }).lines, "modo auto")).toMatch(/^✓/);
   });
 
+  it("warns when the hx auto mode rule is outdated", () => {
+    fs.writeFileSync(
+      path.join(claude, "settings.json"),
+      JSON.stringify({ autoMode: { allow: ["Running the hx CLI (hx sprint) is allowed."] } }),
+    );
+    expect(line(runDoctor({ projectRoot: proj }).lines, "modo auto")).toMatch(
+      /^⚠ regra do hx no modo auto desatualizada.*rode hx setup/,
+    );
+  });
+
   it("lists pending resumes", () => {
     expect(line(runDoctor({ projectRoot: proj }).lines, "retomada")).toBe("");
     const s = "0f8fad5b-d9cb-469f-a165-70867728950e";

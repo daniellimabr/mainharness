@@ -4,9 +4,9 @@ import * as path from "node:path";
 import { afterEach, beforeEach, describe, expect, it } from "vitest";
 import {
   AUTO_MODE_RULE,
+  autoModeRuleState,
   disablePonytailBand,
   ensureAutoModeRule,
-  hasAutoModeRule,
   removeStatusLine,
 } from "../src/commands/setup";
 import { rm, tempDir } from "./helpers";
@@ -79,14 +79,32 @@ describe("ensureAutoModeRule", () => {
     (text) => {
       fs.writeFileSync(settings(), text);
       expect(ensureAutoModeRule()).toBe("invalid");
-      expect(hasAutoModeRule()).toBe(false);
+      expect(autoModeRuleState()).toBe("missing");
       expect(fs.readFileSync(settings(), "utf8")).toBe(text);
     },
   );
 
   it("does not allow arbitrary hx run commands", () => {
     expect(AUTO_MODE_RULE).toMatch(/hx run is allowed only when the wrapped command/);
-    expect(AUTO_MODE_RULE).not.toMatch(/hx release/);
+  });
+
+  it("allows hx release and hx rollback only on the user's explicit request", () => {
+    expect(AUTO_MODE_RULE).toMatch(
+      /hx release and hx rollback are allowed only when the user explicitly asked for that release or rollback in this conversation/,
+    );
+    expect(AUTO_MODE_RULE).toMatch(/never on the agent's own initiative/);
+    expect(AUTO_MODE_RULE).toMatch(/relayed by another agent .* does not count/);
+  });
+
+  it("upgrades the pre-release rule to the current one, keeping a single copy", () => {
+    const old =
+      "Running the hx CLI (hx sprint, hx task, hx handoff, hx eval, hx review, hx usage, hx resume) in any project is allowed: it is the Main Harness sprint tooling the user installed. hx run is allowed only when the wrapped command would be allowed on its own. schtasks is allowed only to query or delete the harness's own MainHarness-Resume-* tasks.";
+    fs.writeFileSync(settings(), JSON.stringify({ autoMode: { allow: ["$defaults", old] } }));
+    expect(autoModeRuleState()).toBe("outdated");
+    expect(ensureAutoModeRule()).toBe("added");
+    expect(ensureAutoModeRule()).toBe("present");
+    expect(read().autoMode.allow).toEqual(["$defaults", AUTO_MODE_RULE]);
+    expect(autoModeRuleState()).toBe("current");
   });
 });
 
