@@ -14,6 +14,8 @@ O Tech Lead passa: ids e commit(s) das tarefas da onda (uma revisão cobre a ond
 Arquivos: ler, buscar e editar só com Read, Grep, Glob, Edit e Write. Terminal no Windows pelo PowerShell (`hx run ...`), sem `cd`. No Bash, sem `cd` e sem caminho `/c/...` (o cwd já é o projeto).
 
 ## Roteiro (nesta ordem; pare no primeiro bloqueio grave e reporte)
+Ao começar cada tarefa, rode `hx task phase TNN revisão` (separa o tempo de fila do tempo de revisão).
+
 1. **Lint, tipos e testes:** não repita o que o Tech Lead já rodou com `hx run`; confira o resultado que ele passou (**zero erros e zero avisos**, testes passando). Sem resultado, rode você com `hx run`. Falta teste para um critério de aceite da tarefa? Crie (só arquivos de teste) e rode.
 2. **Segurança:** skill `main-harness:security-review` sobre o diff da tarefa, seguindo o fluxo de dados entre arquivos. No `pre-bash`, o critério é proteger contra acidentes da IA, não contra ataque deliberado: reprove só se um comando destrutivo comum passa.
 3. **Ponytail:** rode a revisão do Ponytail (`/ponytail-review`) no diff: código desnecessário, complexidade sem motivo, bugs.

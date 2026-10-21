@@ -6,7 +6,7 @@ import { emit } from "../events/emit";
 import { atFlag, loadPlan } from "../sprint/cmd";
 import { renderTaskList, taskLine, updateExecution } from "../sprint/index";
 
-const PHASES = ["testes", "código", "revisão", "commit"];
+const PHASES = ["testes", "código", "fila", "revisão", "commit"];
 
 export function run(args: string[]): number {
   const p = parseArgs(args);

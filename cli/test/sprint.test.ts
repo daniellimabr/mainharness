@@ -182,7 +182,7 @@ describe("sprint commands (real bundle, project with spaces)", () => {
     hx("task", "start", "T01", "--at", "2026-10-15T02:05:00Z");
     const bad = hx("task", "phase", "T01", "deploy");
     expect(bad.code).toBe(1);
-    expect(bad.stderr).toContain("testes, código, revisão, commit");
+    expect(bad.stderr).toContain("testes, código, fila, revisão, commit");
     const ph = hx("task", "phase", "t01", "revisão");
     expect(ph.code).toBe(0);
     expect(ph.stdout).toContain("| 🔄 revisão | T01 | Descrição curta |");
@@ -474,6 +474,26 @@ describe("pauses, time to review and feedback rounds (B035, B037, B040)", () => 
       path.join(dir, "docs", "sprints", "S01-plan.md"),
     );
     expect(renderTaskList(dir, "S01")).toContain("| ✅ | Ajuste 2 |");
+  });
+
+  it("with a fila phase, splits queue and review after delivery (B068)", () => {
+    const t1 = task("T01", "02:00", "02:21");
+    ev("task.phase", "02:04", { phase: "fila" }, "T01");
+    phase("T01", "02:18");
+    ev("task.done", "02:21", { duration_s: t1.duration_s }, "T01");
+    const plan = parsePlan(TEMPLATE);
+    const m = computeMetrics("proj-teste", "S01", plan);
+    expect(m).toMatchObject({
+      actual_min_by_task: { T01: 4 },
+      queue_min_by_task: { T01: 14 },
+      review_min_by_task: { T01: 3 },
+    });
+    expect(renderMetrics("S01", plan, m)).toContain(
+      "| T01 | 20 min | 4 min (fila: 14 min, revisão: 3 min) |",
+    );
+    updateExecution(dir, "S01", plan.tasks, (t) => taskLine(t), { T01: t1 });
+    const rel = fs.readFileSync(path.join(dir, "docs", "sprints", "S01-release.md"), "utf8");
+    expect(rel).toContain("| 23:00 | 23:21 | 4 min (fila: 14 min, revisão: 3 min) |");
   });
 
   it("open sprint: open round and forecast with the pauses so far", () => {

@@ -76,12 +76,14 @@ export function updateExecution(
     const passes = [...earlierPasses(a, sprintId, t.id, x.start), [x.start, x.end]];
     let min = 0;
     let review: number | undefined;
+    let queue: number | undefined;
     for (const [s = "", e = ""] of passes) {
       const tt = taskTime(a, t.id, Date.parse(s), Date.parse(e));
       if (tt.review !== undefined) review = (review ?? 0) + tt.review;
+      if (tt.queue !== undefined) queue = (queue ?? 0) + tt.queue;
       min += tt.min;
     }
-    return taskLine(t, { ...x, start: passes[0]?.[0], duration_s: min * 60 }, review);
+    return taskLine(t, { ...x, start: passes[0]?.[0], duration_s: min * 60 }, review, queue);
   };
   // Total row starts at each task's first pass
   const firstTimes = Object.fromEntries(
@@ -139,23 +141,44 @@ function activity(project: string): Activity {
   return { evs, times: evs.map((e) => Date.parse(e.ts)) };
 }
 
-/** Task minutes net of pauses; with a "revisão" phase (B060), minutes until delivery plus the review after it. */
+/**
+ * Task minutes net of pauses; with a "revisão" phase (B060), minutes until delivery plus the review
+ * after it. With a "fila" phase (B068), delivery is the fila and the wait until "revisão" is the queue.
+ */
 function taskTime(a: Activity, task: string, start: number, end: number) {
   const net = (to: number) => (to - start - pauseMs(a.times, start, to)) / 60000;
   // last delivery: fixes after a rejection are the clone's work, not review
-  const ph = [...a.evs]
-    .reverse()
-    .find(
-      (e) =>
-        e.type === "task.phase" &&
-        e.task === task &&
-        e.data.phase === "revisão" &&
-        Date.parse(e.ts) >= start &&
-        Date.parse(e.ts) <= end,
-    );
-  if (!ph) return { min: net(end), review: undefined };
+  const last = (phase: string, from = start) =>
+    [...a.evs]
+      .reverse()
+      .find(
+        (e) =>
+          e.type === "task.phase" &&
+          e.task === task &&
+          e.data.phase === phase &&
+          Date.parse(e.ts) >= from &&
+          Date.parse(e.ts) <= end,
+      );
+  const q = last("fila");
+  const ph = last("revisão", q ? Date.parse(q.ts) : start);
+  if (q) {
+    const delivered = net(Date.parse(q.ts));
+    const reviewAt = ph ? net(Date.parse(ph.ts)) : net(end);
+    const review = ph ? net(end) - reviewAt : undefined;
+    return { min: delivered, queue: reviewAt - delivered, review };
+  }
+  if (!ph) return { min: net(end), queue: undefined, review: undefined };
   const delivered = net(Date.parse(ph.ts));
-  return { min: delivered, review: net(end) - delivered };
+  return { min: delivered, queue: undefined, review: net(end) - delivered };
+}
+
+/** " (fila: X, revisão: Y)" suffix for a task duration; empty when neither exists. */
+function partsSuffix(queue?: number, review?: number): string {
+  const parts = [
+    queue === undefined ? "" : `fila: ${fmtMin(queue)}`,
+    review === undefined ? "" : `revisão: ${fmtMin(review)}`,
+  ].filter(Boolean);
+  return parts.length ? ` (${parts.join(", ")})` : "";
 }
 
 export interface Round {
@@ -356,14 +379,18 @@ const EXEC_HEADER =
 const EXEC_NOTE = "Horários de Brasília (UTC−3). ✅ feita · 🔄 em andamento · ⬜ a fazer.";
 
 /** One execution table row for a task, from its recorded times. */
-export function taskLine(t: PlanTask, times?: TaskTimes, reviewMin?: number): string {
+export function taskLine(
+  t: PlanTask,
+  times?: TaskTimes,
+  reviewMin?: number,
+  queueMin?: number,
+): string {
   const title = t.title.replace(/\|/g, "/");
   const row = (status: string, start = "", end = "", dur = "") =>
     `| ${status} | ${t.id} | ${title} | ${t.agent} | ${fmtMin(t.planned_min)} | ${start} | ${end} | ${dur} |`;
   if (times?.end) {
     const start = times.start ?? times.end;
-    const review = reviewMin === undefined ? "" : ` (revisão: ${fmtMin(reviewMin)})`;
-    const dur = fmtMin((times.duration_s ?? 0) / 60) + review;
+    const dur = fmtMin((times.duration_s ?? 0) / 60) + partsSuffix(queueMin, reviewMin);
     return row(DONE, localHM(start), localHM(times.end), dur);
   }
   if (times?.start)
@@ -480,6 +507,8 @@ export interface SprintMetrics {
   pause_min: number;
   /** B060: minutes from the last "revisão" phase (delivery) to done; actual_min_by_task stops at delivery. */
   review_min_by_task: Record<string, number>;
+  /** B068: minutes from the last "fila" phase (delivery) to "revisão". */
+  queue_min_by_task?: Record<string, number>;
   /** B040: feedback rounds (count, time net of pauses, cost). */
   feedback_rounds: number;
   feedback_min: number;
@@ -522,6 +551,7 @@ export function computeMetrics(project: string, sprintId: string, plan: Plan): S
   const evs = a.evs.filter((e) => e.sprint === sprintId);
   const durations: Record<string, number> = {};
   const review_min_by_task: Record<string, number> = {};
+  const queue_min_by_task: Record<string, number> = {};
   for (const e of evs)
     if (e.type === "task.done" && e.task) {
       const end = Date.parse(e.ts);
@@ -530,6 +560,8 @@ export function computeMetrics(project: string, sprintId: string, plan: Plan): S
       durations[e.task] = prior + tt.min * 60;
       if (tt.review !== undefined)
         review_min_by_task[e.task] = r1((review_min_by_task[e.task] ?? 0) + tt.review);
+      if (tt.queue !== undefined)
+        queue_min_by_task[e.task] = r1((queue_min_by_task[e.task] ?? 0) + tt.queue);
     }
   const actual_min_by_task: Record<string, number> = {};
   for (const [k, s] of Object.entries(durations)) actual_min_by_task[k] = r1(s / 60);
@@ -555,6 +587,7 @@ export function computeMetrics(project: string, sprintId: string, plan: Plan): S
     actual_min_by_task,
     pause_min: 0,
     review_min_by_task,
+    queue_min_by_task,
     feedback_rounds: rounds.length,
     feedback_min: r1(rounds.reduce((acc, r) => acc + r.min, 0)),
     feedback_usd: r4(rounds.reduce((acc, r) => acc + r.usd, 0)),
@@ -620,9 +653,8 @@ export function renderMetrics(sprintId: string, plan: Plan, m: SprintMetrics): s
         ? "—"
         : `${a - t.planned_min >= 0 ? "+" : "−"}${fmtMin(Math.abs(a - t.planned_min))}`;
     const cost = m.usd_by_task[t.id];
-    const rev = m.review_min_by_task[t.id];
-    const real =
-      a === undefined ? "—" : fmtMin(a) + (rev === undefined ? "" : ` (revisão: ${fmtMin(rev)})`);
+    const parts = partsSuffix(m.queue_min_by_task?.[t.id], m.review_min_by_task[t.id]);
+    const real = a === undefined ? "—" : fmtMin(a) + parts;
     return `| ${t.id} | ${fmtMin(t.planned_min)} | ${real} | ${diff} | ${cost === undefined ? "—" : usd(cost)} |`;
   });
   const byAgent =
