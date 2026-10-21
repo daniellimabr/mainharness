@@ -7,14 +7,14 @@ Versões do Main Harness (versionamento semântico; `0.y.z` até a 1.0).
 ### Novidades
 
 - feat(resume): auto-resume the chat after the usage limit (B005)
+- feat(usage): plan usage % from the OAuth usage endpoint (usage.limits) (B064)
+- feat(sprint): queue (fila) and review shown apart in task time (B068)
+- feat(skills): tsc in clone handoff; sprint-plan sum factor from review-phase sprints (B066, B067)
 
 ### Outros
 
+- refactor: remove hx statusline; move safeText to core/text (B065, B063)
 - docs(backlog): S07 items done (B005, B063-B068)
-- S07/T01: plan usage % from the OAuth usage endpoint (usage.limits)
-- S07/T04: queue (fila) and review shown apart in task time
-- S07/T03: tsc in clone handoff; sprint-plan sum factor from review-phase sprints
-- S07/T02: remove hx statusline; move safeText to core/text
 - docs(sprint): S07 plan approved
 - chore(inbox): move 4 requests to backlog
 - chore(harness): migrate to v0.7.0
