@@ -38,7 +38,7 @@ Decisão de arquitetura → ADR (skill `adr`). Funcionalidade de produto → PRD
 Estilo **Ponytail**: o melhor código é o que você não escreveu. Antes de escrever, veja se precisa existir. Mínimo que resolve, sem abstração especulativa. O código já nasce lintado: o hook `post-edit` formata e roda lint no arquivo; erro que voltar, corrija na hora. Critério fixo de toda sprint: **zero erros e zero avisos** de lint e tipos.
 
 ## Git e segurança
-Direto na `main`, um commit por tarefa. Nada de `push --force`, `reset --hard` ou apagar fora do repo (o hook `pre-bash` bloqueia). Nunca edite `C:\harness-stable`.
+Direto na `main`, um commit por tarefa, no formato `<tipo>(SNN/TNN): <resumo>` (tipo `feat`, `fix`, `docs`, `chore`, `refactor` ou `test`). Nada de `push --force`, `reset --hard` ou apagar fora do repo (o hook `pre-bash` bloqueia). Nunca edite `C:\harness-stable`.
 
 ## Limite de contexto
 Ao receber o pedido de handoff (perto de 250 mil tokens), escreva-o na hora com `hx handoff` (heredoc no stdin, pelo Bash: o PowerShell 5.1 troca acentos por `?` ao mandar texto para o `hx`) e continue a tarefa: a compactação automática libera espaço e o handoff volta para você.
