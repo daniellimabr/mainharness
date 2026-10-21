@@ -150,6 +150,17 @@ describe("runDoctor", () => {
     expect(line(runDoctor({ projectRoot: proj }).lines, "modo auto")).toMatch(/^✓/);
   });
 
+  it("lists pending resumes", () => {
+    expect(line(runDoctor({ projectRoot: proj }).lines, "retomada")).toBe("");
+    const s = "0f8fad5b-d9cb-469f-a165-70867728950e";
+    fs.mkdirSync(path.join(env.home, "resume"), { recursive: true });
+    fs.writeFileSync(
+      path.join(env.home, "resume", `${s}.json`),
+      JSON.stringify({ session: s, dir: proj, at: "2026-10-21T18:02:00.000Z" }),
+    );
+    expect(line(runDoctor({ projectRoot: proj }).lines, "retomada")).toContain("sessão 0f8fad5b");
+  });
+
   it("has no status line check", () => {
     expect(line(runDoctor({ projectRoot: proj }).lines, "status line")).toBe("");
   });

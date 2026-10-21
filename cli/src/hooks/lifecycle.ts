@@ -9,7 +9,8 @@ import { type ProjectState, readState, updateState } from "../core/state";
 import { emit } from "../events/emit";
 import { ID_RE } from "../events/schema";
 import { currentContextTokens, ingestSession } from "../usage/index";
-import { refreshLimits } from "../usage/limits";
+import { type Run, scheduleResume } from "../commands/resume";
+import { exceededResetsAt, lastLimits, refreshLimits } from "../usage/limits";
 import { jsonOut, type HookInput, type HookOutcome } from "./runner";
 
 /** Runtime state plus the compaction mark kept by this module. */
@@ -89,6 +90,22 @@ export function stop(input: HookInput): HookOutcome {
     sprint: c.st.activeSprint,
     data: {},
   });
+  return {};
+}
+
+/** B005: the turn ended on the usage limit: schedule `hx resume` for after the reset (ADR 0011). */
+export async function stopFailure(
+  input: HookInput,
+  deps: { run?: Run; now?: number } = {},
+): Promise<HookOutcome> {
+  if (input.error !== "rate_limit" || !input.session_id || !input.cwd) return {};
+  const c = context(input);
+  if (!c) return {};
+  const ctx = { project: c.p.id, session: c.session, sprint: c.st.activeSprint };
+  const l = (await refreshLimits(ctx, { force: true })) ?? lastLimits();
+  // Neither window at 100%: the 5 h one is the likely culprit.
+  const at = l && (exceededResetsAt(l) ?? l.five_hour_resets_at);
+  if (at) scheduleResume(input.session_id, input.cwd, at, deps);
   return {};
 }
 

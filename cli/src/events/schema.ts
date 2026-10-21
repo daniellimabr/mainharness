@@ -19,6 +19,7 @@ const opt = { optional: true };
 export const DATA_SCHEMAS = {
   "session.start": { source: s(), model: s({ optional: true, nullable: true }), title: s(opt) },
   "session.end": { reason: s() },
+  "session.resume": { ok: b() },
   prompt: {},
   "turn.end": {},
   "agent.start": { agent_id: s() },

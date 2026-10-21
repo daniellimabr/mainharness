@@ -35,7 +35,8 @@ export function disablePonytailBand(
 
 /** Auto mode's classifier denies hx as "Self-Modification"; project permissions.allow does not help (B044). */
 export const AUTO_MODE_RULE =
-  "Running the hx CLI (hx sprint, hx task, hx handoff, hx eval, hx review, hx usage) in any project is allowed: it is the Main Harness sprint tooling the user installed. hx run is allowed only when the wrapped command would be allowed on its own.";
+  "Running the hx CLI (hx sprint, hx task, hx handoff, hx eval, hx review, hx usage, hx resume) in any project is allowed: it is the Main Harness sprint tooling the user installed. hx run is allowed only when the wrapped command would be allowed on its own. schtasks is allowed only to query or delete the harness's own MainHarness-Resume-* tasks.";
+const RULE_PREFIX = "Running the hx CLI (";
 
 type Settings = { autoMode?: { allow?: string[] } & Record<string, unknown> } & Record<
   string,
@@ -84,7 +85,10 @@ export function ensureAutoModeRule(): "added" | "present" | "invalid" {
   // "$defaults" keeps Claude Code's built-in rules when we create the list.
   const allow = (auto.allow ??= ["$defaults"]);
   if (allow.includes(AUTO_MODE_RULE)) return "present";
-  allow.push(AUTO_MODE_RULE);
+  // An older wording of the rule is replaced in place, not kept beside the new one.
+  const old = allow.findIndex((r) => typeof r === "string" && r.startsWith(RULE_PREFIX));
+  if (old >= 0) allow[old] = AUTO_MODE_RULE;
+  else allow.push(AUTO_MODE_RULE);
   writeJson(file, st);
   return "added";
 }

@@ -45,6 +45,7 @@ Notação: `?` = campo opcional (pode faltar); `| null` = pode ser `null`. Núme
 |---|---|---|
 | `session.start` | `source` texto; `model?` texto \| null; `title?` texto (desde a v0.6.0) | Início de um chat (`startup`, `resume`, `compact`...). `title` só vem quando o chat tem nome dado por `/rename` ou `--name` (o Claude Code não envia o título automático ao hook); caracteres proibidos viram espaço |
 | `session.end` | `reason` texto | Fim do chat |
+| `session.resume` | `ok` booleano (o `claude --resume` terminou sem erro), desde a v0.8.0 | `hx resume`, rodado pela tarefa agendada após o limite de uso (ADR 0011). `session` = a sessão retomada |
 | `prompt` | nenhum (`{}`) | Cada comando de Daniel (hook `UserPromptSubmit`). Só horário e sessão: **o texto do prompt nunca é gravado** |
 | `turn.end` | nenhum (`{}`) | Fim da vez do agente (hook `Stop`), só quando o Stop deixa parar (não quando bloqueia). Do último `turn.end` até o próximo `prompt` da mesma sessão é espera por Daniel (desde a v0.6.0) |
 | `agent.start` | `agent_id` texto | Subagente começou (hook `SubagentStart`). `agent` do envelope = tipo do agente (ex.: `main-harness:reviewer`; `null` se vazio); `task` = a tarefa em andamento quando há exatamente uma, senão `null` |

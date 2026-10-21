@@ -27,7 +27,8 @@ export function runTool(
 ): { ok: boolean; out: string } {
   const bin = which(cmd);
   if (!bin) return { ok: false, out: "" };
-  const o = { cwd, encoding: "utf8" as const, timeout, windowsHide: true };
+  // maxBuffer: a long `claude -p` (hx resume) prints more than the 1 MB default.
+  const o = { cwd, encoding: "utf8" as const, timeout, windowsHide: true, maxBuffer: 64 << 20 };
   let r: SpawnSyncReturns<string>;
   if (/\.(c|m)?js$/i.test(bin)) r = spawnSync(process.execPath, [bin, ...args], o);
   else if (/\.(cmd|bat)$/i.test(bin)) {

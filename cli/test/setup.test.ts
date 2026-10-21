@@ -55,6 +55,19 @@ describe("ensureAutoModeRule", () => {
     });
   });
 
+  it("replaces an older wording of the rule in place", () => {
+    const old = "Running the hx CLI (hx sprint, hx usage) in any project is allowed.";
+    fs.writeFileSync(settings(), JSON.stringify({ autoMode: { allow: ["a", old, "b"] } }));
+    expect(ensureAutoModeRule()).toBe("added");
+    expect(read().autoMode.allow).toEqual(["a", AUTO_MODE_RULE, "b"]);
+  });
+
+  it("allows schtasks only for the harness's own resume tasks", () => {
+    expect(AUTO_MODE_RULE).toMatch(
+      /schtasks is allowed only to query or delete .*MainHarness-Resume-/,
+    );
+  });
+
   it("refuses to overwrite an unreadable settings.json", () => {
     fs.writeFileSync(settings(), "{ broken");
     expect(ensureAutoModeRule()).toBe("invalid");

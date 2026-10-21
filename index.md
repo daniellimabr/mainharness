@@ -30,6 +30,7 @@ Uma linha por arquivo: caminho e propósito. Mantido pelo hook `post-edit`.
 - `cli/src/commands/migrate.ts` — hx migrate: brings a project's harness files to the installed harness version (up or down).
 - `cli/src/commands/release.ts` — hx release patch|minor|major: checks, skill eval gate, version bump, CHANGELOG, commit + tag,
 - `cli/src/commands/request.ts` — hx request: writes a NEW request file into the harness inbox (never edits an existing one).
+- `cli/src/commands/resume.ts` — B005: resume a chat after the usage limit (ADR 0011). The StopFailure hook schedules a
 - `cli/src/commands/review.ts` — hx review pass|fail <task>: records the Reviewer's verdict for a task.
 - `cli/src/commands/rollback.ts` — hx rollback: moves the stable clone back to the previous release tag.
 - `cli/src/commands/run.ts` — hx run <cmd...>: runs an agent command and prints only the summary (success) or the failures.
@@ -97,6 +98,7 @@ Uma linha por arquivo: caminho e propósito. Mantido pelo hook `post-edit`.
 - `cli/test/probe-s05.test.ts` — (sem descrição)
 - `cli/test/release.test.ts` — testes de release
 - `cli/test/repomap.test.ts` — testes de repomap
+- `cli/test/resume.test.ts` — B005: resume the chat after the usage limit (StopFailure rate_limit → schtasks → hx resume).
 - `cli/test/review-security-recheck.test.ts` — Re-review of T13 fixes (commit 0aeaf25): remaining bypasses and false positives in pre-bash.
 - `cli/test/review-security.test.ts` — testes de segurança do pre-bash (achados do Reviewer)
 - `cli/test/run.test.ts` — (sem descrição)
@@ -123,6 +125,7 @@ Uma linha por arquivo: caminho e propósito. Mantido pelo hook `post-edit`.
 - `docs/adr/0008-bootstrap-do-attach.md` — ADR 0008 — `/attach` como skill de usuário e plugin ativado por projeto
 - `docs/adr/0009-consumo-enxuto.md` — ADR 0009 — Consumo enxuto: evals no Sonnet, Reviewer no Sonnet e sem Writer
 - `docs/adr/0010-uso-pelo-endpoint-oauth.md` — ADR 0010 — % de uso pelo endpoint interno do /usage (exceção a "só caminhos oficiais")
+- `docs/adr/0011-retomada-apos-limite.md` — ADR 0011 — Retomada automática do chat após o limite de uso
 - `docs/backlog.md` — Backlog do Main Harness
 - `docs/contracts/events.md` — Contrato de eventos: Main Harness e Dashboard IA
 - `docs/roadmap.md` — Roadmap do Main Harness

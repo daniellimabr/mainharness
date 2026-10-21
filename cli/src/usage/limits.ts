@@ -27,6 +27,7 @@ interface Deps {
   fetch?: typeof fetch;
   now?: number;
   timeoutMs?: number;
+  force?: boolean;
 }
 
 function readToken(): string | null {
@@ -60,15 +61,18 @@ function parse(body: unknown): Limits | null {
   };
 }
 
-/** Fetches the limits in the Stop at most every 5 min; any failure is silent (no event, no log). */
-export async function refreshLimits(ctx: Ctx, deps: Deps = {}): Promise<void> {
+/**
+ * Fetches the limits in the Stop at most every 5 min (`force` skips the wait: limit just hit).
+ * Returns the reading it recorded; any failure is silent (no event, no log).
+ */
+export async function refreshLimits(ctx: Ctx, deps: Deps = {}): Promise<Limits | undefined> {
   if (process.env.HARNESS_NO_LIMITS) return;
   try {
     const now = deps.now ?? Date.now();
     const mark = path.join(harnessHome(), "cache", "limits.json");
     try {
       const last = (JSON.parse(fs.readFileSync(mark, "utf8")) as { checkedAt?: number }).checkedAt;
-      if (typeof last === "number" && now - last < EVERY_MS) return;
+      if (!deps.force && typeof last === "number" && now - last < EVERY_MS) return;
     } catch {
       // no mark yet
     }
@@ -85,6 +89,7 @@ export async function refreshLimits(ctx: Ctx, deps: Deps = {}): Promise<void> {
     if (!res.ok) return;
     const data = parse(await res.json());
     if (data) emit({ type: "usage.limits", ...ctx, data: { ...data } });
+    return data ?? undefined;
   } catch {
     // silent by design: the error could carry request details
   }
