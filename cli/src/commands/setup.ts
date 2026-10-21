@@ -5,7 +5,7 @@ import * as os from "node:os";
 import * as path from "node:path";
 import { parseArgs } from "../core/args";
 import { ensureConfig, loadConfig } from "../core/config";
-import { readJson } from "../core/fsx";
+import { readJson, readText, writeJson } from "../core/fsx";
 import { claudeHome, home, pluginRoot } from "../core/paths";
 import { addToUserPath, shimDir, writeShims } from "../core/shim";
 import { runTool } from "../core/proc";
@@ -31,6 +31,46 @@ export function disablePonytailBand(
   fs.mkdirSync(claudeHome(), { recursive: true });
   fs.writeFileSync(path.join(claudeHome(), ".ponytail-band"), "off");
   if (!homeVarSet()) setx(["HOME", os.homedir()]);
+}
+
+/** Auto mode's classifier denies hx as "Self-Modification"; project permissions.allow does not help (B044). */
+export const AUTO_MODE_RULE =
+  "Running the hx CLI (hx sprint, hx task, hx handoff, hx eval, hx review, hx usage) in any project is allowed: it is the Main Harness sprint tooling the user installed. hx run is allowed only when the wrapped command would be allowed on its own.";
+
+type Settings = { autoMode?: { allow?: string[] } & Record<string, unknown> } & Record<
+  string,
+  unknown
+>;
+
+const isObj = (v: unknown): v is Record<string, unknown> =>
+  typeof v === "object" && v !== null && !Array.isArray(v);
+
+export function hasAutoModeRule(): boolean {
+  const allow = readJson<Settings>(path.join(claudeHome(), "settings.json"), {})?.autoMode?.allow;
+  return Array.isArray(allow) && allow.includes(AUTO_MODE_RULE);
+}
+
+/** Adds AUTO_MODE_RULE to autoMode.allow of the user's settings.json, keeping everything else. */
+export function ensureAutoModeRule(): "added" | "present" | "invalid" {
+  const file = path.join(claudeHome(), "settings.json");
+  const text = readText(file)?.trim();
+  let st: Settings = {};
+  if (text) {
+    try {
+      st = JSON.parse(text) as Settings;
+    } catch {
+      return "invalid"; // never overwrite a settings.json we cannot parse
+    }
+  }
+  if (!isObj(st) || (st.autoMode !== undefined && !isObj(st.autoMode))) return "invalid";
+  if (st.autoMode?.allow !== undefined && !Array.isArray(st.autoMode.allow)) return "invalid";
+  const auto = (st.autoMode ??= {});
+  // "$defaults" keeps Claude Code's built-in rules when we create the list.
+  const allow = (auto.allow ??= ["$defaults"]);
+  if (allow.includes(AUTO_MODE_RULE)) return "present";
+  allow.push(AUTO_MODE_RULE);
+  writeJson(file, st);
+  return "added";
 }
 
 export function run(args: string[]): number {
@@ -72,6 +112,9 @@ export function run(args: string[]): number {
   }
   say("desligando o painel do ponytail (Task board: /plugin → ponytail → Task board)");
   if (!dry) disablePonytailBand();
+  say("liberando o hx no modo auto (autoMode.allow em ~/.claude/settings.json)");
+  if (!dry && ensureAutoModeRule() === "invalid")
+    console.error("settings.json do Claude ilegível: corrija o JSON e rode hx setup de novo");
   say(`instalando o comando hx em ${shimDir()} (aponta para ${cfg.stableDir})`);
   let restart = false;
   if (!dry) {

@@ -36,6 +36,7 @@ Uma linha por arquivo: caminho e propósito. Mantido pelo hook `post-edit`.
 - `cli/src/commands/setup.ts` — hx setup: one-time machine install (config, marketplace, user-level /attach skill).
 - `cli/src/commands/skills.ts` — hx skills [on|off <name>]: lists or toggles optional catalog skills in the current project (ADR 0005).
 - `cli/src/commands/sprint.ts` — hx sprint approve|open|status|feedback|close: sprint lifecycle on docs/sprints/SNN-plan.md.
+- `cli/src/commands/status.ts` — hx status --where <texto> --next <texto>: records where the project is and what comes next (project.status).
 - `cli/src/commands/task.ts` — hx task start|done <id>: task times in state and in the "## Execução" table of SNN-release.md, plus events.
 - `cli/src/commands/usage.ts` — hx usage: ingests the project's Claude Code transcripts and prints tokens and US$ per agent/model.
 - `cli/src/core/args.ts` — Tiny argument parser: positionals + --flag value / --flag=value / --bool.
@@ -59,6 +60,7 @@ Uma linha por arquivo: caminho e propósito. Mantido pelo hook `post-edit`.
 - `cli/src/hooks/post-edit.ts` — PostToolUse(Write|Edit|MultiEdit): keeps index.md current, formats and lints the edited file.
 - `cli/src/hooks/pre-bash.ts` — PreToolUse(Bash|PowerShell): denies destructive commands, asks before risky git operations.
 - `cli/src/hooks/pre-edit.ts` — PreToolUse(Write|Edit|MultiEdit): denies edits to the built bundle and to the stable install.
+- `cli/src/hooks/prompt.ts` — UserPromptSubmit: one `prompt` event per command from Daniel (time and session only, never the text).
 - `cli/src/hooks/runner.ts` — Shared hook plumbing: stdin JSON in, exit code + stdout/stderr out. Errors never break the session.
 - `cli/src/hooks/session-start.ts` — SessionStart: records the session, migrates the project if needed and injects a short context.
 - `cli/src/index.ts` — hx: single CLI of the Main Harness. Each command lives in its own module.
@@ -77,6 +79,7 @@ Uma linha por arquivo: caminho e propósito. Mantido pelo hook `post-edit`.
 - `cli/test/doctor.test.ts` — testes de doctor
 - `cli/test/e2e.test.ts` — End to end with paths that have spaces: the real plugin root ("C:\Main Harness" on Daniel's
 - `cli/test/eval.test.ts` — (sem descrição)
+- `cli/test/events-s05.test.ts` — S05 events: agent.start/agent.end, prompt (never the text), session.start title, project.status, Stop typecheck only ...
 - `cli/test/events.test.ts` — testes de events
 - `cli/test/global-setup.ts` — Builds cli/dist/hx.js once before the suite, so integration tests run the real bundle.
 - `cli/test/helpers.ts` — Test helpers: temp folders WITH SPACES, isolated HARNESS_HOME, running the built hx.js.
@@ -85,12 +88,15 @@ Uma linha por arquivo: caminho e propósito. Mantido pelo hook `post-edit`.
 - `cli/test/migrate.test.ts` — testes de migrate
 - `cli/test/paths.test.ts` — testes de paths (HARNESS_HOME)
 - `cli/test/pre-bash-s04.test.ts` — pre-bash S04: cd to /c/... denied, stale bundle on commit asks, Remove-Item with spaces inside the repo allowed.
+- `cli/test/pre-bash-s05.test.ts` — pre-bash S05 (B046, B047): git --output, redirects and PowerShell writers follow the pre-edit rule.
 - `cli/test/pre-edit.test.ts` — pre-edit hook: denies edits to cli/dist/hx.js and the stable dir.
+- `cli/test/probe-s05.test.ts` — (sem descrição)
 - `cli/test/release.test.ts` — testes de release
 - `cli/test/repomap.test.ts` — testes de repomap
 - `cli/test/review-security-recheck.test.ts` — Re-review of T13 fixes (commit 0aeaf25): remaining bypasses and false positives in pre-bash.
 - `cli/test/review-security.test.ts` — testes de segurança do pre-bash (achados do Reviewer)
 - `cli/test/run.test.ts` — (sem descrição)
+- `cli/test/session-start-requests.test.ts` — session-start shows, once, the project's harness requests marked `feito (SNN)` in the harness backlog.
 - `cli/test/setup.test.ts` — (sem descrição)
 - `cli/test/sprint.test.ts` — testes de sprint
 - `cli/test/stop-typecheck.test.ts` — Stop hook typecheck: tsc runs only when cli/src changed and blocks with its first lines.
@@ -122,6 +128,7 @@ Uma linha por arquivo: caminho e propósito. Mantido pelo hook `post-edit`.
 - `docs/sprints/S03-plan.md` — S03 — Arrumação antes do Dashboard (v0.4.0)
 - `docs/sprints/S04-plan.md` — S04 — Consertos e medição (v0.5.0)
 - `docs/sprints/S04-release.md` — S04 — Release Report: Guardas, tempos e estimativa calibrada (v0.5.0)
+- `docs/sprints/S05-plan.md` — S05 — Eventos completos para o Dashboard e ciclo de pedidos fechado
 - `eslint.config.js` — ESLint flat config
 - `hooks/hooks.json` — hooks do plugin (forma exec chamando o hx)
 - `package-lock.json` — versões travadas das dependências de desenvolvimento

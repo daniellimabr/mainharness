@@ -4,6 +4,7 @@ import * as path from "node:path";
 import { afterEach, beforeEach, describe, expect, it } from "vitest";
 import { PLUGINS as SETUP_PLUGINS, updatePlugins } from "../src/attach/setup";
 import { runDoctor } from "../src/commands/doctor";
+import { AUTO_MODE_RULE } from "../src/commands/setup";
 import { hxOnPath } from "../src/core/shim";
 import { HX, isolateHome, REPO_ROOT, rm, runHx, tempDir } from "./helpers";
 
@@ -136,6 +137,17 @@ describe("runDoctor", () => {
     fs.writeFileSync(path.join(claude, ".ponytail-band"), "off");
     const r = runDoctor({ projectRoot: proj, homeVarSet: () => true });
     expect(line(r.lines, "ponytail ligado")).toBe("");
+  });
+
+  it("warns when the hx auto mode rule is missing, and passes once it is there", () => {
+    expect(line(runDoctor({ projectRoot: proj }).lines, "modo auto")).toMatch(
+      /^⚠ .*modo auto.*hx setup/,
+    );
+    fs.writeFileSync(
+      path.join(claude, "settings.json"),
+      JSON.stringify({ autoMode: { allow: [AUTO_MODE_RULE] } }),
+    );
+    expect(line(runDoctor({ projectRoot: proj }).lines, "modo auto")).toMatch(/^✓/);
   });
 
   it("warns when the user HOME is missing in the registry", () => {

@@ -2,7 +2,12 @@ import * as fs from "node:fs";
 import * as os from "node:os";
 import * as path from "node:path";
 import { afterEach, beforeEach, describe, expect, it } from "vitest";
-import { disablePonytailBand } from "../src/commands/setup";
+import {
+  AUTO_MODE_RULE,
+  disablePonytailBand,
+  ensureAutoModeRule,
+  hasAutoModeRule,
+} from "../src/commands/setup";
 import { rm, tempDir } from "./helpers";
 
 let claude: string;
@@ -20,6 +25,56 @@ afterEach(() => {
 });
 
 const band = () => path.join(claude, ".ponytail-band");
+
+describe("ensureAutoModeRule", () => {
+  const settings = () => path.join(claude, "settings.json");
+  const read = () => JSON.parse(fs.readFileSync(settings(), "utf8"));
+
+  it("creates settings.json with $defaults and the rule", () => {
+    expect(ensureAutoModeRule()).toBe("added");
+    expect(read()).toEqual({ autoMode: { allow: ["$defaults", AUTO_MODE_RULE] } });
+  });
+
+  it("handles an empty settings.json", () => {
+    fs.writeFileSync(settings(), "");
+    expect(ensureAutoModeRule()).toBe("added");
+    expect(read().autoMode.allow).toEqual(["$defaults", AUTO_MODE_RULE]);
+  });
+
+  it("keeps the other keys and rules, and is idempotent", () => {
+    fs.writeFileSync(
+      settings(),
+      JSON.stringify({ model: "opus", autoMode: { allow: ["mine"], deny: ["x"] } }),
+    );
+    expect(ensureAutoModeRule()).toBe("added");
+    expect(ensureAutoModeRule()).toBe("present");
+    expect(read()).toEqual({
+      model: "opus",
+      autoMode: { allow: ["mine", AUTO_MODE_RULE], deny: ["x"] },
+    });
+  });
+
+  it("refuses to overwrite an unreadable settings.json", () => {
+    fs.writeFileSync(settings(), "{ broken");
+    expect(ensureAutoModeRule()).toBe("invalid");
+    expect(fs.readFileSync(settings(), "utf8")).toBe("{ broken");
+  });
+
+  it.each(["null", "[]", '{"autoMode":[]}', '{"autoMode":{"allow":"x"}}'])(
+    "treats valid JSON of the wrong shape as invalid: %s",
+    (text) => {
+      fs.writeFileSync(settings(), text);
+      expect(ensureAutoModeRule()).toBe("invalid");
+      expect(hasAutoModeRule()).toBe(false);
+      expect(fs.readFileSync(settings(), "utf8")).toBe(text);
+    },
+  );
+
+  it("does not allow arbitrary hx run commands", () => {
+    expect(AUTO_MODE_RULE).toMatch(/hx run is allowed only when the wrapped command/);
+    expect(AUTO_MODE_RULE).not.toMatch(/hx release/);
+  });
+});
 
 describe("disablePonytailBand", () => {
   it("writes off and is idempotent, without setx when the user HOME is set", () => {

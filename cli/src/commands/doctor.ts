@@ -10,7 +10,7 @@ import { claudeHome, home, pluginRoot } from "../core/paths";
 import { resolveProject } from "../core/projects";
 import { hxOnPath } from "../core/shim";
 import { compareVersions } from "../core/version";
-import { userHomeVarSet } from "./setup";
+import { hasAutoModeRule, userHomeVarSet } from "./setup";
 
 const TIMEOUT = 5000;
 const SKILLS = [
@@ -186,6 +186,13 @@ export function runDoctor(opts: { projectRoot?: string; homeVarSet?: () => boole
     lines.push(
       "⚠ painel do ponytail ligado: rode hx setup e reinicie o VS Code. O Task board desliga em /plugin → ponytail → Task board (o hx não mexe na config do plugin)",
     );
+
+  check(
+    hasAutoModeRule(),
+    "hx liberado no modo auto",
+    "hx sem regra no modo auto (autoMode.allow do ~/.claude/settings.json): rode hx setup",
+    true,
+  );
 
   const root = opts.projectRoot ?? resolveProject(process.cwd())?.root ?? null;
   if ((root ?? process.cwd()).includes(" "))
