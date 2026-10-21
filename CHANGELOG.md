@@ -2,6 +2,30 @@
 
 Versões do Main Harness (versionamento semântico; `0.y.z` até a 1.0).
 
+## [0.7.0] - 2026-10-21
+
+### Novidades
+
+- feat(sprint): task duration until clone delivery, review time apart (B060)
+- feat(statusline): hx statusline records rate-limit % and chat title; setup and doctor (B056)
+- feat(eval): strip harness env vars and warn on cases missing fixtures (B059, B061)
+
+### Correções
+
+- fix(status,session-start): accept ; in hx status and keep escaped pipes in backlog items (B057, B058)
+- fix(usage): rewind cursor to first streaming part across user lines; stable timing tests (B055, B062)
+- fix(pre-bash): treat Tee-Object and format-patch -o to protected paths as writes (B054)
+
+### Outros
+
+- docs(T08): backlog S06 done and follow-up B063
+- test(tdd-workflow): eval fixtures, stronger trigger and commit fallback (B061, T06)
+- docs(sprint): plan S06
+- chore(inbox): move 3 requests to backlog
+- chore(harness): migrate to v0.6.0
+- chore: update index
+- docs: S05 release report and harness requests
+
 ## [0.6.0] - 2026-10-21
 
 ### Novidades
