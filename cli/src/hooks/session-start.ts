@@ -29,11 +29,16 @@ function migrationNote(root: string, from: string, to: string): string {
   }
 }
 
+/** Free text made safe for an event string field (no content-like chars, max 200). */
+export function safeText(t: string): string {
+  return t.replace(/[\r\n\t{};<>`]/g, " ").slice(0, 200);
+}
+
 /** Chat title (only sent when set by /rename or --name), made safe for the event schema. */
 function title(input: HookInput): { title?: string } {
   const t = input.session_title;
   if (typeof t !== "string") return {};
-  const safe = t.replace(/[\r\n\t{};<>`]/g, " ").slice(0, 200);
+  const safe = safeText(t);
   return safe.trim() ? { title: safe } : {};
 }
 
@@ -58,7 +63,8 @@ function doneRequests(projectId: string, version: string): string {
   const lines: string[] = [];
   const ok: string[] = [];
   for (const row of fs.readFileSync(file, "utf8").split("\n")) {
-    const cells = row.split("|").map((c) => c.trim());
+    // `\|` is a pipe inside a cell, not a column break.
+    const cells = row.split(/(?<!\\)\|/).map((c) => c.replaceAll("\\|", "|").trim());
     const [, id = "", item = "", origin = ""] = cells;
     const status = cells[cells.length - 2] ?? "";
     const inbox = /^inbox:\s*`?([\w.-]+\.md)/.exec(origin)?.[1];

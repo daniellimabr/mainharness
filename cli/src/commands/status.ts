@@ -2,6 +2,7 @@
 import { flagStr, parseArgs } from "../core/args";
 import { commandContext } from "../core/context";
 import { emit } from "../events/emit";
+import { safeText } from "../hooks/session-start";
 
 export function run(args: string[]): number {
   const p = parseArgs(args);
@@ -18,7 +19,7 @@ export function run(args: string[]): number {
     session: ctx.session,
     sprint: ctx.sprint,
     agent: ctx.agent,
-    data: { where, next },
+    data: { where: safeText(where), next: safeText(next) },
   });
   console.log("Status registrado.");
   return 0;
