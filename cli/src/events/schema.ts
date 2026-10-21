@@ -17,8 +17,12 @@ const b = (extra: Partial<Field> = {}): Field => ({ type: "boolean", ...extra })
 const opt = { optional: true };
 
 export const DATA_SCHEMAS = {
-  "session.start": { source: s(), model: s({ optional: true, nullable: true }) },
+  "session.start": { source: s(), model: s({ optional: true, nullable: true }), title: s(opt) },
   "session.end": { reason: s() },
+  prompt: {},
+  "agent.start": { agent_id: s() },
+  "agent.end": { agent_id: s() },
+  "project.status": { where: s(), next: s() },
   "sprint.approved": { plan: s(), sha256: s(), approved_at: s(), approver: s() },
   "sprint.open": { tasks: n() },
   "sprint.close": { tasks_done: n(), tasks_total: n(), duration_s: n() },
@@ -107,7 +111,7 @@ const TOP_KEYS = [
 ];
 const MAX_STRING = 200;
 const TS_RE = /^\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2}(\.\d{3})?Z$/;
-const ID_RE = /^[A-Za-z0-9._:@-]{1,128}$/;
+export const ID_RE = /^[A-Za-z0-9._:@-]{1,128}$/;
 
 /** A string that looks like content (code, prose, multi-line text) is rejected. */
 function contentLike(v: string): boolean {

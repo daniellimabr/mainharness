@@ -43,14 +43,19 @@ Notação: `?` = campo opcional (pode faltar); `| null` = pode ser `null`. Núme
 
 | Tipo | Campos de `data` | Quando é gravado |
 |---|---|---|
-| `session.start` | `source` texto; `model?` texto \| null | Início de um chat (`startup`, `resume`, `compact`...) |
+| `session.start` | `source` texto; `model?` texto \| null; `title?` texto (desde a v0.6.0) | Início de um chat (`startup`, `resume`, `compact`...). `title` só vem quando o chat tem nome dado por `/rename` ou `--name` (o Claude Code não envia o título automático ao hook); caracteres proibidos viram espaço |
 | `session.end` | `reason` texto | Fim do chat |
+| `prompt` | nenhum (`{}`) | Cada comando de Daniel (hook `UserPromptSubmit`). Só horário e sessão: **o texto do prompt nunca é gravado** |
+| `agent.start` | `agent_id` texto | Subagente começou (hook `SubagentStart`). `agent` do envelope = tipo do agente (ex.: `main-harness:reviewer`; `null` se vazio); `task` = a tarefa em andamento quando há exatamente uma, senão `null` |
+| `agent.end` | `agent_id` texto | Subagente terminou (hook `SubagentStop`); mesmo envelope do `agent.start` |
+| `project.status` | `where` texto; `next` texto | `hx status --where <onde estamos> --next <próximo passo>` (opcional, quem quiser registra) |
 | `sprint.approved` | `plan` texto; `sha256` texto; `approved_at` texto; `approver` texto | `hx sprint approve` |
 | `sprint.open` | `tasks` número | `hx sprint open` |
 | `sprint.close` | `tasks_done` número; `tasks_total` número; `duration_s` número | `hx sprint close` |
 | `sprint.feedback` | `adjustments` número | `hx sprint feedback <n>` (ajustes pedidos por Daniel) |
 | `sprint.metrics` | `tasks_total`, `tasks_done`, `planned_min`, `actual_min`, `tokens_input`, `tokens_output`, `tokens_cache_write`, `tokens_cache_read`, `usd`, `rework`, `review_rejections`, `context_alerts`, `handoffs` (todos número); `wall_min?` número (tempo corrido: 1º `task.start` ao último `task.done`) e `planned_wall_min?` número (relógio previsto: caminho mais longo pela coluna "Depende de"; sem a coluna, a soma), desde a v0.3.0; `usd_by_agent`, `usd_by_task`, `actual_min_by_task` (objeto chave → número) | Fechamento da sprint |
 | `task.start` | `planned_min?` número | `hx task start` |
+| `task.phase` | `phase` texto (`testes`, `código`, `revisão`, `commit`) | `hx task phase <id> <fase>` (tarefa em andamento) |
 | `task.done` | `duration_s` número; `planned_min?` número | `hx task done` |
 | `review.result` | `result`: `pass` ou `fail` | `hx review pass\|fail` |
 | `usage` | `model` texto; `input`, `output`, `cache_write`, `cache_read` número; `usd` número \| null; `message_id` texto; `transcript`: `main` ou `subagent` | Uma resposta nova do modelo (ADR 0007) |
@@ -67,6 +72,8 @@ Notas:
 - `usd_by_agent`, `usd_by_task` e `actual_min_by_task` têm chaves no formato de id (`[A-Za-z0-9._:@-]`, até 128 caracteres).
 - `sprint.approved.sha256` é o hash do plano no momento da aprovação. Plano alterado depois exige nova aprovação e novo evento.
 - A contagem de compactações é o número de eventos `handoff` com `mode: "compact"`.
+- `agent.start`/`agent.end` se casam pelo `data.agent_id`. Com clones em paralelo (várias tarefas em andamento), `task` fica `null`.
+- **% do limite de uso (janela de 5 h e semanal): não gravado.** Os hooks do Claude Code não recebem esse dado. A única fonte oficial é o JSON da *status line* (`rate_limits.five_hour.used_percentage` e `rate_limits.seven_day.used_percentage`, só para assinantes Pro/Max e após a primeira resposta da sessão). O harness não tem status line; gravar isso exigiria criar uma (fica para o backlog).
 
 ## Privacidade
 

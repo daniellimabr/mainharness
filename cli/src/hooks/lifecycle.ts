@@ -7,6 +7,7 @@ import { logError } from "../core/log";
 import { resolveProject, type ProjectContext } from "../core/projects";
 import { type ProjectState, readState, updateState } from "../core/state";
 import { emit } from "../events/emit";
+import { ID_RE } from "../events/schema";
 import { currentContextTokens, ingestSession } from "../usage/index";
 import { jsonOut, type HookInput, type HookOutcome } from "./runner";
 
@@ -75,11 +76,12 @@ export function stop(input: HookInput): HookOutcome {
   const c = context(input);
   if (!c) return {};
   ingest(input, c);
-  if (!input.stop_hook_active) {
+  const cfg = loadConfig();
+  // Typecheck only in the harness repo itself, not in projects that happen to have cli/.
+  if (!input.stop_hook_active && path.relative(c.p.root, cfg.harnessRepo) === "") {
     const reason = typecheckReason(c.p.root);
     if (reason) return jsonOut({ decision: "block", reason });
   }
-  const cfg = loadConfig();
   if (cfg.contextStrategy !== "compact" || input.stop_hook_active) return {};
   const tokens = tokensOf(input);
   if (tokens === null || tokens < cfg.handoffAt) return {};
@@ -107,9 +109,37 @@ export function stop(input: HookInput): HookOutcome {
   });
 }
 
+/** The task in progress when exactly one is; null when none or several (parallel clones). */
+export function currentTask(st: ProjectState): string | null {
+  const open = Object.entries(st.tasks).filter(([, t]) => t.start && !t.end);
+  return open.length === 1 ? (open[0]?.[0] ?? null) : null;
+}
+
+function emitAgent(type: "agent.start" | "agent.end", input: HookInput, c: Ctx): void {
+  if (!input.agent_id) return;
+  const t = input.agent_type;
+  emit({
+    type,
+    project: c.p.id,
+    session: c.session,
+    sprint: c.st.activeSprint,
+    task: currentTask(c.st),
+    agent: t && ID_RE.test(t) ? t : null,
+    data: { agent_id: input.agent_id },
+  });
+}
+
+export function subagentStart(input: HookInput): HookOutcome {
+  const c = context(input);
+  if (c) emitAgent("agent.start", input, c);
+  return {};
+}
+
 export function subagentStop(input: HookInput): HookOutcome {
   const c = context(input);
-  if (c) ingest(input, c);
+  if (!c) return {};
+  ingest(input, c);
+  emitAgent("agent.end", input, c);
   return {};
 }
 

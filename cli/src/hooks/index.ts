@@ -1,13 +1,16 @@
 // hx hook <name>: dispatches Claude Code hook events (stdin JSON) to their handlers.
-import { preCompact, sessionEnd, stop, subagentStop } from "./lifecycle";
+import { preCompact, sessionEnd, stop, subagentStart, subagentStop } from "./lifecycle";
 import { postEdit } from "./post-edit";
 import { preBash } from "./pre-bash";
 import { preEdit } from "./pre-edit";
+import { prompt } from "./prompt";
 import { type HookHandler, runHook } from "./runner";
 import { sessionStart } from "./session-start";
 
 const HOOKS: Record<string, HookHandler> = {
   "session-start": sessionStart,
+  prompt,
+  "subagent-start": subagentStart,
   "post-edit": postEdit,
   "pre-bash": preBash,
   "pre-edit": preEdit,

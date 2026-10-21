@@ -8,6 +8,7 @@ const COMMANDS: Record<string, () => Promise<{ run: Run }>> = {
   task: () => import("./commands/task"),
   sprint: () => import("./commands/sprint"),
   review: () => import("./commands/review"),
+  status: () => import("./commands/status"),
   handoff: () => import("./commands/handoff"),
   run: () => import("./commands/run"),
   request: () => import("./commands/request"),
@@ -37,6 +38,7 @@ const HELP = `hx <command> [args]
   task phase <id> <fase>      fase da tarefa em andamento (testes, código, revisão, commit)
   sprint open|close|approve|feedback|status <id>
   review pass|fail <task>     resultado da revisão
+  status --where t --next t   registra onde o projeto está e o próximo passo
   handoff [--show|--consume]  grava (stdin)/mostra o handoff
   run <cmd...>                roda e mostra só falhas e resumo
   request --title t ...       cria pedido no inbox do harness

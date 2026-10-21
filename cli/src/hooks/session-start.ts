@@ -25,6 +25,14 @@ function migrationNote(root: string, from: string, to: string): string {
   }
 }
 
+/** Chat title (only sent when set by /rename or --name), made safe for the event schema. */
+function title(input: HookInput): { title?: string } {
+  const t = input.session_title;
+  if (typeof t !== "string") return {};
+  const safe = t.replace(/[\r\n\t{};<>`]/g, " ").slice(0, 200);
+  return safe.trim() ? { title: safe } : {};
+}
+
 export function sessionStart(input: HookInput): HookOutcome {
   const p = resolveProject(input.cwd || process.cwd());
   if (!p) return {};
@@ -43,7 +51,7 @@ export function sessionStart(input: HookInput): HookOutcome {
     project: p.id,
     session,
     sprint: state.activeSprint,
-    data: { source, model: typeof input.model === "string" ? input.model : null },
+    data: { source, model: typeof input.model === "string" ? input.model : null, ...title(input) },
   });
 
   const index = summarizeIndex(p.root);
