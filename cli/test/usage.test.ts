@@ -2,7 +2,7 @@ import * as fs from "node:fs";
 import * as path from "node:path";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import { DEFAULT_CONFIG } from "../src/core/config";
-import { readEvents } from "../src/events/emit";
+import { emit, readEvents } from "../src/events/emit";
 import { validateEvent } from "../src/events/schema";
 import { currentContextTokens, ingestSession, transcriptDirFor, usd } from "../src/usage";
 import { fakeProject, isolateHome, readEventsIn, rm, runHx, tempDir } from "./helpers";
@@ -219,6 +219,36 @@ describe("hx usage", () => {
       });
       expect(again.code).toBe(0);
       expect(readEventsIn(env.home).filter((e) => e.type === "usage")).toHaveLength(5);
+    } finally {
+      rm(proj);
+      rm(cfg);
+    }
+  });
+
+  it("prints the last usage.limits as one line (B064)", () => {
+    const proj = fakeProject();
+    const cfg = tempDir("hx claude");
+    try {
+      const name = path.resolve(proj).replace(/[^A-Za-z0-9-]/g, "-");
+      fs.cpSync(FIX, path.join(cfg, "projects", name), { recursive: true });
+      emit({
+        type: "usage.limits",
+        project: "proj-teste",
+        session: null,
+        sprint: null,
+        data: {
+          five_hour: 42,
+          five_hour_resets_at: null,
+          seven_day: 18,
+          seven_day_resets_at: null,
+        },
+      });
+      const r = runHx(["usage"], {
+        cwd: proj,
+        env: { HARNESS_HOME: env.home, CLAUDE_CONFIG_DIR: cfg },
+      });
+      expect(r.code).toBe(0);
+      expect(r.stdout.split("\n")).toContain("Limite: 5 h 42% · semana 18%");
     } finally {
       rm(proj);
       rm(cfg);

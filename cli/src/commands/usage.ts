@@ -6,6 +6,7 @@ import { commandContext } from "../core/context";
 import { readEvents } from "../events/emit";
 import type { HarnessEvent } from "../events/schema";
 import { transcriptDirFor, transcriptSource } from "../usage";
+import { limitsLine } from "../usage/limits";
 
 interface Totals {
   input: number;
@@ -62,8 +63,13 @@ export function run(args: string[]): number {
     return 1;
   }
   const dir = transcriptDirFor(ctx.root);
+  const lim = limitsLine();
   if (!dir) {
-    console.log("Nenhum transcript do Claude Code encontrado para este projeto.");
+    console.log(
+      ["Nenhum transcript do Claude Code encontrado para este projeto.", lim]
+        .filter(Boolean)
+        .join("\n"),
+    );
     return 0;
   }
   const only = flagStr(p, "session");
@@ -95,6 +101,7 @@ export function run(args: string[]): number {
       `Consumo de ${ctx.id} (US$ estimado):`,
       ...summary("Novo nesta leitura", fresh),
       ...summary("Acumulado", all),
+      ...(lim ? [lim] : []),
     ].join("\n"),
   );
   return 0;

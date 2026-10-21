@@ -27,7 +27,7 @@ Não precisa ser cedo.
 - Detectar o limite (ou estimar pelo consumo) e escrever o handoff antes de parar.
 - Mostrar no Dashboard a previsão de quando a cota vai acabar.
 - Pesquisar se o Claude Code expõe esse percentual.
-- Usar **só caminhos oficiais da Anthropic**.
+- Usar **só caminhos oficiais da Anthropic**. Exceção aceita: o % de uso vem do endpoint interno do `/usage` (ADR 0010, S07).
 
 ## 4. Backup remoto e marketplace no GitHub
 

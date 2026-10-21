@@ -9,6 +9,7 @@ import { type ProjectState, readState, updateState } from "../core/state";
 import { emit } from "../events/emit";
 import { ID_RE } from "../events/schema";
 import { currentContextTokens, ingestSession } from "../usage/index";
+import { refreshLimits } from "../usage/limits";
 import { jsonOut, type HookInput, type HookOutcome } from "./runner";
 
 /** Runtime state plus the compaction mark kept by this module. */
@@ -76,6 +77,8 @@ export function stop(input: HookInput): HookOutcome {
   const c = context(input);
   if (!c) return {};
   ingest(input, c);
+  // B064: not awaited, so the Stop logic is unchanged; the process still exits only after the call (3 s max).
+  void refreshLimits({ project: c.p.id, session: c.session, sprint: c.st.activeSprint });
   const block = stopBlock(input, c);
   if (block) return jsonOut({ decision: "block", ...block });
   // B045: the agent's turn really ended: the wait for Daniel starts here

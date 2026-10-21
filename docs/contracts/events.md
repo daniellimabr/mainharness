@@ -50,7 +50,7 @@ Notação: `?` = campo opcional (pode faltar); `| null` = pode ser `null`. Núme
 | `agent.start` | `agent_id` texto | Subagente começou (hook `SubagentStart`). `agent` do envelope = tipo do agente (ex.: `main-harness:reviewer`; `null` se vazio); `task` = a tarefa em andamento quando há exatamente uma, senão `null` |
 | `agent.end` | `agent_id` texto | Subagente terminou (hook `SubagentStop`); mesmo envelope do `agent.start` |
 | `project.status` | `where` texto; `next` texto | `hx status --where <onde estamos> --next <próximo passo>` (opcional, quem quiser registra) |
-| `statusline` | `five_hour` número \| null (% usado do limite de 5 h); `seven_day` número \| null (% usado do limite semanal); `title?` texto (título do chat, inclusive o automático), desde a v0.7.0 | `hx statusline` (status line do Claude Code, `rate_limits.*.used_percentage` e `session_name`). Só grava quando algum valor muda; fora de projeto conectado não grava |
+| `statusline` | `five_hour` número \| null (% usado do limite de 5 h); `seven_day` número \| null (% usado do limite semanal); `title?` texto (título do chat, inclusive o automático), desde a v0.7.0 | **Obsoleto desde a v0.8.0** (o `hx statusline` foi removido; o % de uso vem do `usage.limits`). Eventos antigos continuam válidos. Era gravado pelo `hx statusline` (`rate_limits.*.used_percentage` e `session_name`) |
 | `sprint.approved` | `plan` texto; `sha256` texto; `approved_at` texto; `approver` texto | `hx sprint approve` |
 | `sprint.open` | `tasks` número | `hx sprint open` |
 | `sprint.close` | `tasks_done` número; `tasks_total` número; `duration_s` número | `hx sprint close` |
@@ -61,6 +61,7 @@ Notação: `?` = campo opcional (pode faltar); `| null` = pode ser `null`. Núme
 | `task.done` | `duration_s` número; `planned_min?` número | `hx task done` |
 | `review.result` | `result`: `pass` ou `fail` | `hx review pass\|fail` |
 | `usage` | `model` texto; `input`, `output`, `cache_write`, `cache_read` número; `usd` número \| null; `message_id` texto; `transcript`: `main` ou `subagent` | Uma resposta nova do modelo (ADR 0007) |
+| `usage.limits` | `five_hour` número (% usado do limite de 5 h); `five_hour_resets_at` texto \| null (reinício da janela, ISO-8601 UTC); `seven_day` número (% usado do limite semanal); `seven_day_resets_at` texto \| null, desde a v0.8.0 | Hook `Stop`, no máximo a cada 5 min, com o valor de `GET api.anthropic.com/api/oauth/usage` (ADR 0010). Falha (sem login, rede, resposta inválida, mais de 3 s) não grava nada. Os limites são da conta: o `project` é só o do chat que leu. Mapeia para a `limit_window` do Dashboard (janela `five_hour`/`seven_day`, %, `resets_at`) |
 | `alert.context` | `tokens` número; `limit` número; `handoff` booleano | Contexto passou de `handoffAt` (ADR 0006) |
 | `handoff` | `mode`: `compact`, `manual` ou `new-chat`; `file` texto \| null | Handoff gravado ou compactação |
 | `harness.request` | `file` texto; `priority`: `alta`, `media` ou `baixa` | `hx request` |
@@ -75,7 +76,7 @@ Notas:
 - `sprint.approved.sha256` é o hash do plano no momento da aprovação. Plano alterado depois exige nova aprovação e novo evento.
 - A contagem de compactações é o número de eventos `handoff` com `mode: "compact"`.
 - `agent.start`/`agent.end` se casam pelo `data.agent_id`. Com clones em paralelo (várias tarefas em andamento), `task` fica `null`.
-- **% do limite de uso (janela de 5 h e semanal): não gravado.** Os hooks do Claude Code não recebem esse dado. A única fonte oficial é o JSON da *status line* (`rate_limits.five_hour.used_percentage` e `rate_limits.seven_day.used_percentage`, só para assinantes Pro/Max e após a primeira resposta da sessão). O harness não tem status line; gravar isso exigiria criar uma (fica para o backlog).
+- **% do limite de uso (janela de 5 h e semanal):** vem do evento `usage.limits` (desde a v0.8.0). Os hooks do Claude Code não recebem esse dado; a fonte é o endpoint interno que o `/usage` usa, não documentado (exceção aceita no ADR 0010). O token do login vai só no cabeçalho da chamada e nunca é gravado.
 
 ## Privacidade
 

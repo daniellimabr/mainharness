@@ -37,7 +37,6 @@ Uma linha por arquivo: caminho e propósito. Mantido pelo hook `post-edit`.
 - `cli/src/commands/skills.ts` — hx skills [on|off <name>]: lists or toggles optional catalog skills in the current project (ADR 0005).
 - `cli/src/commands/sprint.ts` — hx sprint approve|open|status|feedback|close: sprint lifecycle on docs/sprints/SNN-plan.md.
 - `cli/src/commands/status.ts` — hx status --where <texto> --next <texto>: records where the project is and what comes next (project.status).
-- `cli/src/commands/statusline.ts` — hx statusline: Claude Code status line (stdin JSON). Records the usage limits and chat title.
 - `cli/src/commands/task.ts` — hx task start|done <id>: task times in state and in the "## Execução" table of SNN-release.md, plus events.
 - `cli/src/commands/usage.ts` — hx usage: ingests the project's Claude Code transcripts and prints tokens and US$ per agent/model.
 - `cli/src/core/args.ts` — Tiny argument parser: positionals + --flag value / --flag=value / --bool.
@@ -50,6 +49,7 @@ Uma linha por arquivo: caminho e propósito. Mantido pelo hook `post-edit`.
 - `cli/src/core/projects.ts` — Connected projects: ~/.harness/projects.json and <project>/.claude/harness.json.
 - `cli/src/core/shim.ts` — hx on the PATH of every shell: launchers in ~/.harness/bin pointing at the stable bundle,
 - `cli/src/core/state.ts` — Per-project runtime state: ~/.harness/state/<project>.json (active sprint, session, task times).
+- `cli/src/core/text.ts` — Free text made safe for an event string field (no content-like chars, max 200).
 - `cli/src/core/time.ts` — Times shown to people, in the configured timezone (America/Sao_Paulo, UTC−3).
 - `cli/src/core/version.ts` — Harness version: single source is .claude-plugin/plugin.json.
 - `cli/src/eval/run.ts` — hx eval runner: `claude -p` sessions (Sonnet, 1 run per query, max 3 at once), each in a temp
@@ -73,6 +73,7 @@ Uma linha por arquivo: caminho e propósito. Mantido pelo hook `post-edit`.
 - `cli/src/sprint/cmd.ts` — Shared helpers for sprint commands: --at timestamps, boolean flags and loading a sprint plan.
 - `cli/src/sprint/index.ts` — Sprint plan (docs/sprints/SNN-plan.md): parse the task table, approval hash, execution table (SNN-release.md), metrics.
 - `cli/src/usage/index.ts` — Usage (tokens and US$) public API: ingest transcripts, current context size, transcript folder.
+- `cli/src/usage/limits.ts` — B064: plan usage % (5 h and weekly) from the endpoint behind Claude Code's /usage.
 - `cli/src/usage/price.ts` — US$ estimate for one response from its transcript usage block and the config price table.
 - `cli/src/usage/transcript.ts` — TranscriptSource: reads Claude Code JSONL transcripts incrementally and emits `usage` events.
 - `cli/test/attach.test.ts` — E2E tests for hx attach and hx skills, in temp folders with spaces.
@@ -85,6 +86,7 @@ Uma linha por arquivo: caminho e propósito. Mantido pelo hook `post-edit`.
 - `cli/test/global-setup.ts` — Builds cli/dist/hx.js once before the suite, so integration tests run the real bundle.
 - `cli/test/helpers.ts` — Test helpers: temp folders WITH SPACES, isolated HARNESS_HOME, running the built hx.js.
 - `cli/test/hooks.test.ts` — testes de hooks
+- `cli/test/limits.test.ts` — B064: plan usage % (5 h and weekly) from the OAuth usage endpoint, throttled in the Stop.
 - `cli/test/lint.test.ts` — testes de lint
 - `cli/test/migrate.test.ts` — testes de migrate
 - `cli/test/paths.test.ts` — testes de paths (HARNESS_HOME)
@@ -101,7 +103,6 @@ Uma linha por arquivo: caminho e propósito. Mantido pelo hook `post-edit`.
 - `cli/test/session-start-requests.test.ts` — session-start shows, once, the project's harness requests marked `feito (SNN)` in the harness backlog.
 - `cli/test/setup.test.ts` — (sem descrição)
 - `cli/test/sprint.test.ts` — testes de sprint
-- `cli/test/statusline.test.ts` — (sem descrição)
 - `cli/test/stop-typecheck.test.ts` — Stop hook typecheck: tsc runs only when cli/src changed and blocks with its first lines.
 - `cli/test/text-s06.test.ts` — S06 text fixes: hx status cleans where/next like the title (B057); session-start keeps `\|` in backlog items (B058).
 - `cli/test/turn-end.test.ts` — B045: the Stop hook emits turn.end only when it lets the agent stop.
@@ -121,6 +122,7 @@ Uma linha por arquivo: caminho e propósito. Mantido pelo hook `post-edit`.
 - `docs/adr/0007-consumo-via-transcripts.md` — ADR: consumo lido dos transcripts
 - `docs/adr/0008-bootstrap-do-attach.md` — ADR 0008 — `/attach` como skill de usuário e plugin ativado por projeto
 - `docs/adr/0009-consumo-enxuto.md` — ADR 0009 — Consumo enxuto: evals no Sonnet, Reviewer no Sonnet e sem Writer
+- `docs/adr/0010-uso-pelo-endpoint-oauth.md` — ADR 0010 — % de uso pelo endpoint interno do /usage (exceção a "só caminhos oficiais")
 - `docs/backlog.md` — Backlog do Main Harness
 - `docs/contracts/events.md` — Contrato de eventos: Main Harness e Dashboard IA
 - `docs/roadmap.md` — Roadmap do Main Harness
@@ -136,6 +138,8 @@ Uma linha por arquivo: caminho e propósito. Mantido pelo hook `post-edit`.
 - `docs/sprints/S05-plan.md` — S05 — Eventos completos para o Dashboard e ciclo de pedidos fechado
 - `docs/sprints/S05-release.md` — Release Report — S05: Eventos completos para o Dashboard e ciclo de pedidos fechado
 - `docs/sprints/S06-plan.md` — S06 — Pendências do backlog: status line, tempos honestos e evals estáveis
+- `docs/sprints/S06-release.md` — S06 — Release Report
+- `docs/sprints/S07-plan.md` — S07 — % de uso no VS Code, fim da status line e tempos mais finos
 - `eslint.config.js` — ESLint flat config
 - `hooks/hooks.json` — hooks do plugin (forma exec chamando o hx)
 - `package-lock.json` — versões travadas das dependências de desenvolvimento
@@ -147,6 +151,7 @@ Uma linha por arquivo: caminho e propósito. Mantido pelo hook `post-edit`.
 - `skills/archify/SKILL.md` — Create validated architecture, workflow, sequence, data-flow, lifecycle/state, entity-relationship, class/interface, ...
 - `skills/archify/SOURCE.md` — Origem
 - `skills/handoff/SKILL.md` — Escreve um handoff curto (máx. ~40 linhas): objetivo, estado atual, arquivos que pode tocar, decisões, critério de pr...
+- `skills/handoff/evals/evals.json` — (sem descrição)
 - `skills/optional/frontend-design/SKILL.md` — Guidance for distinctive, intentional visual design when building new UI or reshaping an existing one. Helps with aes...
 - `skills/optional/frontend-design/SOURCE.md` — Origem
 - `skills/optional/webapp-testing/SKILL.md` — Toolkit for interacting with and testing local web applications using Playwright. Supports verifying frontend functio...
@@ -157,6 +162,10 @@ Uma linha por arquivo: caminho e propósito. Mantido pelo hook `post-edit`.
 - `skills/security-review/SKILL.md` — Revisão de segurança POR TAREFA da sprint do Main Harness, só para o Reviewer (chamada como main-harness:security-rev...
 - `skills/sprint-plan/SKILL.md` — Monta o sprint plan docs/sprints/SNN-plan.md a partir da conversa com Daniel: escopo, fora de escopo, critérios de ac...
 - `skills/sprint-plan/evals/evals.json` — (sem descrição)
+- `skills/sprint-plan/evals/files-history/docs/backlog.md` — Backlog — Pedidos
+- `skills/sprint-plan/evals/files-history/docs/sprints/S01-release.md` — Release Report — S01
+- `skills/sprint-plan/evals/files-history/docs/sprints/S02-release.md` — Release Report — S02
+- `skills/sprint-plan/evals/files-history/docs/sprints/S03-release.md` — Release Report — S03
 - `skills/sprint-plan/evals/files-new/docs/backlog.md` — Backlog — Pedidos
 - `skills/sprint-plan/evals/files-new/package.json` — (sem descrição)
 - `skills/sprint-plan/evals/files-new/src/api/orders.ts` — (sem descrição)
