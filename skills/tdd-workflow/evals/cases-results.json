@@ -1,0 +1,35 @@
+{
+  "date": "2026-10-21T15:44:02.088Z",
+  "runs": [
+    {
+      "id": "1",
+      "baseline": false,
+      "passed": true,
+      "failed": [],
+      "skills": [
+        "tdd-workflow"
+      ],
+      "answer": "RED: rodar o teste.\n\nRED confirmado (módulo ausente). Agora GREEN.\n\nA T03 está implementada e os 3 testes passam. Lint e tipos não rodaram, então o critério \"zero erros e zero avisos\" continua sem verificação.\n\n**Implementação**\n- `src/slug.test.ts` tem os 3 testes do plano.\n- `src/slug.ts` exporta `slugify`, que normaliza em NFD, remove os diacríticos, converte para minúsculas e troca espaços por hífen.\n\n**Comandos rodados**\n- `hx run npx vitest run src/slug.test.ts` falhou antes da implementação (RED) e passou depois (GREEN).\n- `hx run npm run lint` falhou: `'eslint' não é reconhecido`.\n- `hx run npm run typecheck` falhou: `'tsc' não é reconhecido`.\n\n**RED:** `Cannot find module './slug' imported from src/slug.test.ts`.\n\n**GREEN:** 1 arquivo, 3 testes passando.\n\n| # | Garantia | Teste | Tipo | Resultado |\n|---|---|---|---|---|\n| 1 | Minúsculas | `src/slug.test.ts: lowercases` | unitário | PASS |\n| 2 | Espaço vira hífen | `src/slug.test.ts: turns spaces into hyphens` | unitário | PASS |\n| 3 | Sem acentos | `src/slug.test.ts: removes accents` | unitário | PASS |\n| 4 | Lint e tipos: zero erros e zero avisos | `npm run lint` / `npm run typecheck` | comando | **NÃO VERIFICADO** |\n\n**Pendências**\n- **Lint e tipos:** `eslint` e `tsc` não estão instalados no projeto, provavelmente porque falta rodar `npm install`. Não instalei nada porque isso mexe no `node_modules` e no lockfile. Se você autorizar, rodo `npm install` e refaço as duas verificações.\n- **Commit:** a pasta não é um repositório git, então não commitei. A mensagem que eu usaria é `feat(slug): add slugify with lowercase, hyphens and accent removal (T03)`, com o trailer `Co-Authored-By: Claude Sonnet 5.5 <noreply@anthropic.com>`."
+    },
+    {
+      "id": "2",
+      "baseline": false,
+      "passed": true,
+      "failed": [],
+      "skills": [
+        "tdd-workflow"
+      ],
+      "answer": "Sem testes existentes. Escrevo o teste primeiro (RED).\n\nRED confirmado. Agora o fix mínimo.\n\nCorrigi o bug em `src/duration.ts`: `parseDuration('1h30m')` agora devolve 5400. O teste novo passou, mas lint e tipos não rodaram. As dependências não estão instaladas (`node_modules` ausente) e não há `eslint.config.*` no projeto.\n\n**O que estava errado:** a função somava em minutos, não em segundos (`h*60`, `m*1`, `s/60`). Agora usa `h*3600`, `m*60` e `s*1`.\n\n**Como foi feito:**\n- **RED:** criei `src/duration.test.ts` com `1h30m` → 5400, `45m` → 2700 e `20s` → 20. Os 3 falharam (`expected 90 to be 5400`).\n- **GREEN:** depois do fix, os 3 passam (`npx vitest run`).\n\n| # | Garantia | Teste | Tipo | Resultado |\n|---|---|---|---|---|\n| 1 | `1h30m` → 5400 s | `src/duration.test.ts: parses hours and minutes into seconds` | unitário | PASS |\n| 2 | `45m` → 2700 s | `src/duration.test.ts: parses minutes` | unitário | PASS |\n| 3 | `20s` → 20 s | `src/duration.test.ts: parses seconds` | unitário | PASS |\n\n**O que ficou sem rodar:**\n- **Tipos e lint:** o `tsc --noEmit` e o `eslint . --max-warnings 0` falharam por esse motivo de ambiente, não por causa do código. `npm test` também não achou o `vitest` pelo script; rodei via `npx`.\n- **Commit:** o diretório não é um repositório git, então não commitei. A mensagem que eu usaria é `fix(duration): return seconds instead of minutes in parseDuration`. O skill pede o id da tarefa (TNN) no fim, mas você não passou um.\n\nSe quiser, rodo `npm install` e crio um `eslint.config.js` mínimo para fechar a checagem de lint e tipos."
+    },
+    {
+      "id": "3",
+      "baseline": false,
+      "passed": true,
+      "failed": [],
+      "skills": [
+        "tdd-workflow"
+      ],
+      "answer": "Preenchi a seção \"Plano de testes\" em `docs/sprints/S02-plan.md`. Não rodei nada, porque é só documentação.\n\nCada critério tem um tipo de teste e o que ele prova:\n\n| Critério | Tipo | O que prova |\n|---|---|---|\n| 1. CSV com cabeçalho | Integração | Com um log real em pasta temporária, `hx export` cria o arquivo. A primeira linha é o cabeçalho e depois vem uma linha por pedido. |\n| 1a. Log sem pedidos | Unitário | O CSV contém só o cabeçalho. |\n| 2. Linhas vazias ignoradas | Unitário | Linhas vazias ou só com espaços, no começo, no meio e no fim, geram o mesmo CSV do log sem elas. |\n| 3. Arquivo de saída já existe | Integração | O comando termina com código diferente de zero. A mensagem cita o caminho e diz que o arquivo já existe. O conteúdo original fica intacto. |\n| 3a. Sem efeito colateral | Unitário | A checagem de existência vem antes de qualquer escrita, então nenhum arquivo parcial é criado. |\n| 4. Lint e tipos | Comando | `hx run` do lint e dos tipos termina com zero erros e zero avisos. |\n\nAcrescentei também três notas:\n- Os testes são independentes e usam pasta temporária, apagada no fim.\n- Cada teste deve falhar primeiro (RED) pelo motivo certo.\n- A meta de cobertura é 80% em `src/export.ts`.\n\nOs casos 1a e 3a não estavam nos seus critérios. Eu os incluí para cobrir os extremos de cada critério. Se não quiser, é só tirar essas linhas.\n\nNão achei o comando de teste do projeto, então a seção diz só \"o comando de teste do projeto\". Quando T01 começar, vale trocar pelo comando real."
+    }
+  ]
+}

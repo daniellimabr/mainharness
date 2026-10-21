@@ -1,0 +1,8 @@
+{
+  "project": "pedidos",
+  "name": "Pedidos",
+  "version": "0.7.0",
+  "web": false,
+  "optionalSkills": [],
+  "migrations": []
+}

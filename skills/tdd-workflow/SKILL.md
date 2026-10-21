@@ -1,6 +1,6 @@
 ---
 name: tdd-workflow
-description: "Desenvolvimento guiado por testes nas tarefas da sprint: escrever o teste que falha primeiro, ver falhar (RED), implementar o mínimo até passar (GREEN), refatorar, e fechar com um commit por tarefa. Use ao implementar uma tarefa de código de um sprint plan, corrigir bug, refatorar, ou ao montar o plano de testes de um sprint plan."
+description: "TDD para toda mudança de código de produção: teste que falha primeiro (RED), mínimo até passar (GREEN), refatorar e um commit por tarefa. Use SEMPRE que o pedido for implementar uma tarefa ('implementa a TNN', 'tarefa do SNN-plan'), corrigir um bug ('corrige', 'tem um bug', 'retorna X em vez de Y'), refatorar código ('refatora src/...'), ou montar o plano de testes de um sprint plan. Não use para escrever o sprint plan, revisão de segurança, só rodar a suíte existente ou abrir o app."
 argument-hint: "<id da tarefa ou docs/sprints/SNN-plan.md>"
 ---
 
@@ -41,7 +41,7 @@ Com os testes verdes: tire duplicação, melhore nomes, simplifique. Rode de nov
 ## Passo 4: fechar a tarefa
 
 1. `hx run` na suíte da área tocada + lint + tipos: **zero erros e zero avisos**.
-2. **Um commit por tarefa** na `main` (não um por etapa): `git add <arquivos da tarefa>` e mensagem `<tipo>(<escopo>): <o que muda> (TNN)` em inglês. Nada de commits de checkpoint RED/GREEN.
+2. **Um commit por tarefa** na `main` (não um por etapa): `git add <arquivos da tarefa>` e mensagem `<tipo>(<escopo>): <o que muda> (TNN)` em inglês. Nada de commits de checkpoint RED/GREEN. Se o ambiente não permite commitar (sem git ou sem permissão), diga isso e mostre a mensagem que usaria.
 3. Relatório curto ao Tech Lead (não precisa de arquivo): tarefa, comandos rodados, RED visto (uma linha do erro), GREEN, e a tabela:
 
 | # | Garantia | Teste | Tipo | Resultado |
