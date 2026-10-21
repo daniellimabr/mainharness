@@ -37,6 +37,12 @@ function stampOk(skill: string): void {
   );
 }
 
+function fakeClaude(js: string): string {
+  const f = path.join(stableParent, `fake claude ${Math.random().toString(36).slice(2)}.js`);
+  fs.writeFileSync(f, js);
+  return f;
+}
+
 beforeEach(() => {
   home = tempDir("hx home");
   repo = tempDir("hx harness repo");
@@ -47,6 +53,7 @@ beforeEach(() => {
     HARNESS_REPO: repo,
     HARNESS_STABLE_DIR: stable,
     HARNESS_RELEASE_CHECK: "node -e 0",
+    HARNESS_CLAUDE_BIN: fakeClaude("process.exit(0)"),
   };
   git(repo, ["init", "-q", "-b", "main"]);
   git(repo, ["config", "user.email", "t@t"]);
@@ -122,13 +129,14 @@ describe("hx release / rollback", () => {
     const r2 = runHx(["release", "patch"], { cwd: repo, env });
     expect(r2.code).toBe(0);
     expect(git(stable, ["describe", "--tags", "--exact-match", "HEAD"])).toBe("v0.1.1");
-    expect(fs.readFileSync(log, "utf8").trim().split(/\r?\n/)).toEqual(
-      [
+    expect(fs.readFileSync(log, "utf8").trim().split(/\r?\n/)).toEqual([
+      expect.stringMatching(/ plugin validate /),
+      ...[
         "main-harness@harness-stable",
         "ponytail@ponytail",
         "security-guidance@claude-plugins-official",
       ].map((id) => `${proj} plugin update ${id} --scope project`),
-    );
+    ]);
     expect(r2.stdout).toContain("plugins atualizados em 1 projeto(s)");
     expect(
       fs.readFileSync(path.join(repo, "CHANGELOG.md"), "utf8").indexOf("[0.1.1]"),
@@ -141,6 +149,23 @@ describe("hx release / rollback", () => {
 
     const types = readEventsIn(home).map((e) => e.type);
     expect(types).toEqual(["harness.release", "harness.release", "harness.rollback"]);
+  }, 90_000);
+
+  it("stops before publishing when claude plugin validate fails", () => {
+    stampOk("skills/adr");
+    stampOk("skills/optional/web");
+    commit("test: skill evals");
+    const args = path.join(stableParent, "validate args.txt");
+    env.HARNESS_CLAUDE_BIN = fakeClaude(
+      `require("fs").writeFileSync(${JSON.stringify(args)}, process.argv.slice(2).join("|"));` +
+        `console.error("bad manifest"); process.exit(1);`,
+    );
+    const r = runHx(["release", "minor"], { cwd: repo, env });
+    expect(r.code).not.toBe(0);
+    expect(r.stderr).toMatch(/claude plugin validate falhou[\s\S]*bad manifest/);
+    expect(fs.readFileSync(args, "utf8")).toBe(`plugin|validate|${repo}`);
+    expect(fs.existsSync(stable)).toBe(false);
+    expect(git(repo, ["tag"])).toBe("");
   });
 
   it("refuses to release with uncommitted changes", () => {

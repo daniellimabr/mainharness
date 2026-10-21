@@ -7,6 +7,7 @@ import { updatePlugins } from "../attach/setup";
 import { flagStr, parseArgs } from "../core/args";
 import { loadConfig } from "../core/config";
 import { readJson, samePathKey, writeJson } from "../core/fsx";
+import { runTool, which } from "../core/proc";
 import { readProjects } from "../core/projects";
 import { bumpVersion } from "../core/version";
 import { emit } from "../events/emit";
@@ -29,6 +30,14 @@ function runChecks(repo: string): void {
     const tail = `${r.stdout ?? ""}${r.stderr ?? ""}`.trim().split("\n").slice(-25).join("\n");
     throw new Error(`checagens falharam (${cmd}):\n${tail}`);
   }
+}
+
+/** Fails the release when `claude plugin validate` rejects the repo (or claude is missing). */
+function validatePlugin(repo: string): void {
+  if (!which("claude"))
+    throw new Error("claude não encontrado no PATH; sem ele não dá para validar o plugin");
+  const r = runTool("claude", ["plugin", "validate", repo], 120_000);
+  if (!r.ok) throw new Error(`claude plugin validate falhou:\n${r.out}`);
 }
 
 function changelogSection(repo: string, version: string, prev: string | null): string {
@@ -79,6 +88,7 @@ function release(kind: "patch" | "minor" | "major", skipChecks: boolean): number
   const prev = tags[tags.length - 1] ?? null;
 
   if (!skipChecks) runChecks(repo);
+  validatePlugin(repo);
   const gates = checkSkills(repo, changedSkills(repo, prev));
   const bad = gates.filter((g) => !g.ok);
   if (bad.length) {
