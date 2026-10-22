@@ -2,6 +2,29 @@
 
 Versões do Main Harness (versionamento semântico; `0.y.z` até a 1.0).
 
+## [0.8.1] - 2026-10-22
+
+### Novidades
+
+- feat(S08/T03): auto mode rule allows hx release/rollback only on explicit user request
+- feat(S08/T02): warn about non-conventional commits before the changelog
+
+### Correções
+
+- fix(S08/T05): hx setup drops every older auto mode rule; backlog B069-B072 done
+- fix(S08/T01): retry the eval judge only for runs without a verdict
+
+### Outros
+
+- chore(S08/T05): sprint execution table and new inbox request
+- docs(S08/T04): task commit format and router step at wave start
+- docs(S08): sprint plan
+- chore(inbox): move 4 requests to backlog
+- chore(harness): migrate to v0.8.0
+- chore: update index
+- docs(S07): release report and harness requests
+- docs(changelog): group S07 commits for v0.8.0
+
 ## [0.8.0] - 2026-10-21
 
 ### Novidades
