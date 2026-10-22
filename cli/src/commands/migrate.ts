@@ -46,10 +46,15 @@ ${m.description}
   return rel;
 }
 
-/** Re-copies the optional skills enabled in the project from the installed plugin (ADR 0005). */
-function refreshOptionalSkills(root: string, names: string[]): string[] {
+/**
+ * Re-copies the optional skills in the project from the installed plugin (ADR 0005):
+ * the enabled ones plus catalog skills already copied by older harness versions.
+ */
+function refreshOptionalSkills(root: string, enabled: string[]): string[] {
+  const skillsDir = path.join(root, ".claude", "skills");
+  const present = fs.existsSync(skillsDir) ? fs.readdirSync(skillsDir) : [];
   const touched: string[] = [];
-  for (const name of names) {
+  for (const name of new Set([...enabled, ...present])) {
     const src = path.join(pluginRoot(), "skills", "optional", name);
     if (!fs.existsSync(src)) continue;
     const dest = path.join(root, ".claude", "skills", name);

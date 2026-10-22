@@ -158,6 +158,28 @@ describe("migrateProject", () => {
     expect(git("log", "-1", "--format=%s")).toBe("chore(harness): migrate to v0.1.0");
   });
 
+  it("refreshes catalog skills already copied into the project, even outside optionalSkills", () => {
+    const cat = path.join(plugin, "skills", "optional");
+    for (const name of ["frontend-design", "other"]) {
+      fs.mkdirSync(path.join(cat, name), { recursive: true });
+      fs.writeFileSync(path.join(cat, name, "SKILL.md"), `new ${name}`);
+    }
+    const skills = path.join(proj, ".claude", "skills");
+    fs.mkdirSync(path.join(skills, "frontend-design"), { recursive: true });
+    fs.writeFileSync(path.join(skills, "frontend-design", "SKILL.md"), "old");
+    fs.writeFileSync(path.join(skills, "frontend-design", "stale.md"), "old");
+    fs.mkdirSync(path.join(skills, "minha-skill"));
+    fs.writeFileSync(path.join(skills, "minha-skill", "SKILL.md"), "mine");
+    setVersions("0.1.0", "0.1.1");
+    migrateProject(proj, { migrations: [], commit: false });
+    expect(fs.readdirSync(path.join(skills, "frontend-design"))).toEqual(["SKILL.md"]);
+    expect(fs.readFileSync(path.join(skills, "frontend-design", "SKILL.md"), "utf8")).toBe(
+      "new frontend-design",
+    );
+    expect(fs.existsSync(path.join(skills, "other"))).toBe(false);
+    expect(fs.readFileSync(path.join(skills, "minha-skill", "SKILL.md"), "utf8")).toBe("mine");
+  });
+
   it("leaves a plan when a structural migration has no down", () => {
     setVersions("0.2.0", "0.1.0");
     const r = migrateProject(proj, {
