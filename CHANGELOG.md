@@ -2,6 +2,26 @@
 
 Versões do Main Harness (versionamento semântico; `0.y.z` até a 1.0).
 
+## [0.8.2] - 2026-10-22
+
+### Novidades
+
+- feat(S09/T03): align frontend-design with upstream 41bbe19
+
+### Correções
+
+- fix(S09/T02): migrate refreshes catalog skills already in the project
+- fix(S09/T01): retry atomic rename on transient Windows locks
+
+### Outros
+
+- chore(S09/T05): sprint execution table and new inbox requests
+- docs(S09/T04): reviewer skips mobile check on UI tasks
+- docs(S09/T05): backlog B073-B077
+- docs(S09/T04): UI tasks call frontend-design and reviewer checks the plan
+- chore(harness): migrate to v0.8.1
+- docs(S08): release report
+
 ## [0.8.1] - 2026-10-22
 
 ### Novidades
