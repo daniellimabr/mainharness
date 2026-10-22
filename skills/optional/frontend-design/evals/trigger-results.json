@@ -1,5 +1,5 @@
 {
-  "date": "2026-10-16T18:19:17.295Z",
+  "date": "2026-10-22T13:43:34.205Z",
   "results": [
     {
       "query": "cria uma landing page pra minha cafeteria em Floripa, quero algo com personalidade e não com cara de template",
@@ -13,9 +13,11 @@
     {
       "query": "redesenha a tela de onboarding do app, tá muito genérica, escolhe tipografia e paleta melhores",
       "should_trigger": true,
-      "triggered": false,
-      "skills": [],
-      "passed": false
+      "triggered": true,
+      "skills": [
+        "frontend-design"
+      ],
+      "passed": true
     },
     {
       "query": "build a portfolio site for a ceramic artist — single page, bold typography, make it feel handmade",

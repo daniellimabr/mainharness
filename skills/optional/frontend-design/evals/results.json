@@ -1,15 +1,14 @@
 {
   "skill": "frontend-design",
-  "skillSha256": "4fd66146ecb9d8b5121c835017f19c3c2cc0775bc6efe5969d338f972204fc29",
-  "date": "2026-10-16T18:24:36.613Z",
+  "skillSha256": "1d1c919c2162be184ca04e9901bd870406f2ae320d7990a5637bd9afd1d39439",
+  "date": "2026-10-22T13:44:41.712Z",
   "passed": true,
   "trigger": {
-    "passed": 14,
+    "passed": 15,
     "total": 15
   },
   "evals": {
     "passed": 3,
     "total": 3
-  },
-  "notes": "baseline sem skill: 1/3"
+  }
 }
