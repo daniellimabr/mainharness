@@ -18,7 +18,20 @@ export function writeFileAtomic(file: string, content: string): void {
   fs.mkdirSync(path.dirname(file), { recursive: true });
   const tmp = `${file}.${process.pid}.tmp`;
   fs.writeFileSync(tmp, content);
-  fs.renameSync(tmp, file);
+  // Windows can lock the target for a moment (antivirus, indexer, another reader).
+  for (let attempt = 1; ; attempt++) {
+    try {
+      fs.renameSync(tmp, file);
+      return;
+    } catch (err) {
+      const code = (err as NodeJS.ErrnoException).code;
+      if (attempt >= 5 || !["EPERM", "EBUSY", "EACCES"].includes(code ?? "")) {
+        fs.rmSync(tmp, { force: true });
+        throw err;
+      }
+      Atomics.wait(new Int32Array(new SharedArrayBuffer(4)), 0, 0, attempt * 20);
+    }
+  }
 }
 
 export function readText(file: string): string | null {

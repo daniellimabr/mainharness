@@ -120,7 +120,19 @@ function writeFileAtomic(file2, content) {
   fs3.mkdirSync(path3.dirname(file2), { recursive: true });
   const tmp = `${file2}.${process.pid}.tmp`;
   fs3.writeFileSync(tmp, content);
-  fs3.renameSync(tmp, file2);
+  for (let attempt = 1; ; attempt++) {
+    try {
+      fs3.renameSync(tmp, file2);
+      return;
+    } catch (err) {
+      const code = err.code;
+      if (attempt >= 5 || !["EPERM", "EBUSY", "EACCES"].includes(code ?? "")) {
+        fs3.rmSync(tmp, { force: true });
+        throw err;
+      }
+      Atomics.wait(new Int32Array(new SharedArrayBuffer(4)), 0, 0, attempt * 20);
+    }
+  }
 }
 function readText(file2) {
   try {
@@ -2064,9 +2076,11 @@ ${m.description}
   fs18.writeFileSync(path19.join(root, rel), text);
   return rel;
 }
-function refreshOptionalSkills(root, names) {
+function refreshOptionalSkills(root, enabled) {
+  const skillsDir = path19.join(root, ".claude", "skills");
+  const present = fs18.existsSync(skillsDir) ? fs18.readdirSync(skillsDir) : [];
   const touched = [];
-  for (const name of names) {
+  for (const name of /* @__PURE__ */ new Set([...enabled, ...present])) {
     const src = path19.join(pluginRoot(), "skills", "optional", name);
     if (!fs18.existsSync(src)) continue;
     const dest = path19.join(root, ".claude", "skills", name);

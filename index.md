@@ -85,6 +85,7 @@ Uma linha por arquivo: caminho e propósito. Mantido pelo hook `post-edit`.
 - `cli/test/eval.test.ts` — (sem descrição)
 - `cli/test/events-s05.test.ts` — S05 events: agent.start/agent.end, prompt (never the text), session.start title, project.status, Stop typecheck only ...
 - `cli/test/events.test.ts` — testes de events
+- `cli/test/fsx.test.ts` — (sem descrição)
 - `cli/test/global-setup.ts` — Builds cli/dist/hx.js once before the suite, so integration tests run the real bundle.
 - `cli/test/helpers.ts` — Test helpers: temp folders WITH SPACES, isolated HARNESS_HOME, running the built hx.js.
 - `cli/test/hooks.test.ts` — testes de hooks
@@ -147,6 +148,7 @@ Uma linha por arquivo: caminho e propósito. Mantido pelo hook `post-edit`.
 - `docs/sprints/S07-release.md` — S07 — Release Report
 - `docs/sprints/S08-plan.md` — S08 — Lições da S07: juiz do eval, CHANGELOG, release no modo auto e ondas paralelas
 - `docs/sprints/S08-release.md` — S08 — Release Report
+- `docs/sprints/S09-plan.md` — S09 — Skill de front-end atualizada nos projetos e migração sem falha no Windows
 - `eslint.config.js` — ESLint flat config
 - `hooks/hooks.json` — hooks do plugin (forma exec chamando o hx)
 - `package-lock.json` — versões travadas das dependências de desenvolvimento
