@@ -146,6 +146,7 @@ Uma linha por arquivo: caminho e propósito. Mantido pelo hook `post-edit`.
 - `docs/sprints/S07-plan.md` — S07 — % de uso no VS Code, fim da status line e tempos mais finos
 - `docs/sprints/S07-release.md` — S07 — Release Report
 - `docs/sprints/S08-plan.md` — S08 — Lições da S07: juiz do eval, CHANGELOG, release no modo auto e ondas paralelas
+- `docs/sprints/S08-release.md` — S08 — Release Report
 - `eslint.config.js` — ESLint flat config
 - `hooks/hooks.json` — hooks do plugin (forma exec chamando o hx)
 - `package-lock.json` — versões travadas das dependências de desenvolvimento
