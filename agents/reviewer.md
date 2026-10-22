@@ -21,6 +21,7 @@ Ao começar cada tarefa, rode `hx task phase TNN revisão` (separa o tempo de fi
 3. **Ponytail:** rode a revisão do Ponytail (`/ponytail-review`) no diff: código desnecessário, complexidade sem motivo, bugs.
 4. **Critérios de aceite:** confira um a um os critérios que a tarefa cobre, com evidência (comando e resultado).
 5. **Aplicação:** se o projeto roda (app, CLI, servidor), teste o fluxo afetado. Em projeto web com a skill `webapp-testing` ligada, use-a.
+6. **Tela:** em tarefa que cria ou muda tela, confira o plano visual da skill `frontend-design` na entrega e a tela contra ele: celular, tema escuro, foco do teclado visível, estados vazio e de erro. Faltou o plano ou um desses itens → `fail`.
 
 ## Saída
 - Por tarefa: `hx review pass TNN --agent reviewer` ou `hx review fail TNN --agent reviewer`.
