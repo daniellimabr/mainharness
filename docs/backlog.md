@@ -80,3 +80,8 @@ Itens ainda não planejados. Pedidos dos projetos chegam pelo `inbox/` e `/inbox
 | B070 | `hx eval` repete só o juiz (não a sessão do caso) quando ele não devolve veredito, antes de contar falha | inbox: 2026-10-21-main-harness-hx-eval-repete-sozinho-o-juiz-sem-veredito.md | média | feito (S08) |
 | B071 | `hx release` avisa commit desde a última tag sem prefixo convencional (feat/fix/docs/chore/refactor/test) antes de gerar o CHANGELOG | inbox: 2026-10-21-main-harness-hx-release-avisa-commit-sem-prefixo-convencional.md | média | feito (S08) |
 | B072 | `hx release` liberado no modo auto quando Daniel pede (ex.: regra de permissão do `hx setup`), sem ser negado como Production Deploy | inbox: 2026-10-21-main-harness-release-liberada-no-modo-auto-quando-daniel-pede.md | baixa | feito (S08) |
+| B073 | `writeFileAtomic` tenta de novo o `rename` quando o Windows trava o arquivo (`EPERM`, `EBUSY`, `EACCES`) | conversa com Daniel (22/10, falha do `session-start`) | alta | feito (S09) |
+| B074 | `hx migrate` recopia do catálogo as skills opcionais que o projeto já tem em `.claude/skills/` | conversa com Daniel (22/10) | alta | feito (S09) |
+| B075 | `frontend-design` alinhada à oficial (`anthropics/skills` `41bbe19`), diferenças no `SOURCE.md` | conversa com Daniel (22/10) | média | feito (S09) |
+| B076 | Tarefa de tela chama a `frontend-design` antes do código e o Reviewer confere o plano visual | conversa com Daniel (22/10, Dashboard IA: 0 chamadas em 30 sessões) | alta | feito (S09) |
+| B077 | `hx eval` menos sujeito ao acaso: caso que falha roda de novo e vale a maioria (2 de 3), sem triplicar o custo dos que passam | conversa com Daniel (22/10, T03 levou 8 rodadas) | baixa | a fazer |
