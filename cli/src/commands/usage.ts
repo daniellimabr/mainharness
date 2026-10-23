@@ -31,9 +31,16 @@ const line = (t: Totals) =>
   `entrada ${fmt(t.input)} · saída ${fmt(t.output)} · cache escrito ${fmt(t.cache_write)} · ` +
   `cache lido ${fmt(t.cache_read)} · US$ ${t.usd.toLocaleString("pt-BR", { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`;
 
-function summary(title: string, evs: HarnessEvent[]): string[] {
+function summary(title: string, all: HarnessEvent[]): string[] {
   const total = zero();
+  const spareTotal = zero();
   const by = { agente: new Map<string, Totals>(), modelo: new Map<string, Totals>() };
+  // Non-Claude model outside the price table (e.g. Gemini workers via OmniRoute): own line, not Claude total.
+  const isSpare = (e: HarnessEvent) =>
+    e.data.usd === null && !String(e.data.model).startsWith("claude");
+  const evs = all.filter((e) => !isSpare(e));
+  const spare = all.filter(isSpare);
+  for (const e of spare) add(spareTotal, e.data);
   for (const e of evs) {
     add(total, e.data);
     for (const [map, k] of [
@@ -45,10 +52,14 @@ function summary(title: string, evs: HarnessEvent[]): string[] {
     }
   }
   const out = [`${title} (${evs.length} respostas): ${line(total)}`];
-  if (!evs.length) return out;
   for (const [label, map] of Object.entries(by)) {
+    if (!map.size) continue;
     out.push(`  por ${label}:`);
     for (const [k, t] of map) out.push(`    ${k}: ${line(t)}`);
+  }
+  if (spare.length) {
+    const models = [...new Set(spare.map((e) => String(e.data.model)))].join(", ");
+    out.push(`  fora do Claude (${models}, fora do total): ${line(spareTotal)}`);
   }
   return out;
 }

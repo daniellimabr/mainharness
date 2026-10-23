@@ -225,6 +225,43 @@ describe("hx usage", () => {
     }
   });
 
+  it("puts an unpriced model in a 'fora do Claude' line, outside the Claude total", () => {
+    const proj = fakeProject();
+    const cfg = tempDir("hx claude");
+    try {
+      const name = path.resolve(proj).replace(/[^A-Za-z0-9-]/g, "-");
+      const pdir = path.join(cfg, "projects", name);
+      fs.mkdirSync(pdir, { recursive: true });
+      const msg = (id: string, model: string) =>
+        JSON.stringify({
+          type: "assistant",
+          timestamp: "2026-10-23T10:00:00.000Z",
+          message: {
+            id,
+            model,
+            stop_reason: "end_turn",
+            usage: { input_tokens: 1000, output_tokens: 500 },
+          },
+        });
+      const solo = (lines: string[]) => {
+        fs.writeFileSync(path.join(pdir, "sess-r.jsonl"), `${lines.join("\n")}\n`);
+        return runHx(["usage"], {
+          cwd: proj,
+          env: { HARNESS_HOME: env.home, CLAUDE_CONFIG_DIR: cfg },
+        }).stdout.split("\n");
+      };
+      const out = solo([msg("m1", "claude-opus-5-5"), msg("g1", "gemini/gemini-3.5-flash-lite")]);
+      const acc = out.findIndex((l) => l.startsWith("Acumulado"));
+      expect(out[acc]).toMatch(/^Acumulado \(1 respostas\): entrada 1\.000 · saída 500/);
+      const reserve = out.filter((l) => l.includes("fora do Claude"));
+      expect(reserve.length).toBeGreaterThan(0);
+      expect(reserve.at(-1)).toMatch(/gemini\/gemini-3\.5-flash-lite.*entrada 1\.000.*US\$ 0,00/);
+    } finally {
+      rm(proj);
+      rm(cfg);
+    }
+  });
+
   it("prints the last usage.limits as one line (B064)", () => {
     const proj = fakeProject();
     const cfg = tempDir("hx claude");
