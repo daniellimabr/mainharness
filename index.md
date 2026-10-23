@@ -31,7 +31,6 @@ Uma linha por arquivo: caminho e propósito. Mantido pelo hook `post-edit`.
 - `cli/src/commands/migrate.ts` — hx migrate: brings a project's harness files to the installed harness version (up or down).
 - `cli/src/commands/release.ts` — hx release patch|minor|major: checks, skill eval gate, version bump, CHANGELOG, commit + tag,
 - `cli/src/commands/request.ts` — hx request: writes a NEW request file into the harness inbox (never edits an existing one).
-- `cli/src/commands/resume.ts` — B005: resume a chat after the usage limit (ADR 0011). The StopFailure hook schedules a
 - `cli/src/commands/review.ts` — hx review pass|fail <task>: records the Reviewer's verdict for a task.
 - `cli/src/commands/rollback.ts` — hx rollback: moves the stable clone back to the previous release tag.
 - `cli/src/commands/run.ts` — hx run <cmd...>: runs an agent command and prints only the summary (success) or the failures.
@@ -100,7 +99,6 @@ Uma linha por arquivo: caminho e propósito. Mantido pelo hook `post-edit`.
 - `cli/test/probe-s05.test.ts` — (sem descrição)
 - `cli/test/release.test.ts` — testes de release
 - `cli/test/repomap.test.ts` — testes de repomap
-- `cli/test/resume.test.ts` — B005: resume the chat after the usage limit (StopFailure rate_limit → schtasks → hx resume).
 - `cli/test/review-security-recheck.test.ts` — Re-review of T13 fixes (commit 0aeaf25): remaining bypasses and false positives in pre-bash.
 - `cli/test/review-security.test.ts` — testes de segurança do pre-bash (achados do Reviewer)
 - `cli/test/run.test.ts` — (sem descrição)
@@ -149,6 +147,8 @@ Uma linha por arquivo: caminho e propósito. Mantido pelo hook `post-edit`.
 - `docs/sprints/S08-plan.md` — S08 — Lições da S07: juiz do eval, CHANGELOG, release no modo auto e ondas paralelas
 - `docs/sprints/S08-release.md` — S08 — Release Report
 - `docs/sprints/S09-plan.md` — S09 — Skill de front-end atualizada nos projetos e migração sem falha no Windows
+- `docs/sprints/S09-release.md` — S09 — Release Report
+- `docs/sprints/S10-plan.md` — S10 — Modo reserva com Gemini (manual × automático), clones em Sonnet e fim da retomada agendada
 - `eslint.config.js` — ESLint flat config
 - `hooks/hooks.json` — hooks do plugin (forma exec chamando o hx)
 - `package-lock.json` — versões travadas das dependências de desenvolvimento

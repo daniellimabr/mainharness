@@ -10,7 +10,6 @@ import { claudeHome, home, pluginRoot } from "../core/paths";
 import { resolveProject } from "../core/projects";
 import { hxOnPath } from "../core/shim";
 import { compareVersions } from "../core/version";
-import { pendingResumes } from "./resume";
 import { autoModeRuleState, userHomeVarSet } from "./setup";
 
 const TIMEOUT = 5000;
@@ -197,11 +196,6 @@ export function runDoctor(opts: { projectRoot?: string; homeVarSet?: () => boole
       : "hx sem regra no modo auto (autoMode.allow do ~/.claude/settings.json): rode hx setup",
     true,
   );
-
-  for (const r of pendingResumes())
-    lines.push(
-      `• retomada agendada: sessão ${r.session.slice(0, 8)} às ${new Date(r.at).toLocaleString("pt-BR")} em ${r.dir}`,
-    );
 
   const root = opts.projectRoot ?? resolveProject(process.cwd())?.root ?? null;
   if ((root ?? process.cwd()).includes(" "))

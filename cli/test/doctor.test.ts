@@ -160,15 +160,10 @@ describe("runDoctor", () => {
     );
   });
 
-  it("lists pending resumes", () => {
-    expect(line(runDoctor({ projectRoot: proj }).lines, "retomada")).toBe("");
-    const s = "0f8fad5b-d9cb-469f-a165-70867728950e";
+  it("no longer reports scheduled resumes (removed in v0.9.0)", () => {
     fs.mkdirSync(path.join(env.home, "resume"), { recursive: true });
-    fs.writeFileSync(
-      path.join(env.home, "resume", `${s}.json`),
-      JSON.stringify({ session: s, dir: proj, at: "2026-10-21T18:02:00.000Z" }),
-    );
-    expect(line(runDoctor({ projectRoot: proj }).lines, "retomada")).toContain("sessão 0f8fad5b");
+    fs.writeFileSync(path.join(env.home, "resume", "x.json"), "{}");
+    expect(line(runDoctor({ projectRoot: proj }).lines, "retomada")).toBe("");
   });
 
   it("has no status line check", () => {

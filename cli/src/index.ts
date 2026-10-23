@@ -10,7 +10,6 @@ const COMMANDS: Record<string, () => Promise<{ run: Run }>> = {
   review: () => import("./commands/review"),
   status: () => import("./commands/status"),
   handoff: () => import("./commands/handoff"),
-  resume: () => import("./commands/resume"),
   run: () => import("./commands/run"),
   request: () => import("./commands/request"),
   metrics: () => import("./commands/metrics"),
@@ -41,7 +40,6 @@ const HELP = `hx <command> [args]
   review pass|fail <task>     resultado da revisão
   status --where t --next t   registra onde o projeto está e o próximo passo
   handoff [--show|--consume]  grava (stdin)/mostra o handoff
-  resume <sessão> <pasta>     retoma o chat após o limite de uso (tarefa agendada)
   run <cmd...>              roda e mostra só falhas e resumo
   request --title t ...       cria pedido no inbox do harness
   metrics [sprint]            indicadores da sprint

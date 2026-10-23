@@ -62,10 +62,8 @@ describe("ensureAutoModeRule", () => {
     expect(read().autoMode.allow).toEqual(["a", AUTO_MODE_RULE, "b"]);
   });
 
-  it("allows schtasks only for the harness's own resume tasks", () => {
-    expect(AUTO_MODE_RULE).toMatch(
-      /schtasks is allowed only to query or delete .*MainHarness-Resume-/,
-    );
+  it("no longer allows schtasks or hx resume (removed in v0.9.0)", () => {
+    expect(AUTO_MODE_RULE).not.toMatch(/schtasks|resume/);
   });
 
   it("refuses to overwrite an unreadable settings.json", () => {
@@ -98,7 +96,7 @@ describe("ensureAutoModeRule", () => {
 
   it("upgrades the pre-release rule to the current one, keeping a single copy", () => {
     const old =
-      "Running the hx CLI (hx sprint, hx task, hx handoff, hx eval, hx review, hx usage, hx resume) in any project is allowed: it is the Main Harness sprint tooling the user installed. hx run is allowed only when the wrapped command would be allowed on its own. schtasks is allowed only to query or delete the harness's own MainHarness-Resume-* tasks.";
+      "Running the hx CLI (hx sprint, hx task, hx handoff, hx eval, hx review, hx usage) in any project is allowed: it is the Main Harness sprint tooling the user installed. hx run is allowed only when the wrapped command would be allowed on its own.";
     fs.writeFileSync(settings(), JSON.stringify({ autoMode: { allow: ["$defaults", old] } }));
     expect(autoModeRuleState()).toBe("outdated");
     expect(ensureAutoModeRule()).toBe("added");

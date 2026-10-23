@@ -86,19 +86,6 @@
         ]
       }
     ],
-    "StopFailure": [
-      {
-        "matcher": "rate_limit",
-        "hooks": [
-          {
-            "type": "command",
-            "command": "node",
-            "args": ["${CLAUDE_PLUGIN_ROOT}/cli/dist/hx.js", "hook", "stop-failure"],
-            "timeout": 20
-          }
-        ]
-      }
-    ],
     "SubagentStop": [
       {
         "hooks": [

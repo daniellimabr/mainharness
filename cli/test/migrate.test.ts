@@ -3,7 +3,7 @@ import * as fs from "node:fs";
 import * as path from "node:path";
 import { afterEach, beforeEach, describe, expect, it } from "vitest";
 import { migrateProject } from "../src/commands/migrate";
-import type { Migration } from "../src/migrations";
+import { MIGRATIONS, type Migration, removeResumeTasks } from "../src/migrations";
 import { fakeProject, isolateHome, readEventsIn, rm, tempDir } from "./helpers";
 
 let env: ReturnType<typeof isolateHome>;
@@ -178,6 +178,36 @@ describe("migrateProject", () => {
     );
     expect(fs.existsSync(path.join(skills, "other"))).toBe(false);
     expect(fs.readFileSync(path.join(skills, "minha-skill", "SKILL.md"), "utf8")).toBe("mine");
+  });
+
+  it("v0.9.0 deletes only the harness's resume tasks and the pending folder", () => {
+    const a = "MainHarness-Resume-0f8fad5b-d9cb-469f-a165-70867728950e";
+    const b = "MainHarness-Resume-7c9e6679-7425-40de-944b-e07fc1f90ae7";
+    const calls: string[][] = [];
+    const fake = (cmd: string, args: string[]) => {
+      calls.push([cmd, ...args]);
+      const out = `"\\${a}","N/A","Ready"\r\n"\\${b}","N/A","Ready"\r\n"\\${a}","N/A","Ready"\r\n"\\Other","N/A","Ready"`;
+      return { ok: true, out: args[0] === "/query" ? out : "" };
+    };
+    const pending = path.join(env.home, "resume");
+    fs.mkdirSync(pending, { recursive: true });
+    fs.writeFileSync(path.join(pending, "x.json"), "{}");
+    expect(removeResumeTasks(fake)).toEqual([]);
+    expect(calls).toEqual([
+      ["schtasks", "/query", "/fo", "csv", "/nh"],
+      ["schtasks", "/delete", "/tn", a, "/f"],
+      ["schtasks", "/delete", "/tn", b, "/f"],
+    ]);
+    expect(fs.existsSync(pending)).toBe(false);
+    // no pending folder: schtasks is never called
+    calls.length = 0;
+    expect(removeResumeTasks(fake)).toEqual([]);
+    expect(calls).toEqual([]);
+    // schtasks missing (not Windows) or failing: nothing deleted, no throw
+    fs.mkdirSync(pending);
+    expect(removeResumeTasks(() => ({ ok: false, out: "" }))).toEqual([]);
+    expect(fs.existsSync(pending)).toBe(true);
+    expect(MIGRATIONS.map((m) => [m.version, m.kind])).toContainEqual(["0.9.0", "simple"]);
   });
 
   it("leaves a plan when a structural migration has no down", () => {

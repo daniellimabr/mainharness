@@ -1,6 +1,6 @@
 # ADR 0011 — Retomada automática do chat após o limite de uso
 
-- **Status:** aceito (Daniel, aprovação do plano da S07, 2026-10-21)
+- **Status:** substituído (retomada removida na S10, v0.9.0; ver ADR 0012, modo reserva). Antes: aceito (Daniel, aprovação do plano da S07, 2026-10-21)
 - **Data:** 2026-10-21
 - **Harness:** 0.7.0
 
