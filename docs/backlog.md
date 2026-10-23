@@ -93,8 +93,8 @@ Itens ainda não planejados. Pedidos dos projetos chegam pelo `inbox/` e `/inbox
 | B083 | `hx task phase` falha em tarefa reaberta por ajuste | inbox: 2026-10-22-dashboard-ia-hx-task-phase-falha-em-tarefa-reaberta-por-ajuste.md | média | novo |
 | B084 | Marca de status no `backlog.md` | inbox: 2026-10-22-dashboard-ia-marca-de-status-no-backlog-md.md | alta | novo |
 | B085 | Marcas de status do backlog nas skills `sprint-plan` e `release-report` | inbox: 2026-10-22-dashboard-ia-marcas-de-status-do-backlog-nas-skills-sprint-plan-e-release.md | média | novo |
-| B086 | Remover a retomada automática agendada de sessão | inbox: 2026-10-22-dashboard-ia-remover-retomada-automatica-agendada-de-sessao.md | alta | novo |
-| B087 | Retomada automática após limite de uso não funcionou (Windows) | inbox: 2026-10-22-dashboard-ia-retomada-automatica-apos-limite-de-uso-nao-funcionou-windows.md | alta | novo |
+| B086 | Remover a retomada automática agendada de sessão | inbox: 2026-10-22-dashboard-ia-remover-retomada-automatica-agendada-de-sessao.md | alta | planejado (S10) |
+| B087 | Retomada automática após limite de uso não funcionou (Windows) | inbox: 2026-10-22-dashboard-ia-retomada-automatica-apos-limite-de-uso-nao-funcionou-windows.md | alta | planejado (S10) |
 | B088 | Reviewer com dois nomes nos eventos | inbox: 2026-10-22-dashboard-ia-reviewer-com-dois-nomes-nos-eventos.md | média | novo |
 | B089 | Roadmap não é atualizado no fechamento da sprint | inbox: 2026-10-22-dashboard-ia-roadmap-nao-e-atualizado-no-fechamento-da-sprint.md | alta | novo |
 | B090 | `hx release` não recusa pelo `SNN-release.md` da sprint aberta | inbox: 2026-10-22-main-harness-hx-release-nao-recusa-pelo-snn-release-md-da-sprint-aberta.md | baixa | novo |
