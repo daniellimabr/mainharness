@@ -165,7 +165,8 @@ function loadConfig() {
   const cfg = {
     ...DEFAULT_CONFIG,
     ...file2,
-    prices: { ...DEFAULT_CONFIG.prices, ...file2.prices ?? {} }
+    prices: { ...DEFAULT_CONFIG.prices, ...file2.prices ?? {} },
+    worker: { ...DEFAULT_CONFIG.worker, ...file2.worker ?? {} }
   };
   const envNum = (k) => process.env[k] ? Number(process.env[k]) : void 0;
   cfg.contextLimit = envNum("HARNESS_CONTEXT_LIMIT") ?? cfg.contextLimit;
@@ -218,7 +219,13 @@ var init_config = __esm({
       harnessRepo: "C:\\Main Harness",
       stableDir: "C:\\harness-stable",
       inboxDir: "C:\\Main Harness\\inbox",
-      timezone: "America/Sao_Paulo"
+      timezone: "America/Sao_Paulo",
+      worker: {
+        url: "http://localhost:20128",
+        token: "",
+        model: "gemini/gemini-3.5-flash-lite",
+        threshold: 90
+      }
     };
   }
 });
@@ -1879,15 +1886,15 @@ var init_proc = __esm({
 });
 
 // cli/src/migrations/index.ts
-function removeResumeTasks(run19 = (c, a) => runTool(c, a, 1e4)) {
+function removeResumeTasks(run20 = (c, a) => runTool(c, a, 1e4)) {
   const dir = path18.join(harnessHome(), "resume");
   if (!fs17.existsSync(dir)) return [];
-  const { ok, out } = run19("schtasks", ["/query", "/fo", "csv", "/nh"]);
+  const { ok, out } = run20("schtasks", ["/query", "/fo", "csv", "/nh"]);
   if (!ok) return [];
   for (const tn of new Set(
     out.match(/MainHarness-Resume-[0-9a-f]{8}(-[0-9a-f]{4}){3}-[0-9a-f]{12}/gi)
   ))
-    run19("schtasks", ["/delete", "/tn", tn, "/f"]);
+    run20("schtasks", ["/delete", "/tn", tn, "/f"]);
   fs17.rmSync(dir, { recursive: true, force: true });
   return [];
 }
@@ -3218,12 +3225,55 @@ var init_handoff = __esm({
   }
 });
 
+// cli/src/commands/worker.ts
+var worker_exports = {};
+__export(worker_exports, {
+  run: () => run8
+});
+async function omniUp(url, token, deps) {
+  try {
+    const res = await (deps.fetch ?? fetch)(`${url}/v1/models`, {
+      headers: { Authorization: `Bearer ${token}` },
+      signal: AbortSignal.timeout(deps.timeoutMs ?? TIMEOUT_MS2),
+      redirect: "error"
+    });
+    return res.ok;
+  } catch {
+    return false;
+  }
+}
+async function run8(args, deps = {}) {
+  if (args[0] !== "status") {
+    console.error("uso: hx worker status");
+    return 1;
+  }
+  const w = loadConfig().worker;
+  if (!w.token) {
+    console.error("Trabalhador n\xE3o configurado: falta worker.token em ~/.harness/config.json.");
+    return 1;
+  }
+  if (!await omniUp(w.url, w.token, deps)) {
+    console.error(`Trabalhador indispon\xEDvel: OmniRoute fora do ar em ${w.url}.`);
+    return 1;
+  }
+  console.log(`Trabalhador pronto: OmniRoute em ${w.url}, modelo ${w.model}.`);
+  return 0;
+}
+var TIMEOUT_MS2;
+var init_worker = __esm({
+  "cli/src/commands/worker.ts"() {
+    "use strict";
+    init_config();
+    TIMEOUT_MS2 = 3e3;
+  }
+});
+
 // cli/src/commands/run.ts
 var run_exports = {};
 __export(run_exports, {
-  run: () => run8
+  run: () => run9
 });
-function run8(args) {
+function run9(args) {
   const parts2 = args[0] === "--" ? args.slice(1) : args;
   if (!parts2.length) {
     console.error("uso: hx run <comando>");
@@ -3267,9 +3317,9 @@ var init_run = __esm({
 // cli/src/commands/request.ts
 var request_exports = {};
 __export(request_exports, {
-  run: () => run9
+  run: () => run10
 });
-function run9(args) {
+function run10(args) {
   const p = parseArgs(args);
   const title2 = flagStr(p, "title");
   const need = flagStr(p, "need");
@@ -3336,9 +3386,9 @@ var init_request = __esm({
 // cli/src/commands/metrics.ts
 var metrics_exports = {};
 __export(metrics_exports, {
-  run: () => run10
+  run: () => run11
 });
-function run10(args) {
+function run11(args) {
   const p = parseArgs(args);
   const doEmit = boolFlag(p, "emit");
   const ctx = commandContext(process.cwd(), flagStr(p, "agent"));
@@ -3374,7 +3424,7 @@ var init_metrics = __esm({
 // cli/src/commands/usage.ts
 var usage_exports = {};
 __export(usage_exports, {
-  run: () => run11
+  run: () => run12
 });
 function add(t, d) {
   t.input += Number(d.input) || 0;
@@ -3383,9 +3433,14 @@ function add(t, d) {
   t.cache_read += Number(d.cache_read) || 0;
   t.usd += Number(d.usd) || 0;
 }
-function summary(title2, evs) {
+function summary(title2, all) {
   const total = zero();
+  const spareTotal = zero();
   const by = { agente: /* @__PURE__ */ new Map(), modelo: /* @__PURE__ */ new Map() };
+  const isSpare = (e) => e.data.usd === null && !String(e.data.model).startsWith("claude");
+  const evs = all.filter((e) => !isSpare(e));
+  const spare = all.filter(isSpare);
+  for (const e of spare) add(spareTotal, e.data);
   for (const e of evs) {
     add(total, e.data);
     for (const [map, k] of [
@@ -3397,14 +3452,18 @@ function summary(title2, evs) {
     }
   }
   const out = [`${title2} (${evs.length} respostas): ${line(total)}`];
-  if (!evs.length) return out;
   for (const [label, map] of Object.entries(by)) {
+    if (!map.size) continue;
     out.push(`  por ${label}:`);
     for (const [k, t] of map) out.push(`    ${k}: ${line(t)}`);
   }
+  if (spare.length) {
+    const models = [...new Set(spare.map((e) => String(e.data.model)))].join(", ");
+    out.push(`  fora do Claude (${models}, fora do total): ${line(spareTotal)}`);
+  }
   return out;
 }
-function run11(args) {
+function run12(args) {
   const p = parseArgs(args);
   let ctx;
   try {
@@ -3816,7 +3875,7 @@ __export(setup_exports, {
   disablePonytailBand: () => disablePonytailBand,
   ensureAutoModeRule: () => ensureAutoModeRule,
   removeStatusLine: () => removeStatusLine,
-  run: () => run12,
+  run: () => run13,
   userHomeVarSet: () => userHomeVarSet
 });
 function userHomeVarSet() {
@@ -3868,7 +3927,7 @@ function ensureAutoModeRule() {
   writeJson(file2, st);
   return "added";
 }
-function run12(args) {
+function run13(args) {
   const dry = parseArgs(args).flags["dry-run"] === true;
   const say = (msg) => console.log(dry ? `[simula\xE7\xE3o] ${msg}` : msg);
   if (fs30.existsSync(home.config())) say("config.json j\xE1 existe");
@@ -3949,7 +4008,7 @@ var init_setup2 = __esm({
 // cli/src/commands/doctor.ts
 var doctor_exports = {};
 __export(doctor_exports, {
-  run: () => run13,
+  run: () => run14,
   runDoctor: () => runDoctor
 });
 function pythonVersion() {
@@ -4166,7 +4225,7 @@ function runDoctor(opts = {}) {
   lines.push(problems ? `${problems} problema${problems > 1 ? "s" : ""}` : "Tudo certo");
   return { ok: problems === 0, lines };
 }
-function run13(_args) {
+function run14(_args) {
   const r = runDoctor();
   for (const l of r.lines) console.log(l);
   return r.ok ? 0 : 1;
@@ -4205,7 +4264,7 @@ var init_doctor = __esm({
 // cli/src/commands/attach.ts
 var attach_exports = {};
 __export(attach_exports, {
-  run: () => run14
+  run: () => run15
 });
 function indexMd(root, vars) {
   try {
@@ -4214,7 +4273,7 @@ function indexMd(root, vars) {
     return render("index.md", { ...vars, map: "" });
   }
 }
-function run14(args) {
+function run15(args) {
   const p = parseArgs(args);
   const root = path33.resolve(p._[0] ?? process.cwd());
   if (!fs32.existsSync(root) || !fs32.statSync(root).isDirectory()) {
@@ -4348,9 +4407,9 @@ var init_attach = __esm({
 // cli/src/commands/skills.ts
 var skills_exports = {};
 __export(skills_exports, {
-  run: () => run15
+  run: () => run16
 });
-function run15(args) {
+function run16(args) {
   const [action, name] = args;
   const p = resolveProject(process.cwd());
   if (!p) {
@@ -4575,7 +4634,7 @@ async function claude(prompt2, cwd, extra, ctx) {
       if (process.platform === "win32" && child.pid)
         (0, import_node_child_process10.spawnSync)("taskkill", ["/T", "/F", "/PID", String(child.pid)]);
       else child.kill();
-    }, TIMEOUT_MS2);
+    }, TIMEOUT_MS3);
     child.on("close", () => clearTimeout(timer));
     let out = "";
     let err = "";
@@ -4774,7 +4833,7 @@ ${r.answer}
   }
   return stampSkill(repo, skill, { passed: ok, trigger, evals, notes });
 }
-var import_node_child_process10, fs34, os5, path35, PARALLEL, TIMEOUT_MS2, MAX_FILE, safeId2, ASSUMES_REPO, needsFixtures, frac;
+var import_node_child_process10, fs34, os5, path35, PARALLEL, TIMEOUT_MS3, MAX_FILE, safeId2, ASSUMES_REPO, needsFixtures, frac;
 var init_run2 = __esm({
   "cli/src/eval/run.ts"() {
     "use strict";
@@ -4787,7 +4846,7 @@ var init_run2 = __esm({
     init_emit();
     init_skills3();
     PARALLEL = 3;
-    TIMEOUT_MS2 = 10 * 6e4;
+    TIMEOUT_MS3 = 10 * 6e4;
     MAX_FILE = 2e4;
     safeId2 = (s2) => s2.replace(/[^A-Za-z0-9._:@-]/g, "-").slice(0, 128);
     ASSUMES_REPO = /\bsprint\b|\bS\d{2}\b|release report|repo conectado|\bhx /i;
@@ -4799,9 +4858,9 @@ var init_run2 = __esm({
 // cli/src/commands/eval.ts
 var eval_exports = {};
 __export(eval_exports, {
-  run: () => run16
+  run: () => run17
 });
-async function run16(args) {
+async function run17(args) {
   const p = parseArgs(args);
   const repo = path36.resolve(loadConfig().harnessRepo);
   const tag = versionTags(repo).pop() ?? null;
@@ -4869,7 +4928,7 @@ var init_eval = __esm({
 var release_exports = {};
 __export(release_exports, {
   moveStable: () => moveStable,
-  run: () => run17
+  run: () => run18
 });
 function repoRoot() {
   const repo = path37.resolve(loadConfig().harnessRepo);
@@ -4980,7 +5039,7 @@ function release(kind, skipChecks) {
   console.log(updatePlugins(readProjects().map((p) => p.path)));
   return 0;
 }
-function run17(args) {
+function run18(args) {
   const p = parseArgs(args);
   const [sub, target] = p._;
   if (sub === "check") {
@@ -5038,9 +5097,9 @@ var init_release = __esm({
 // cli/src/commands/rollback.ts
 var rollback_exports = {};
 __export(rollback_exports, {
-  run: () => run18
+  run: () => run19
 });
-function run18(_args) {
+function run19(_args) {
   const stable = path38.resolve(loadConfig().stableDir);
   if (!fs36.existsSync(path38.join(stable, ".git")))
     throw new Error(`vers\xE3o est\xE1vel n\xE3o encontrada em ${stable}`);
@@ -5081,6 +5140,7 @@ var COMMANDS = {
   review: () => Promise.resolve().then(() => (init_review(), review_exports)),
   status: () => Promise.resolve().then(() => (init_status(), status_exports)),
   handoff: () => Promise.resolve().then(() => (init_handoff(), handoff_exports)),
+  worker: () => Promise.resolve().then(() => (init_worker(), worker_exports)),
   run: () => Promise.resolve().then(() => (init_run(), run_exports)),
   request: () => Promise.resolve().then(() => (init_request(), request_exports)),
   metrics: () => Promise.resolve().then(() => (init_metrics(), metrics_exports)),
@@ -5110,7 +5170,8 @@ var HELP = `hx <command> [args]
   review pass|fail <task>     resultado da revis\xE3o
   status --where t --next t   registra onde o projeto est\xE1 e o pr\xF3ximo passo
   handoff [--show|--consume]  grava (stdin)/mostra o handoff
-  run <cmd...>              roda e mostra s\xF3 falhas e resumo
+  worker status               trabalhador no Gemini (OmniRoute): configurado e no ar?
+  run <cmd...>                roda e mostra s\xF3 falhas e resumo
   request --title t ...       cria pedido no inbox do harness
   metrics [sprint]            indicadores da sprint
   usage [--session id]        consumo a partir dos transcripts

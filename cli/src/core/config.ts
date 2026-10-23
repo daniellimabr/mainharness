@@ -22,6 +22,8 @@ export interface Config {
   inboxDir: string;
   /** IANA timezone for times shown to people (events stay UTC). */
   timezone: string;
+  /** Gemini workers via OmniRoute; the token only ever comes from config.json. */
+  worker: { url: string; token: string; model: string; threshold: number };
 }
 
 export const DEFAULT_CONFIG: Config = {
@@ -56,6 +58,12 @@ export const DEFAULT_CONFIG: Config = {
   stableDir: "C:\\harness-stable",
   inboxDir: "C:\\Main Harness\\inbox",
   timezone: "America/Sao_Paulo",
+  worker: {
+    url: "http://localhost:20128",
+    token: "",
+    model: "gemini/gemini-3.5-flash-lite",
+    threshold: 90,
+  },
 };
 
 /** Reads config.json merged over defaults; env vars override limits (used by tests). */
@@ -65,6 +73,7 @@ export function loadConfig(): Config {
     ...DEFAULT_CONFIG,
     ...file,
     prices: { ...DEFAULT_CONFIG.prices, ...(file.prices ?? {}) },
+    worker: { ...DEFAULT_CONFIG.worker, ...(file.worker ?? {}) },
   };
   const envNum = (k: string) => (process.env[k] ? Number(process.env[k]) : undefined);
   cfg.contextLimit = envNum("HARNESS_CONTEXT_LIMIT") ?? cfg.contextLimit;

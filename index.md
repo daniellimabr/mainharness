@@ -40,6 +40,7 @@ Uma linha por arquivo: caminho e propósito. Mantido pelo hook `post-edit`.
 - `cli/src/commands/status.ts` — hx status --where <texto> --next <texto>: records where the project is and what comes next (project.status).
 - `cli/src/commands/task.ts` — hx task start|done <id>: task times in state and in the "## Execução" table of SNN-release.md, plus events.
 - `cli/src/commands/usage.ts` — hx usage: ingests the project's Claude Code transcripts and prints tokens and US$ per agent/model.
+- `cli/src/commands/worker.ts` — hx worker status: checks the Gemini (OmniRoute) worker config; never writes ~/.claude/settings.json (ADR 0012).
 - `cli/src/core/args.ts` — Tiny argument parser: positionals + --flag value / --flag=value / --bool.
 - `cli/src/core/config.ts` — ~/.harness/config.json: prices, context limits and harness locations.
 - `cli/src/core/context.ts` — Resolves "who/where" for CLI commands run by agents: project, session, sprint, agent.
@@ -109,6 +110,7 @@ Uma linha por arquivo: caminho e propósito. Mantido pelo hook `post-edit`.
 - `cli/test/text-s06.test.ts` — S06 text fixes: hx status cleans where/next like the title (B057); session-start keeps `\|` in backlog items (B058).
 - `cli/test/turn-end.test.ts` — B045: the Stop hook emits turn.end only when it lets the agent stop.
 - `cli/test/usage.test.ts` — testes de usage
+- `cli/test/worker.test.ts` — hx worker status: OmniRoute (Gemini) worker config check; never touches ~/.claude/settings.json (ADR 0012).
 - `cli/tsconfig.json` — TypeScript estrito do CLI
 - `commands/continue.md` — Retoma a sprint a partir do último handoff (num chat novo)
 - `commands/inbox.md` — Leva os pedidos do inbox do Main Harness para o backlog (só no repo do harness)
@@ -126,9 +128,10 @@ Uma linha por arquivo: caminho e propósito. Mantido pelo hook `post-edit`.
 - `docs/adr/0009-consumo-enxuto.md` — ADR 0009 — Consumo enxuto: evals no Sonnet, Reviewer no Sonnet e sem Writer
 - `docs/adr/0010-uso-pelo-endpoint-oauth.md` — ADR 0010 — % de uso pelo endpoint interno do /usage (exceção a "só caminhos oficiais")
 - `docs/adr/0011-retomada-apos-limite.md` — ADR 0011 — Retomada automática do chat após o limite de uso
-- `docs/adr/0012-modo-reserva.md` — ADR 0012 — Modo reserva no Gemini pelo OmniRoute
+- `docs/adr/0012-trabalhadores-gemini.md` — ADR 0012 — Trabalhadores no Gemini pelo OmniRoute
 - `docs/backlog.md` — Backlog do Main Harness
 - `docs/contracts/events.md` — Contrato de eventos: Main Harness e Dashboard IA
+- `docs/omniroute.md` — Trabalhadores no Gemini (OmniRoute)
 - `docs/roadmap.md` — Roadmap do Main Harness
 - `docs/sprints/S00-plan.md` — sprint plan S00 (criação do harness)
 - `docs/sprints/S00-release.md` — Release Report da S00 (tabela de execução gerada pelo hx)
