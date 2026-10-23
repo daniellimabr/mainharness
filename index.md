@@ -126,6 +126,7 @@ Uma linha por arquivo: caminho e propósito. Mantido pelo hook `post-edit`.
 - `docs/adr/0009-consumo-enxuto.md` — ADR 0009 — Consumo enxuto: evals no Sonnet, Reviewer no Sonnet e sem Writer
 - `docs/adr/0010-uso-pelo-endpoint-oauth.md` — ADR 0010 — % de uso pelo endpoint interno do /usage (exceção a "só caminhos oficiais")
 - `docs/adr/0011-retomada-apos-limite.md` — ADR 0011 — Retomada automática do chat após o limite de uso
+- `docs/adr/0012-modo-reserva.md` — ADR 0012 — Modo reserva no Gemini pelo OmniRoute
 - `docs/backlog.md` — Backlog do Main Harness
 - `docs/contracts/events.md` — Contrato de eventos: Main Harness e Dashboard IA
 - `docs/roadmap.md` — Roadmap do Main Harness
