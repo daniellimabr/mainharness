@@ -1,18 +1,20 @@
-# ADR 0012 — Modo reserva no Gemini pelo OmniRoute
+# ADR 0012 — Trabalhadores no Gemini pelo OmniRoute
 
-- **Status:** rascunho (resultado do spike da S10/T01; versão final na T08)
+- **Status:** aceito
 - **Data:** 2026-10-23
-- **Harness:** 0.8.2
+- **Harness:** 0.9.0
 
 ## Contexto
 
-O limite de uso do Claude (5 h e semanal) trava as sprints. A retomada agendada (ADR 0011) saiu na S10. A proposta: perto do limite, o Tech Lead entrega as tarefas abertas a trabalhadores `claude -p` que falam com o Gemini através do OmniRoute local, e o chat seguinte abre no Gemini.
+O limite de uso do Claude (5 h e semanal) trava as sprints. A retomada agendada (ADR 0011) saiu na S10. Daniel quer gastar menos Claude desde já, não só quando o limite chega: tarefas que caibam num modelo mais simples devem rodar fora do Claude.
+
+A primeira versão (rascunho deste ADR) era um "modo reserva": `hx reserve on` gravava as variáveis do OmniRoute no bloco `env` do `~/.claude/settings.json`, para o chat seguinte abrir no Gemini. No teste, o Claude Code **aplicou o arquivo na hora em todos os chats abertos**: o chat da S10 passou a mandar o Opus para o OmniRoute e travou ("Ambiguous model"). O modo reserva foi descartado antes do commit.
 
 ## Resultado do spike (23/10)
 
-**Montagem:** OmniRoute global (`npm install -g omniroute`) em `http://localhost:20128`, com o provedor Gemini e uma conta Google grátis dedicada. A chave do OmniRoute fica em `~/.harness/config.json` (`reserve.url` e `reserve.token`), fora de qualquer repositório.
+**Montagem:** OmniRoute global (`npm install -g omniroute`) em `http://localhost:20128`, com o provedor Gemini e uma conta Google grátis dedicada. A chave fica em `~/.harness/config.json` (chave `worker`), fora de qualquer repositório. Guia: [docs/omniroute.md](../omniroute.md).
 
-**Variáveis (só no processo):**
+**Variáveis (só no processo do trabalhador):**
 - `ANTHROPIC_BASE_URL=http://localhost:20128` e `ANTHROPIC_AUTH_TOKEN=<token>`;
 - `ANTHROPIC_API_KEY` vazio;
 - `ANTHROPIC_MODEL`, `ANTHROPIC_DEFAULT_OPUS_MODEL`, `ANTHROPIC_DEFAULT_SONNET_MODEL`, `ANTHROPIC_DEFAULT_HAIKU_MODEL` e `CLAUDE_CODE_SUBAGENT_MODEL` com o modelo Gemini.
@@ -30,27 +32,31 @@ O OmniRoute aceita o formato da Anthropic (`/v1/messages`) e traduz para o Gemin
 
 A lentidão está no Gemini, não no OmniRoute: o teste do próprio painel levou 44 s e houve um 504 após 110 s.
 
-**Trabalhador:** `claude -p` com `gemini-3.5-flash-lite` criou `soma.js` numa pasta temporária, em 183 s e com cerca de 10 pedidos (100 mil tokens de entrada, a maior parte do system prompt do Claude Code). Funciona; é lento, mas serve para trabalho em segundo plano.
+**Trabalhador:** `claude -p` com `gemini-3.5-flash-lite` criou `soma.js` numa pasta temporária, em 183 s e com cerca de 10 pedidos (100 mil tokens de entrada, a maior parte do system prompt do Claude Code). Funciona; é lento, mas serve para trabalho em segundo plano. Como é o próprio Claude Code com o plugin, hooks, skills e `hx` rodam, e o trabalhador aparece no dashboard (eventos `worker.start`/`worker.end`, agente `gemini`).
 
 **O que quebra:**
-- o trabalhador chamou a ferramenta `PowerShell`, fora do `--allowedTools` do teste, e não conseguiu rodar o `node`. O `hx reserve run` precisa liberar as ferramentas de que a tarefa precisa;
+- o trabalhador chamou a ferramenta `PowerShell`, fora do `--allowedTools` do teste, e não conseguiu rodar o `node`: o `hx worker run` precisa liberar as ferramentas de que a tarefa precisa;
 - aviso `unrecognized_model` no título da sessão (inofensivo);
 - os conectores do claude.ai somem quando o token está definido (esperado);
-- o custo que o Claude Code mostra (US$ 0,83) é estimado pela tabela do Claude; o Gemini grátis custa US$ 0.
-
-**Chat:** o mesmo caminho (as variáveis no `settings.json`) é o que o `hx reserve on` grava; falta o teste com o chat aberto, na T04.
+- o custo que o Claude Code mostra é estimado pela tabela do Claude; o `hx usage` põe o trabalhador numa linha "fora do Claude".
 
 ## Alternativas
 
-- **`gemini -p` (Gemini CLI) como trabalhador, sem OmniRoute.** Ideia de Daniel. Dispensa o tradutor, mas não roda os hooks, as skills nem o `hx` do Claude Code, que garantem o TDD, o lint e as fases da tarefa. Fica como plano B se o OmniRoute der problema.
-- **Gemini direto no Claude Code.** Não dá: o Claude Code só fala o formato da Anthropic, e o Gemini não.
+- **Modo reserva no `settings.json`** (rascunho anterior). Descartado: o arquivo vale ao vivo para todos os chats e derruba o chat aberto.
+- **`gemini -p` (Gemini CLI) como trabalhador, sem OmniRoute.** Dispensa o tradutor, mas não roda os hooks, as skills nem o `hx`, que garantem TDD, lint e as fases da tarefa. Plano B se o OmniRoute der problema.
+- **OmniRoute sempre no meio dos chats do Claude.** Ponto único de falha e risco nos termos da Anthropic.
+- **Gemini direto no Claude Code.** Não dá: o Claude Code só fala o formato da Anthropic.
 
 ## Decisão
 
-Seguir com `claude -p` → OmniRoute → Gemini. Modelo padrão `gemini/gemini-3.5-flash-lite`, configurável em `reserve.model`. T04 a T07 continuam.
+- Trabalhador = `claude -p` → OmniRoute → Gemini, disparado por `hx worker run TNN <handoff>`, **com as variáveis do OmniRoute só no processo filho**. Nenhum comando do harness escreve no `~/.claude/settings.json` (teste confere o arquivo intacto).
+- O Tech Lead manda ao trabalhador, **sempre que parecer viável**, tarefas simples e bem delimitadas; revisa e commita como faz com clones. Perto do limite (padrão 90%, `worker.threshold`), tudo o que estiver aberto vai para trabalhadores (skill `worker`).
+- Um trabalhador por vez (cota do plano grátis).
+- Modelo padrão `gemini/gemini-3.5-flash-lite`, configurável em `worker.model`; a configuração aceita qualquer modelo do OmniRoute.
 
-## Riscos
+## Consequências e riscos
 
-- O OmniRoute lista provedores de terceiros (`dva/`, `aug/`, `cxa/` e outros) que revendem modelos pagos. Para a reserva, só o provedor Gemini fica ligado.
+- O chat nunca muda de modelo; o trabalho fora do Claude é sempre explícito e aparece no dashboard e no `hx usage`.
+- O OmniRoute lista provedores de terceiros (`dva/`, `aug/`, `cxa/` e outros) que revendem modelos pagos: só o provedor Gemini fica ligado.
 - Termos de uso: uma conta Google só para isso, sem somar contas.
-- A lentidão do plano grátis pode mudar sem aviso.
+- A lentidão e a cota do plano grátis podem mudar sem aviso.

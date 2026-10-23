@@ -45,11 +45,11 @@ Se colisões em arquivos virarem rotina (os indicadores da sprint mostram), aval
 
 Quando o Dashboard for para a nuvem. O adaptador de consumo do ADR 0007 já prevê a troca: nova implementação de `UsageSource`, mesmo evento `usage`.
 
+## 8. Trabalhadores no Gemini (feito na S10, v0.9.0)
+
+O Tech Lead passa tarefas simples a trabalhadores `claude -p` no Gemini, pelo OmniRoute local, sempre que parecer viável; perto do limite do Claude, tudo o que estiver aberto (ADR 0012, guia em `docs/omniroute.md`). O chat nunca muda de modelo: as variáveis do OmniRoute ficam só no processo do trabalhador. Só o provedor Gemini fica ligado, numa conta dedicada, e o `hx usage` conta o trabalhador à parte. Próximos passos: medir quais tarefas o Gemini entrega bem, entender o atraso fixo de ~8 s por pedido no plano grátis e testar outros modelos (`worker.model`).
+
 ## Avaliado e descartado por ora
 
-**Gateways que trocam o modelo por outros provedores quando a cota acaba** (ex.: OmniRoute). Motivos:
-
-- troca silenciosa de modelo no meio da sprint;
-- envio de código a terceiros;
-- risco com os termos de uso;
-- quebra da contagem de consumo.
+- **OmniRoute sempre no meio, com a assinatura do Claude ligada a ele.** Risco nos termos de uso da Anthropic.
+- **Modo reserva no `~/.claude/settings.json`.** O Claude Code aplica o arquivo ao vivo em todos os chats abertos e derrubou o chat da S10 (ADR 0012).
