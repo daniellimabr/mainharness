@@ -85,3 +85,20 @@ Itens ainda não planejados. Pedidos dos projetos chegam pelo `inbox/` e `/inbox
 | B075 | `frontend-design` alinhada à oficial (`anthropics/skills` `41bbe19`), diferenças no `SOURCE.md` | conversa com Daniel (22/10) | média | feito (S09) |
 | B076 | Tarefa de tela chama a `frontend-design` antes do código e o Reviewer confere o plano visual | conversa com Daniel (22/10, Dashboard IA: 0 chamadas em 30 sessões) | alta | feito (S09) |
 | B077 | `hx eval` menos sujeito ao acaso: caso que falha roda de novo e vale a maioria (2 de 3), sem triplicar o custo dos que passam | conversa com Daniel (22/10, T03 levou 8 rodadas) | baixa | a fazer |
+| B078 | Conferência visual no navegador em tarefas de tela | inbox: 2026-10-22-dashboard-ia-conferencia-visual-no-navegador-em-tarefas-de-tela.md | alta | novo |
+| B079 | Espera por resposta de Daniel dentro de uma tarefa não conta como duração | inbox: 2026-10-22-dashboard-ia-espera-por-resposta-de-daniel-dentro-de-uma-tarefa-nao-conta.md | média | novo |
+| B080 | `git rm` de arquivos rastreados previstos no plano aprovado | inbox: 2026-10-22-dashboard-ia-git-rm-de-arquivos-rastreados-previstos-no-plano-aprovado.md | baixa | novo |
+| B081 | `hx help`: documentar `--force` no `sprint approve` | inbox: 2026-10-22-dashboard-ia-hx-help-documentar-force-no-sprint-approve.md | baixa | novo |
+| B082 | `hx task phase` em rodada de ajuste | inbox: 2026-10-22-dashboard-ia-hx-task-phase-em-rodada-de-ajuste.md | baixa | novo |
+| B083 | `hx task phase` falha em tarefa reaberta por ajuste | inbox: 2026-10-22-dashboard-ia-hx-task-phase-falha-em-tarefa-reaberta-por-ajuste.md | média | novo |
+| B084 | Marca de status no `backlog.md` | inbox: 2026-10-22-dashboard-ia-marca-de-status-no-backlog-md.md | alta | novo |
+| B085 | Marcas de status do backlog nas skills `sprint-plan` e `release-report` | inbox: 2026-10-22-dashboard-ia-marcas-de-status-do-backlog-nas-skills-sprint-plan-e-release.md | média | novo |
+| B086 | Remover a retomada automática agendada de sessão | inbox: 2026-10-22-dashboard-ia-remover-retomada-automatica-agendada-de-sessao.md | alta | novo |
+| B087 | Retomada automática após limite de uso não funcionou (Windows) | inbox: 2026-10-22-dashboard-ia-retomada-automatica-apos-limite-de-uso-nao-funcionou-windows.md | alta | novo |
+| B088 | Reviewer com dois nomes nos eventos | inbox: 2026-10-22-dashboard-ia-reviewer-com-dois-nomes-nos-eventos.md | média | novo |
+| B089 | Roadmap não é atualizado no fechamento da sprint | inbox: 2026-10-22-dashboard-ia-roadmap-nao-e-atualizado-no-fechamento-da-sprint.md | alta | novo |
+| B090 | `hx release` não recusa pelo `SNN-release.md` da sprint aberta | inbox: 2026-10-22-main-harness-hx-release-nao-recusa-pelo-snn-release-md-da-sprint-aberta.md | baixa | novo |
+| B091 | `hx setup` e `doctor`: só falar do que mudou | inbox: 2026-10-22-main-harness-hx-setup-e-doctor-so-falar-do-que-mudou.md | média | novo |
+| B092 | Modo auto nega `git status` logo após `hx release` falhar | inbox: 2026-10-22-main-harness-modo-auto-nega-git-status-logo-apos-hx-release-falhar.md | baixa | novo |
+| B093 | Fator de estimativa padrão para a primeira sprint | inbox: 2026-10-23-6thgear-fator-de-estimativa-padrao-para-a-primeira-sprint.md | média | novo |
+| B094 | Clones marcam as fases testes, código e lint | inbox: 2026-10-23-dashboard-ia-clones-marcam-as-fases-testes-codigo-e-lint.md | média | novo |
