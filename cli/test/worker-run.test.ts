@@ -170,7 +170,13 @@ describe("hx worker run: end to end with a fake claude", () => {
     expect(fs.readFileSync(report, "utf8")).toContain("trabalho feito");
     const s = JSON.parse(fs.readFileSync(seen, "utf8"));
     expect(s).toMatchObject({ stdin: "Faça a T01.\n", token: TOKEN, key: "", model: MODEL });
-    expect(s.argv).toEqual(["-p", "--allowedTools", "Read,Edit,Write,Glob,Grep,Bash,PowerShell"]);
+    expect(s.argv).toEqual([
+      "-p",
+      "--model",
+      "gemini/gemini-3.5-flash-lite",
+      "--allowedTools",
+      "Read,Edit,Write,Glob,Grep,Bash,PowerShell",
+    ]);
     const evs = readEventsIn(env.home);
     expect(evs.find((e) => e.type === "worker.end")).toMatchObject({
       agent: "gemini",

@@ -3360,7 +3360,11 @@ async function child(sprint, tnn, handoff) {
   delete env.CLAUDECODE;
   const bin = process.env.HX_CLAUDE_BIN || "claude";
   const r = await new Promise((resolve15) => {
-    const c = (0, import_node_child_process6.spawn)(`${bin} -p --allowedTools ${TOOLS}`, { env, shell: true, windowsHide: true });
+    const c = (0, import_node_child_process6.spawn)(`${bin} -p --model ${process.env.ANTHROPIC_MODEL} --allowedTools ${TOOLS}`, {
+      env,
+      shell: true,
+      windowsHide: true
+    });
     let out2 = "";
     const timer = setTimeout(() => {
       out2 += "\nTempo esgotado (60 min): trabalhador encerrado.";
