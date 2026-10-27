@@ -108,3 +108,5 @@ Itens ainda não planejados. Pedidos dos projetos chegam pelo `inbox/` e `/inbox
 | B098 | Aviso de limite considera `resets_at` para não avisar após a janela reiniciar com leitura velha | roadmap | baixa | novo |
 | B099 | Gravar o lock de `hx worker run` antes do spawn para impedir execução simultânea | roadmap | baixa | novo |
 | B100 | `hx worker status` diz "pronto" com o login do Gemini expirado no OmniRoute: testar uma chamada curta ao modelo | S10/T09 | média | novo |
+| B101 | Handoff da sessão atualizado sozinho em `hx task done/phase` (estado das tarefas e arquivos não commitados) | inbox: 2026-10-27-main-harness-handoff-atualizado-a-cada-tarefa.md | média | novo |
+| B102 | `hx eval`: o `hx` da sandbox é o `cli/dist/hx.js` do repo, não o estável | inbox: 2026-10-27-main-harness-hx-eval-usa-o-hx-do-repo-nao-o-estavel.md | alta | novo |
