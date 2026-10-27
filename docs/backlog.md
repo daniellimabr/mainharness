@@ -102,3 +102,9 @@ Itens ainda não planejados. Pedidos dos projetos chegam pelo `inbox/` e `/inbox
 | B092 | Modo auto nega `git status` logo após `hx release` falhar | inbox: 2026-10-22-main-harness-modo-auto-nega-git-status-logo-apos-hx-release-falhar.md | baixa | novo |
 | B093 | Fator de estimativa padrão para a primeira sprint | inbox: 2026-10-23-6thgear-fator-de-estimativa-padrao-para-a-primeira-sprint.md | média | novo |
 | B094 | Clones marcam as fases testes, código e lint | inbox: 2026-10-23-dashboard-ia-clones-marcam-as-fases-testes-codigo-e-lint.md | média | novo |
+| B095 | `hx sprint approve` substitui a seção Aprovação antiga em vez de falhar quando o plano muda | inbox: 2026-10-23-dashboard-ia-hx-sprint-approve-substitui-a-secao-aprovacao-quando-o-plano.md | média | novo |
+| B096 | Comando `hx shot` para tirar print com navegador headless e apoiar conferência visual do Reviewer | inbox: 2026-10-23-dashboard-ia-reviewer-com-prints-garantidos-hx-shot.md | média | novo |
+| B097 | `workerNudge` guarda lista de sessões para evitar que dois chats perto do limite alternem o aviso | roadmap | baixa | novo |
+| B098 | Aviso de limite considera `resets_at` para não avisar após a janela reiniciar com leitura velha | roadmap | baixa | novo |
+| B099 | Gravar o lock de `hx worker run` antes do spawn para impedir execução simultânea | roadmap | baixa | novo |
+| B100 | `hx worker status` diz "pronto" com o login do Gemini expirado no OmniRoute: testar uma chamada curta ao modelo | S10/T09 | média | novo |
