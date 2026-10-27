@@ -2,6 +2,33 @@
 
 Versões do Main Harness (versionamento semântico; `0.y.z` até a 1.0).
 
+## [0.9.0] - 2026-10-27
+
+### Novidades
+
+- feat(S10/T07): delegation rule, usage-threshold nudge (Stop + hx task) and worker skill
+- feat(S10/T06): hx worker run TNN <handoff> runs a detached Gemini worker via OmniRoute
+- feat(S10/T05): hx usage shows non-Claude models on their own line, outside the Claude total
+- feat(S10/T04): hx worker status for Gemini workers via OmniRoute; never writes settings.json
+
+### Correções
+
+- fix(S10/T06): worker passes --model so the tech-lead agent's pinned Claude id doesn't reach OmniRoute
+
+### Outros
+
+- chore(S10/T09): sprint execution table
+- docs(S10/T09): backlog B095-B100 (first real Gemini worker delegation)
+- docs(S10/T08): final ADR 0012 (Gemini workers), OmniRoute guide and roadmap
+- docs(S10): revised plan approved (Gemini workers, no settings.json changes)
+- docs(S10/T01): ADR 0012 draft with the OmniRoute/Gemini spike result
+- refactor(S10/T03): remove scheduled resume after usage limit; v0.9.0 migration deletes leftover tasks
+- docs(S10/T02): call clones with model sonnet by default, opus for complex tasks
+- docs(S10): sprint plan approved
+- chore(inbox): move 17 requests to backlog
+- chore(harness): migrate to v0.8.2
+- docs(S09): release report and harness request
+
 ## [0.8.2] - 2026-10-22
 
 ### Novidades
