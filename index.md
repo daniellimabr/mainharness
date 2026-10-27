@@ -156,6 +156,7 @@ Uma linha por arquivo: caminho e propósito. Mantido pelo hook `post-edit`.
 - `docs/sprints/S09-plan.md` — S09 — Skill de front-end atualizada nos projetos e migração sem falha no Windows
 - `docs/sprints/S09-release.md` — S09 — Release Report
 - `docs/sprints/S10-plan.md` — S10 — Modo reserva com Gemini (manual × automático), clones em Sonnet e fim da retomada agendada
+- `docs/sprints/S10-release.md` — S10 — Release Report
 - `eslint.config.js` — ESLint flat config
 - `hooks/hooks.json` — hooks do plugin (forma exec chamando o hx)
 - `package-lock.json` — versões travadas das dependências de desenvolvimento
