@@ -1,0 +1,15 @@
+{
+  "skill": "worker",
+  "skillSha256": "10eaff630b33034e16ff111b0ad0ce89f627fbd5ae36830d856b81477030d8d6",
+  "date": "2026-10-27T21:57:16.505Z",
+  "passed": true,
+  "trigger": {
+    "passed": 8,
+    "total": 8
+  },
+  "evals": {
+    "passed": 3,
+    "total": 3
+  },
+  "notes": "baseline sem skill: 0/3"
+}

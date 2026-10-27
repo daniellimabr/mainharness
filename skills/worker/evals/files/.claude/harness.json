@@ -1,0 +1,8 @@
+{
+  "project": "main-harness",
+  "name": "Main Harness",
+  "version": "0.2.1",
+  "web": false,
+  "optionalSkills": [],
+  "migrations": []
+}

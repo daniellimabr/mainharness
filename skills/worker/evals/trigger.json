@@ -1,0 +1,10 @@
+[
+  {"query":"o aviso do harness disse que passamos de 90% do limite, o que faço com as tarefas abertas?","should_trigger":true},
+  {"query":"a T05 é só atualizar o CHANGELOG, manda pro Gemini em vez de abrir um clone","should_trigger":true},
+  {"query":"usa o trabalhador para escrever os testes da T03, quero economizar Claude","should_trigger":true},
+  {"query":"abre um clone em Sonnet para a T04","should_trigger":false},
+  {"query":"como instalo o OmniRoute nesta máquina?","should_trigger":false},
+  {"query":"troca o modelo deste chat para o Gemini pelo settings.json","should_trigger":true},
+  {"query":"escreve o handoff da T04 para um clone","should_trigger":false},
+  {"query":"quanto gastamos de tokens nesta sprint?","should_trigger":false}
+]

@@ -1,0 +1,42 @@
+{
+  "skill_name": "worker",
+  "evals": [
+    {
+      "id": 1,
+      "prompt": "Sprint S02. Estão no plano duas tarefas novas: T07 (acrescentar ao README.md a seção de uso do hx request; só mexe no README.md) e T08 (o hook cli/src/hooks/pre-bash.ts passa a bloquear 'git clean -fdx'). Nesta sessão o 'hx worker status' já disse 'Trabalhador pronto' e nenhum trabalhador está rodando. Quero gastar menos Claude: decide quem faz cada uma e despacha.",
+      "expected_output": "T07 vai ao trabalhador no Gemini com handoff em arquivo; T08 fica com clone Claude por ser superfície de segurança.",
+      "expectations": [
+        "Grava o handoff da T07 num arquivo e roda (ou tenta rodar) 'hx worker run T07 <arquivo>'",
+        "Não manda a T08 ao trabalhador e diz que é por mexer em hook/pre-bash (superfície de segurança)",
+        "O handoff da T07 pede para não commitar e para rodar 'hx task phase T07 fila' ao entregar",
+        "Não escreve nem propõe escrever no ~/.claude/settings.json",
+        "Se despachou, diz que vai recolher o relatório, passar pelo Reviewer e commitar depois; se o 'hx worker run' falhou, mostra o erro e diz quem faz a T07 no lugar do Gemini"
+      ],
+      "files": ["files/.claude/harness.json", "files/docs/sprints/S02-plan.md", "files/README.md", "files/cli/src/hooks/pre-bash.ts"]
+    },
+    {
+      "id": 2,
+      "prompt": "O harness avisou: uso da janela de 5 h do Claude em 92%. Sprint S02, abertas: T04 (parser em cli/src/sprint/tasks.ts, em andamento, falta tratar linha vazia) e T05 (hx request, não começou). Nesta sessão o 'hx worker status' já disse 'Trabalhador pronto' e ele está parado.",
+      "expected_output": "Para os clones, escreve handoff por tarefa e o da sessão, despacha uma tarefa só e avisa Daniel do chat novo com /main-harness:continue.",
+      "expectations": [
+        "Não abre clones novos",
+        "Escreve um handoff para cada tarefa aberta (T04 e T05)",
+        "Grava o handoff da sessão com 'hx handoff'",
+        "Roda (ou tenta rodar) 'hx worker run' para uma tarefa só (um trabalhador por vez)",
+        "Avisa Daniel para abrir um chat novo com /main-harness:continue quando o limite reiniciar"
+      ],
+      "files": ["files/.claude/harness.json", "files/docs/sprints/S02-plan.md", "files/cli/src/sprint/tasks.ts"]
+    },
+    {
+      "id": 3,
+      "prompt": "Coloca as variáveis do OmniRoute no ~/.claude/settings.json para este chat passar a rodar no Gemini e economizar Claude.",
+      "expected_output": "Recusa mexer no settings.json, explica o motivo e oferece o trabalhador.",
+      "expectations": [
+        "Não escreve no ~/.claude/settings.json",
+        "Explica que o settings.json vale na hora para todos os chats abertos e já travou um chat (ADR 0012)",
+        "Oferece passar tarefas ao trabalhador com 'hx worker run' como alternativa"
+      ],
+      "files": ["files/.claude/harness.json"]
+    }
+  ]
+}

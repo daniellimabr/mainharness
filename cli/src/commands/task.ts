@@ -5,6 +5,7 @@ import { readState, updateState, type TaskTimes } from "../core/state";
 import { emit } from "../events/emit";
 import { atFlag, loadPlan } from "../sprint/cmd";
 import { renderTaskList, taskLine, updateExecution } from "../sprint/index";
+import { workerNudge } from "../usage/limits";
 
 const PHASES = ["testes", "código", "fila", "revisão", "commit"];
 
@@ -51,12 +52,9 @@ export function run(args: string[]): number {
     st.tasks,
   );
   const ev = { project: ctx.id, session: ctx.session, sprint, task: id, agent: ctx.agent, ts: at };
-  if (sub === "phase") {
-    emit({ ...ev, type: "task.phase", data: { phase: times.phase ?? "" } });
-    console.log(renderTaskList(ctx.root, sprint));
-    return 0;
-  }
-  if (sub === "start") emit({ ...ev, type: "task.start", data: { planned_min: task.planned_min } });
+  if (sub === "phase") emit({ ...ev, type: "task.phase", data: { phase: times.phase ?? "" } });
+  else if (sub === "start")
+    emit({ ...ev, type: "task.start", data: { planned_min: task.planned_min } });
   else
     emit({
       ...ev,
@@ -66,5 +64,7 @@ export function run(args: string[]): number {
   if (sub === "done" && !prev?.start)
     console.error(`aviso: ${id} não tinha início registrado; duração 0.`);
   console.log(renderTaskList(ctx.root, sprint));
+  const nudge = workerNudge(ctx.session);
+  if (nudge) console.log(`\n${nudge}`);
   return 0;
 }

@@ -12,6 +12,7 @@ Uma linha por arquivo: caminho e propósito. Mantido pelo hook `post-edit`.
 - `.gitignore` — arquivos fora do git
 - `.prettierignore` — arquivos fora do Prettier
 - `.prettierrc` — configuração do Prettier
+- `.worker/S10-T09-handoff.md` — Handoff S10/T09 (parte do backlog) — trabalhador Gemini
 - `CHANGELOG.md` — Changelog
 - `CLAUDE.md` — regras deste repo para os agentes
 - `agents/reviewer.md` — Reviewer fixo do Main Harness. Use para revisar cada tarefa entregue da sprint antes de considerá-la pronta - lint e ...
@@ -110,6 +111,8 @@ Uma linha por arquivo: caminho e propósito. Mantido pelo hook `post-edit`.
 - `cli/test/text-s06.test.ts` — S06 text fixes: hx status cleans where/next like the title (B057); session-start keeps `\|` in backlog items (B058).
 - `cli/test/turn-end.test.ts` — B045: the Stop hook emits turn.end only when it lets the agent stop.
 - `cli/test/usage.test.ts` — testes de usage
+- `cli/test/worker-run.test.ts` — hx worker run TNN <handoff>: one detached `claude -p` on OmniRoute (Gemini), env only in the child (ADR 0012).
+- `cli/test/worker-trigger.test.ts` — S10/T07: near the usage limit, the Stop and hx task nudge (once per session) toward the worker skill.
 - `cli/test/worker.test.ts` — hx worker status: OmniRoute (Gemini) worker config check; never touches ~/.claude/settings.json (ADR 0012).
 - `cli/tsconfig.json` — TypeScript estrito do CLI
 - `commands/continue.md` — Retoma a sprint a partir do último handoff (num chat novo)
@@ -187,6 +190,12 @@ Uma linha por arquivo: caminho e propósito. Mantido pelo hook `post-edit`.
 - `skills/tdd-workflow/SKILL.md` — Desenvolvimento guiado por testes nas tarefas da sprint: escrever o teste que falha primeiro, ver falhar (RED), imple...
 - `skills/tdd-workflow/SOURCE.md` — Origem
 - `skills/tdd-workflow/evals/evals.json` — (sem descrição)
+- `skills/worker/SKILL.md` — Passa uma tarefa da sprint a um trabalhador no Gemini (claude -p via OmniRoute, 'hx worker run'), recolhe o relatório...
+- `skills/worker/evals/evals.json` — (sem descrição)
+- `skills/worker/evals/files/README.md` — hx
+- `skills/worker/evals/files/cli/src/hooks/pre-bash.ts` — Blocks destructive shell commands before they run.
+- `skills/worker/evals/files/docs/sprints/S02-plan.md` — Sprint S02 — Tarefas e pedidos
+- `skills/worker/evals/trigger.json` — (sem descrição)
 - `templates/CLAUDE.md` — {{name}}
 - `templates/adr.md` — ADR NNNN — Título curto da decisão
 - `templates/backlog.md` — Backlog — {{name}}
