@@ -64,6 +64,8 @@ export const DATA_SCHEMAS = {
   "task.phase": { phase: s() },
   "task.start": { planned_min: n(opt) },
   "task.done": { duration_s: n(), planned_min: n(opt) },
+  "worker.start": { model: s() },
+  "worker.end": { model: s(), exit_code: n(), duration_s: n() },
   "review.result": { result: s({ enum: ["pass", "fail"] }) },
   usage: {
     model: s(),

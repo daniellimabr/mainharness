@@ -42,6 +42,7 @@ const HELP = `hx <command> [args]
   status --where t --next t   registra onde o projeto está e o próximo passo
   handoff [--show|--consume]  grava (stdin)/mostra o handoff
   worker status               trabalhador no Gemini (OmniRoute): configurado e no ar?
+  worker run TNN <handoff>    roda a tarefa num trabalhador Gemini em segundo plano
   run <cmd...>                roda e mostra só falhas e resumo
   request --title t ...       cria pedido no inbox do harness
   metrics [sprint]            indicadores da sprint

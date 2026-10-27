@@ -60,6 +60,8 @@ Notação: `?` = campo opcional (pode faltar); `| null` = pode ser `null`. Núme
 | `task.start` | `planned_min?` número | `hx task start` |
 | `task.phase` | `phase` texto (`testes`, `código`, `revisão`, `commit`) | `hx task phase <id> <fase>` (tarefa em andamento) |
 | `task.done` | `duration_s` número; `planned_min?` número | `hx task done` |
+| `worker.start` | `model` texto (agente `gemini`) | `hx worker run TNN <handoff>`, ao disparar o trabalhador no OmniRoute (ADR 0012), desde a v0.9.0 |
+| `worker.end` | `model` texto; `exit_code` número; `duration_s` número (agente `gemini`) | Fim do `claude -p` do trabalhador; junto vem `task.phase` `fila` |
 | `review.result` | `result`: `pass` ou `fail` | `hx review pass\|fail` |
 | `usage` | `model` texto; `input`, `output`, `cache_write`, `cache_read` número; `usd` número \| null; `message_id` texto; `transcript`: `main` ou `subagent` | Uma resposta nova do modelo (ADR 0007) |
 | `usage.limits` | `five_hour` número (% usado do limite de 5 h); `five_hour_resets_at` texto \| null (reinício da janela, ISO-8601 UTC); `seven_day` número (% usado do limite semanal); `seven_day_resets_at` texto \| null, desde a v0.8.0 | Hook `Stop`, no máximo a cada 5 min, com o valor de `GET api.anthropic.com/api/oauth/usage` (ADR 0010). Falha (sem login, rede, resposta inválida, mais de 3 s) não grava nada. Os limites são da conta: o `project` é só o do chat que leu. Mapeia para a `limit_window` do Dashboard (janela `five_hour`/`seven_day`, %, `resets_at`) |
