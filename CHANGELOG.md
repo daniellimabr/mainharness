@@ -2,6 +2,18 @@
 
 Versões do Main Harness (versionamento semântico; `0.y.z` até a 1.0).
 
+## [0.10.1] - 2026-10-28
+
+### Correções
+
+- fix(S11/T02): sprint-run stops on the first reply when not on Sonnet
+- fix(S11/T02): Opus is the default chat model; Sonnet picked for sprint-run
+
+### Outros
+
+- chore(S11): execution table after feedback
+- chore(harness): migrate to v0.10.0
+
 ## [0.10.0] - 2026-10-28
 
 ### Novidades
