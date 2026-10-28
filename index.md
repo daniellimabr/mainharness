@@ -13,6 +13,7 @@ Uma linha por arquivo: caminho e propósito. Mantido pelo hook `post-edit`.
 - `.prettierignore` — arquivos fora do Prettier
 - `.prettierrc` — configuração do Prettier
 - `.worker/S10-T09-handoff.md` — Handoff S10/T09 (parte do backlog) — trabalhador Gemini
+- `.worker/S11-T06-handoff.md` — Handoff S11/T06 — Alerta de contexto em 120 mil
 - `CHANGELOG.md` — Changelog
 - `CLAUDE.md` — regras deste repo para os agentes
 - `agents/reviewer.md` — Reviewer fixo do Main Harness. Use para revisar cada tarefa entregue da sprint antes de considerá-la pronta - lint e ...
@@ -101,6 +102,7 @@ Uma linha por arquivo: caminho e propósito. Mantido pelo hook `post-edit`.
 - `cli/test/probe-s05.test.ts` — (sem descrição)
 - `cli/test/release.test.ts` — testes de release
 - `cli/test/repomap.test.ts` — testes de repomap
+- `cli/test/request.test.ts` — hx request --to <id>: writes into a registered project's inbox/; session-start there warns about it.
 - `cli/test/review-security-recheck.test.ts` — Re-review of T13 fixes (commit 0aeaf25): remaining bypasses and false positives in pre-bash.
 - `cli/test/review-security.test.ts` — testes de segurança do pre-bash (achados do Reviewer)
 - `cli/test/run.test.ts` — (sem descrição)
@@ -132,6 +134,7 @@ Uma linha por arquivo: caminho e propósito. Mantido pelo hook `post-edit`.
 - `docs/adr/0010-uso-pelo-endpoint-oauth.md` — ADR 0010 — % de uso pelo endpoint interno do /usage (exceção a "só caminhos oficiais")
 - `docs/adr/0011-retomada-apos-limite.md` — ADR 0011 — Retomada automática do chat após o limite de uso
 - `docs/adr/0012-trabalhadores-gemini.md` — ADR 0012 — Trabalhadores no Gemini pelo OmniRoute
+- `docs/adr/0013-modelo-por-papel.md` — ADR 0013 — Um modelo fixo por papel
 - `docs/backlog.md` — Backlog do Main Harness
 - `docs/contracts/events.md` — Contrato de eventos: Main Harness e Dashboard IA
 - `docs/omniroute.md` — Trabalhadores no Gemini (OmniRoute)
@@ -157,6 +160,7 @@ Uma linha por arquivo: caminho e propósito. Mantido pelo hook `post-edit`.
 - `docs/sprints/S09-release.md` — S09 — Release Report
 - `docs/sprints/S10-plan.md` — S10 — Modo reserva com Gemini (manual × automático), clones em Sonnet e fim da retomada agendada
 - `docs/sprints/S10-release.md` — S10 — Release Report
+- `docs/sprints/S11-plan.md` — S11 — Backlog pendente, todo executado pelo trabalhador Gemini
 - `eslint.config.js` — ESLint flat config
 - `hooks/hooks.json` — hooks do plugin (forma exec chamando o hx)
 - `package-lock.json` — versões travadas das dependências de desenvolvimento

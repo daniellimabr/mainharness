@@ -27,10 +27,25 @@ Código, nomes e mensagens de commit seguem o repo (padrão: inglês). Documenta
 2. Daniel aprova → `hx sprint approve SNN`. Plano mudou depois de aprovado → nova aprovação.
 3. Execução em **chat novo** (`/main-harness:sprint-run SNN`): `hx sprint open SNN`. Republique a lista de tarefas (saída do `hx`) sempre que uma tarefa começa ou termina, e mantenha a lista nativa de tarefas do Claude Code em sincronia, se a ferramenta existir nesta interface; senão a lista do `hx` basta.
 4. Para cada tarefa: `hx task start TNN` → TDD (skill `tdd-workflow`) → lint/tipos zerados → **um commit na `main` por tarefa** → `hx task done TNN`. **Tarefa que cria ou muda tela:** chame a skill `frontend-design` antes do código (e a `dataviz`, se existir, para gráficos); em clone, ponha isso no handoff, e a entrega traz o plano visual da skill.
-5. **Paralelismo:** tarefas cujos arquivos não se cruzam rodam em clones (subagente `main-harness:tech-lead`), cada um com handoff (objetivo, arquivos que pode tocar, estado atual, critério de pronto). Chame o clone com `model: sonnet` (o enquadramento já foi feito em Opus); tarefa complexa vai com `model: opus`, marcada no plano (coluna Agente: "clone (opus)"). **Trabalhador no Gemini** (skill `worker`): tarefa de escopo fechado, poucos arquivos e sem superfície de segurança vai para ele em vez de um clone, um por vez; no plano, coluna Agente "gemini". Ele nunca troca o modelo dos chats. **Dois agentes nunca editam o mesmo arquivo ao mesmo tempo.** Clones não commitam; você commita por tarefa. Sem git worktrees.
-6. **Reviewer** (subagente `main-harness:reviewer`, Sonnet) revisa por onda: uma revisão cobre as tarefas entregues da onda, e ele registra `hx review pass|fail` por tarefa. Tarefa que toca superfície de segurança (hooks, pre-bash, attach, release, entrada externa): chame com `model: opus`. Reprovação volta para o passo 4; a re-revisão continua o mesmo Reviewer (SendMessage), sem abrir outro. Máximo de 2 reprovações por tarefa: na 3ª ele para e escala a você, que decide (com Daniel, se preciso).
+5. **Paralelismo:** tarefas cujos arquivos não se cruzam rodam em clones (subagente `main-harness:tech-lead`), cada um com handoff (objetivo, arquivos que pode tocar, estado atual, critério de pronto), com o modelo da coluna Agente (regra em "Modelo por papel"). **Trabalhador no Gemini** (skill `worker`): um por vez; ele nunca troca o modelo dos chats. **Dois agentes nunca editam o mesmo arquivo ao mesmo tempo.** Clones não commitam; você commita por tarefa. Sem git worktrees.
+6. **Reviewer** (subagente `main-harness:reviewer`) revisa por onda, sempre com `model: opus`: uma revisão cobre as tarefas entregues da onda, e ele registra `hx review pass|fail` por tarefa. Reprovação volta para o passo 4; a re-revisão continua o mesmo Reviewer (SendMessage), sem abrir outro. Máximo de 2 reprovações por tarefa: na 3ª ele para e escala a você, que decide (com Daniel, se preciso).
 7. Daniel testa e dá retorno; cada ajuste pedido: `hx sprint feedback 1` e volta ao passo 4.
 8. Sem ajustes pendentes e com a confirmação de Daniel: `hx sprint close SNN` e você escreve o Release Report (`/main-harness:release-report SNN`).
+
+## Modelo por papel (ADR 0013)
+| Papel | Modelo |
+|---|---|
+| Planejar (sprint plan, ADR, PRD) | Opus (Daniel escolhe no seletor ao abrir o chat) |
+| Orquestrar o `sprint-run` | Sonnet |
+| Executar uma tarefa | pela regra abaixo (coluna Agente do plano) |
+| Revisar (Reviewer) | Opus |
+
+Quem executa, decidido por você no plano e aprovado por Daniel:
+- **Opus** ("clone (opus)"), se vale ao menos uma: decisão de desenho que o plano não fechou; muda contrato usado por outros projetos (eventos, config, comandos do `hx`); lógica nova em área sensível (hooks, `pre-bash`, release, processo com senha); o Sonnet já falhou 2 vezes na tarefa.
+- **Gemini** ("gemini"): escopo fechado, até 3 arquivos, nada sensível, handoff com o teste de aceite.
+- **Sonnet** ("clone (sonnet)"): todo o resto.
+
+O modelo de cada papel não muda com o % de uso. Perto do limite, grave o handoff e pare.
 
 Decisão de arquitetura → ADR (skill `adr`). Funcionalidade de produto → PRD (skill `prd`). Diagramas → skill `archify`. Documentos (sprint plan, ADR, PRD, Release Report, CHANGELOG) são seus; para ganhar tempo, delegue a um clone seu.
 
@@ -41,7 +56,7 @@ Estilo **Ponytail**: o melhor código é o que você não escreveu. Antes de esc
 Direto na `main`, um commit por tarefa, no formato `<tipo>(SNN/TNN): <resumo>` (tipo `feat`, `fix`, `docs`, `chore`, `refactor` ou `test`). Nada de `push --force`, `reset --hard` ou apagar fora do repo (o hook `pre-bash` bloqueia). Nunca edite `C:\harness-stable`.
 
 ## Limite de contexto
-Ao receber o pedido de handoff (perto de 250 mil tokens), escreva-o na hora com `hx handoff` (heredoc no stdin, pelo Bash: o PowerShell 5.1 troca acentos por `?` ao mandar texto para o `hx`) e continue a tarefa: a compactação automática libera espaço e o handoff volta para você.
+Ao receber o pedido de handoff (a partir de 120 mil tokens), escreva-o na hora com `hx handoff` (heredoc no stdin, pelo Bash: o PowerShell 5.1 troca acentos por `?` ao mandar texto para o `hx`) e continue a tarefa: a compactação automática libera espaço e o handoff volta para você.
 
 ## Precisa de algo no harness?
 `hx request --title ... --need ... --why ... --priority ...` cria um pedido no inbox do Main Harness. Nunca edite o harness a partir de outro projeto.
