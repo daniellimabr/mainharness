@@ -25,8 +25,8 @@ A S10 também trouxe o gatilho de 90%: perto do limite de uso, o harness mandava
 
 | Papel | Modelo | Onde |
 |---|---|---|
-| Planejar (sprint plan, ADR, PRD) | **Opus** | chat de planejamento, Opus escolhido por Daniel no seletor |
-| Orquestrar a execução (`sprint-run`) | **Sonnet** | chat novo; padrão do agente `tech-lead` |
+| Planejar (sprint plan, ADR, PRD) | **Opus** | chat de planejamento; padrão do agente `tech-lead` |
+| Orquestrar a execução (`sprint-run`) | **Sonnet** | chat novo, Sonnet escolhido por Daniel no seletor |
 | Executar uma tarefa | **pela regra abaixo** | coluna Agente do plano |
 | Revisar (Reviewer) | **Opus** | `model: opus` ao chamar |
 
@@ -42,5 +42,5 @@ A S10 também trouxe o gatilho de 90%: perto do limite de uso, o harness mandava
 
 - O chat de execução em Sonnet relê contexto a preço de Sonnet; o Opus fica no plano e na revisão, onde erro custa mais.
 - O harness grava modelo e tokens por modelo no `sprint.metrics` (S11/T05) para medir. A S12 é a primeira sprint inteira no modelo novo e compara com a S10 e a S11.
-- Daniel escolhe Opus no seletor ao abrir um chat de planejamento; o `sprint-run` avisa se o chat de execução estiver em Opus (sem trocar sozinho).
+- O padrão do chat é Opus (decisão de Daniel no teste da S11). Daniel escolhe Sonnet no seletor ao abrir o chat do `sprint-run`, que avisa se não estiver em Sonnet (sem trocar sozinho).
 - Se a regra errar muito (retrabalho em tarefas de Gemini ou Sonnet), revemos a regra, não voltamos ao gatilho.
