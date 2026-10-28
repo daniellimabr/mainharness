@@ -517,6 +517,10 @@ export interface SprintMetrics {
   wait_min: number;
   /** B045: wall_min minus the waits inside it that are not already pauses. */
   work_min: number;
+  /** T05: cost, tokens and distinct models from the usage events. */
+  usd_by_model: Record<string, number>;
+  tokens_by_model: Record<string, Record<string, number>>;
+  models_by_task: Record<string, string[]>;
 }
 
 /** B045: wait intervals [turn end, next prompt] per session, overlaps merged, sorted. */
@@ -593,6 +597,9 @@ export function computeMetrics(project: string, sprintId: string, plan: Plan): S
     feedback_usd: r4(rounds.reduce((acc, r) => acc + r.usd, 0)),
     wait_min: 0,
     work_min: 0,
+    usd_by_model: {},
+    tokens_by_model: {},
+    models_by_task: {},
   };
   const waits = waitIntervals(evs);
   m.wait_min = r1(waits.reduce((acc, [s = 0, e = 0]) => acc + e - s, 0) / 60000);
@@ -609,14 +616,30 @@ export function computeMetrics(project: string, sprintId: string, plan: Plan): S
       const task = e.task ?? "sem-tarefa";
       m.usd_by_agent[agent] = (m.usd_by_agent[agent] ?? 0) + usd;
       m.usd_by_task[task] = (m.usd_by_task[task] ?? 0) + usd;
+      const model =
+        String(d.model ?? "desconhecido")
+          .replace(/[^A-Za-z0-9._:@-]/g, "_")
+          .slice(0, 128) || "desconhecido";
+      m.usd_by_model[model] = (m.usd_by_model[model] ?? 0) + usd;
+      const tk = (m.tokens_by_model[model] ??= {
+        input: 0,
+        output: 0,
+        cache_write: 0,
+        cache_read: 0,
+      });
+      for (const k of ["input", "output", "cache_write", "cache_read"])
+        tk[k] = (tk[k] ?? 0) + num(d[k]);
+      const ms = (m.models_by_task[task] ??= []);
+      if (!ms.includes(model)) ms.push(model);
     } else if (e.type === "sprint.feedback") m.rework += num(d.adjustments);
     else if (e.type === "review.result" && d.result === "fail") m.review_rejections++;
     else if (e.type === "alert.context") m.context_alerts++;
     else if (e.type === "handoff") m.handoffs++;
   }
   m.usd = r4(m.usd);
-  for (const rec of [m.usd_by_agent, m.usd_by_task])
+  for (const rec of [m.usd_by_agent, m.usd_by_task, m.usd_by_model])
     for (const [k, v] of Object.entries(rec)) rec[k] = r4(v);
+  for (const ms of Object.values(m.models_by_task)) ms.sort();
   const ts = (type: string) =>
     evs
       .filter((e) => e.type === type)
@@ -661,6 +684,17 @@ export function renderMetrics(sprintId: string, plan: Plan, m: SprintMetrics): s
     Object.entries(m.usd_by_agent)
       .map(([k, v]) => `${k} ${usd(v)}`)
       .join(" · ") || "—";
+  const byModel =
+    Object.entries(m.usd_by_model)
+      .map(([k, v]) => `${k} ${usd(v)}`)
+      .join(" · ") || "—";
+  const tokByModel =
+    Object.entries(m.tokens_by_model)
+      .map(
+        ([k, t]) =>
+          `${k} ${tok(t.input ?? 0)} / ${tok(t.output ?? 0)} / ${tok(t.cache_write ?? 0)} / ${tok(t.cache_read ?? 0)}`,
+      )
+      .join(" · ") || "—";
   return [
     `### Indicadores — ${sprintId}`,
     "",
@@ -679,6 +713,8 @@ export function renderMetrics(sprintId: string, plan: Plan, m: SprintMetrics): s
     `| Tokens (entrada / saída / escrita em cache / leitura de cache) | ${tok(m.tokens_input)} / ${tok(m.tokens_output)} / ${tok(m.tokens_cache_write)} / ${tok(m.tokens_cache_read)} |`,
     `| Custo total | ${usd(m.usd)} |`,
     `| Custo por agente | ${byAgent} |`,
+    `| Custo por modelo | ${byModel} |`,
+    `| Tokens por modelo (entrada / saída / escrita em cache / leitura de cache) | ${tokByModel} |`,
     `| Retrabalho (ajustes pedidos por Daniel) | ${m.rework} |`,
     `| Rodadas de ajuste (quantidade · tempo · custo) | ${m.feedback_rounds} · ${fmtMin(m.feedback_min)} · ${usd(m.feedback_usd)} |`,
     `| Reprovações do Reviewer | ${m.review_rejections} |`,

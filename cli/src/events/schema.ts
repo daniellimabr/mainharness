@@ -4,7 +4,14 @@ import { ULID_RE } from "./ulid";
 
 export const EVENT_VERSION = 1;
 
-type FieldType = "string" | "number" | "boolean" | "string[]" | "numberRecord";
+type FieldType =
+  | "string"
+  | "number"
+  | "boolean"
+  | "string[]"
+  | "numberRecord"
+  | "numberRecordMap"
+  | "stringsRecord";
 interface Field {
   type: FieldType;
   optional?: boolean;
@@ -60,6 +67,9 @@ export const DATA_SCHEMAS = {
     feedback_usd: n(opt),
     wait_min: n(opt),
     work_min: n(opt),
+    usd_by_model: { type: "numberRecord", optional: true },
+    tokens_by_model: { type: "numberRecordMap", optional: true },
+    models_by_task: { type: "stringsRecord", optional: true },
   },
   "task.phase": { phase: s() },
   "task.start": { planned_min: n(opt) },
@@ -166,6 +176,21 @@ function checkField(key: string, f: Field, v: unknown, errs: string[]): void {
         for (const [k, x] of Object.entries(v as Record<string, unknown>)) {
           if (!ID_RE.test(k) || typeof x !== "number" || !Number.isFinite(x))
             errs.push(`data.${key}.${k}: expected number`);
+        }
+      break;
+    case "numberRecordMap":
+    case "stringsRecord":
+      if (typeof v !== "object" || Array.isArray(v)) errs.push(`data.${key}: expected object`);
+      else
+        for (const [k, x] of Object.entries(v as Record<string, unknown>)) {
+          if (!ID_RE.test(k)) errs.push(`data.${key}.${k}: bad key`);
+          else
+            checkField(
+              `${key}.${k}`,
+              f.type === "stringsRecord" ? { type: "string[]" } : { type: "numberRecord" },
+              x,
+              errs,
+            );
         }
       break;
   }
