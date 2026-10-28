@@ -84,6 +84,7 @@ Uma linha por arquivo: caminho e propósito. Mantido pelo hook `post-edit`.
 - `cli/src/usage/price.ts` — US$ estimate for one response from its transcript usage block and the config price table.
 - `cli/src/usage/transcript.ts` — TranscriptSource: reads Claude Code JSONL transcripts incrementally and emits `usage` events.
 - `cli/test/attach.test.ts` — E2E tests for hx attach and hx skills, in temp folders with spaces.
+- `cli/test/bench.test.ts` — scripts/bench.mjs: one S12 run (challenge x model) in a temp clone, with a fake claude (HX_CLAUDE_BIN).
 - `cli/test/commands.test.ts` — testes de commands
 - `cli/test/config.test.ts` — (sem descrição)
 - `cli/test/doctor.test.ts` — testes de doctor
@@ -121,6 +122,7 @@ Uma linha por arquivo: caminho e propósito. Mantido pelo hook `post-edit`.
 - `cli/test/worker-run.test.ts` — hx worker run TNN <handoff>: one detached `claude -p` on OmniRoute (Gemini), env only in the child (ADR 0012).
 - `cli/test/worker-trigger.test.ts` — S10/T07: near the usage limit, the Stop and hx task nudge (once per session) toward the worker skill.
 - `cli/test/worker.test.ts` — hx worker status: OmniRoute (Gemini) worker config check; never touches ~/.claude/settings.json (ADR 0012).
+- `cli/test/zz-worker-ref.ts` — hx worker status|run: Gemini (OmniRoute) workers. Never writes ~/.claude/settings.json: Claude Code
 - `cli/tsconfig.json` — TypeScript estrito do CLI
 - `commands/continue.md` — Retoma a sprint a partir do último handoff (num chat novo)
 - `commands/inbox.md` — Leva os pedidos do inbox do Main Harness para o backlog (só no repo do harness)
@@ -140,8 +142,14 @@ Uma linha por arquivo: caminho e propósito. Mantido pelo hook `post-edit`.
 - `docs/adr/0011-retomada-apos-limite.md` — ADR 0011 — Retomada automática do chat após o limite de uso
 - `docs/adr/0012-trabalhadores-gemini.md` — ADR 0012 — Trabalhadores no Gemini pelo OmniRoute
 - `docs/adr/0013-modelo-por-papel.md` — ADR 0013 — Um modelo fixo por papel
+- `docs/avaliacao-observabilidade.md` — Avaliação de observabilidade: Main Harness e Dashboard IA
 - `docs/backlog.md` — Backlog do Main Harness
 - `docs/contracts/events.md` — Contrato de eventos: Main Harness e Dashboard IA
+- `docs/experiments/S12-protocolo.md` — S12 — Protocolo do experimento de modelos
+- `docs/experiments/S12/desafio-1.md` — Handoff — S12 / Desafio 1 (B099): lock do `hx worker run` antes do spawn
+- `docs/experiments/S12/desafio-2.md` — Handoff — S12 / Desafio 2 (B105): trabalhador que morre sem relatório
+- `docs/experiments/S12/hidden/d1-hidden.test.ts` — S12 hidden tests, challenge 1 (B099): the lock of `hx worker run` is taken before the spawn.
+- `docs/experiments/S12/hidden/d2-hidden.test.ts` — S12 hidden tests, challenge 2 (B105): a worker that dies without a report gets a failure report.
 - `docs/omniroute.md` — Trabalhadores no Gemini (OmniRoute)
 - `docs/roadmap.md` — Roadmap do Main Harness
 - `docs/sprints/S00-plan.md` — sprint plan S00 (criação do harness)
@@ -167,10 +175,12 @@ Uma linha por arquivo: caminho e propósito. Mantido pelo hook `post-edit`.
 - `docs/sprints/S10-release.md` — S10 — Release Report
 - `docs/sprints/S11-plan.md` — S11 — Backlog pendente, todo executado pelo trabalhador Gemini
 - `docs/sprints/S11-release.md` — S11 — Release Report
+- `docs/sprints/S12-plan.md` — S12 — Experimento: Opus × Sonnet × Gemini na mesma tarefa
 - `eslint.config.js` — ESLint flat config
 - `hooks/hooks.json` — hooks do plugin (forma exec chamando o hx)
 - `package-lock.json` — versões travadas das dependências de desenvolvimento
 - `package.json` — scripts e dependências de desenvolvimento
+- `scripts/bench.mjs` — S12 experiment: one run of a challenge on one model, in a temp clone, under the same conditions
 - `settings.json` — configuração do plugin: agente principal = tech-lead
 - `skills-user/attach/SKILL.md` — Conecta o repo aberto ao Main Harness
 - `skills/adr/SKILL.md` — Registra uma decisão de arquitetura como ADR em docs/adr/NNNN-slug.md, com contexto, o que a documentação diz, altern...
