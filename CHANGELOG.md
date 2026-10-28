@@ -2,6 +2,33 @@
 
 Versões do Main Harness (versionamento semântico; `0.y.z` até a 1.0).
 
+## [0.10.0] - 2026-10-28
+
+### Novidades
+
+- feat(S11/T07): task done/phase refresh an auto section of the session handoff
+- feat(S11/T03): lean executor persona with phases; worker runs --agent executor
+- feat(S11/T08): hx eval sandbox runs the repo hx bundle
+- feat(S11/T05): cost and tokens per model in sprint.metrics and hx metrics
+- feat(S11/T09): hx request --to <project> and session-start inbox notice
+- feat(S11/T06): context alert at 120k tokens by default
+- feat(S11/T02): Sonnet as default execution model, Opus check in plan/run
+
+### Correções
+
+- fix(S11/T04): worker skill falls back to a clone without asking
+
+### Outros
+
+- docs(S11/T10): backlog, roadmap and execution table for v0.10.0
+- refactor(S11/T04): remove the 90% usage trigger; add lint phase
+- docs(S11/T01): ADR 0013 model per role and tech-lead rule
+- docs(S11): sprint plan
+- chore(inbox): move 2 requests to backlog
+- chore(harness): migrate to v0.9.0
+- chore(S10): index update
+- docs(S10): release report
+
 ## [0.9.0] - 2026-10-27
 
 ### Novidades
