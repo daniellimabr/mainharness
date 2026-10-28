@@ -1,4 +1,4 @@
-# S12 — Protocolo do experimento de modelos
+﻿# S12 — Protocolo do experimento de modelos
 
 Objetivo: comparar **Opus**, **Sonnet** e **Gemini** na mesma tarefa, nas mesmas condições, em qualidade, velocidade, tokens/custo, chamadas e consumo da franquia. O resultado vai para `docs/experiments/S12-resultado.md`.
 
@@ -24,7 +24,7 @@ Exemplo: `node scripts/bench.mjs desafio-1 opus --base f805292`. Grava em `docs/
 
 ## Testes de aceite e ocultos
 
-- **Aceite:** vai no handoff; o modelo o escreve e faz passar. O bench roda a suíte inteira (`npm test`) depois do `npm run build`.
+- **Aceite:** vai no handoff; o modelo o escreve e faz passar. O bench roda `cli/test/worker-run.test.ts` (o comando do handoff) depois do `npm run build`.
 - **Ocultos:** casos de borda que o modelo não vê. Ficam em `docs/experiments/S12/hidden/<desafio>/`, com o **mesmo caminho relativo** que terão no repo (ex.: `hidden/desafio-1/cli/test/d1-hidden.test.ts`). O bench os copia para o clone só depois de gravar o diff e roda só esses arquivos.
 - Os ocultos precisam **falhar no commit de partida**.
 
