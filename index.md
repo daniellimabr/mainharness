@@ -166,6 +166,7 @@ Uma linha por arquivo: caminho e propósito. Mantido pelo hook `post-edit`.
 - `docs/sprints/S10-plan.md` — S10 — Modo reserva com Gemini (manual × automático), clones em Sonnet e fim da retomada agendada
 - `docs/sprints/S10-release.md` — S10 — Release Report
 - `docs/sprints/S11-plan.md` — S11 — Backlog pendente, todo executado pelo trabalhador Gemini
+- `docs/sprints/S11-release.md` — S11 — Release Report
 - `eslint.config.js` — ESLint flat config
 - `hooks/hooks.json` — hooks do plugin (forma exec chamando o hx)
 - `package-lock.json` — versões travadas das dependências de desenvolvimento
