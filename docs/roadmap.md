@@ -47,9 +47,15 @@ Quando o Dashboard for para a nuvem. O adaptador de consumo do ADR 0007 já prev
 
 ## 8. Trabalhadores no Gemini (feito na S10, v0.9.0)
 
-O Tech Lead passa tarefas simples a trabalhadores `claude -p` no Gemini, pelo OmniRoute local, sempre que parecer viável; perto do limite do Claude, tudo o que estiver aberto (ADR 0012, guia em `docs/omniroute.md`). O chat nunca muda de modelo: as variáveis do OmniRoute ficam só no processo do trabalhador. Só o provedor Gemini fica ligado, numa conta dedicada, e o `hx usage` conta o trabalhador à parte. Próximos passos: medir quais tarefas o Gemini entrega bem, entender o atraso fixo de ~8 s por pedido no plano grátis e testar outros modelos (`worker.model`).
+O Tech Lead passa tarefas simples a trabalhadores `claude -p` no Gemini, pelo OmniRoute local, quando a regra do plano manda (ADR 0012 e ADR 0013, guia em `docs/omniroute.md`). O chat nunca muda de modelo: as variáveis do OmniRoute ficam só no processo do trabalhador. Só o provedor Gemini fica ligado, numa conta dedicada, e o `hx usage` conta o trabalhador à parte. Próximos passos: medir quais tarefas o Gemini entrega bem, entender o atraso fixo de ~8 s por pedido no plano grátis e testar outros modelos (`worker.model`).
+
+## 9. Um modelo fixo por papel (feito na S11, v0.10.0)
+
+Opus planeja e revisa, Sonnet orquestra a execução, e quem executa cada tarefa (Gemini, Sonnet ou Opus) sai de uma regra escrita no plano (ADR 0013). O gatilho de 90% saiu. Clones e trabalhadores usam a persona enxuta `executor`. O `sprint.metrics` traz custo e tokens por modelo, e o alerta de contexto passou para 120 mil. Próximo passo: a S12 é a primeira sprint inteira no modelo novo e compara o custo com a S10 e a S11.
 
 ## Avaliado e descartado por ora
+
+- **Troca de modelo pelo % de uso (gatilho de 90%, S10).** A escolha de modelo virou reação ao limite, não decisão do plano (ADR 0013).
 
 - **OmniRoute sempre no meio, com a assinatura do Claude ligada a ele.** Risco nos termos de uso da Anthropic.
 - **Modo reserva no `~/.claude/settings.json`.** O Claude Code aplica o arquivo ao vivo em todos os chats abertos e derrubou o chat da S10 (ADR 0012).

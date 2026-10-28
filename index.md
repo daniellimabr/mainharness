@@ -14,8 +14,11 @@ Uma linha por arquivo: caminho e propósito. Mantido pelo hook `post-edit`.
 - `.prettierrc` — configuração do Prettier
 - `.worker/S10-T09-handoff.md` — Handoff S10/T09 (parte do backlog) — trabalhador Gemini
 - `.worker/S11-T06-handoff.md` — Handoff S11/T06 — Alerta de contexto em 120 mil
+- `.worker/S11-T07-handoff.md` — Handoff S11/T07 — Handoff atualizado em `task done/phase` (B101)
+- `.worker/S11-T08-handoff.md` — Handoff S11/T08 — `hx eval` com o `hx` do repo (B102)
 - `CHANGELOG.md` — Changelog
 - `CLAUDE.md` — regras deste repo para os agentes
+- `agents/executor.md` — Executor de uma tarefa da sprint do Main Harness, a partir de um handoff com objetivo, arquivos permitidos, estado at...
 - `agents/reviewer.md` — Reviewer fixo do Main Harness. Use para revisar cada tarefa entregue da sprint antes de considerá-la pronta - lint e ...
 - `agents/tech-lead.md` — Tech Lead do Main Harness. Sessão principal de todo projeto conectado; também usado como clone para executar uma tare...
 - `bin/hx` — hx on the agents' PATH (Git Bash). Resolves the bundle relative to this script.
@@ -82,6 +85,7 @@ Uma linha por arquivo: caminho e propósito. Mantido pelo hook `post-edit`.
 - `cli/src/usage/transcript.ts` — TranscriptSource: reads Claude Code JSONL transcripts incrementally and emits `usage` events.
 - `cli/test/attach.test.ts` — E2E tests for hx attach and hx skills, in temp folders with spaces.
 - `cli/test/commands.test.ts` — testes de commands
+- `cli/test/config.test.ts` — (sem descrição)
 - `cli/test/doctor.test.ts` — testes de doctor
 - `cli/test/e2e.test.ts` — End to end with paths that have spaces: the real plugin root ("C:\Main Harness" on Daniel's
 - `cli/test/eval.test.ts` — (sem descrição)
@@ -93,6 +97,7 @@ Uma linha por arquivo: caminho e propósito. Mantido pelo hook `post-edit`.
 - `cli/test/hooks.test.ts` — testes de hooks
 - `cli/test/limits.test.ts` — B064: plan usage % (5 h and weekly) from the OAuth usage endpoint, throttled in the Stop.
 - `cli/test/lint.test.ts` — testes de lint
+- `cli/test/metrics.test.ts` — (sem descrição)
 - `cli/test/migrate.test.ts` — testes de migrate
 - `cli/test/paths.test.ts` — testes de paths (HARNESS_HOME)
 - `cli/test/pre-bash-s04.test.ts` — pre-bash S04: cd to /c/... denied, stale bundle on commit asks, Remove-Item with spaces inside the repo allowed.
@@ -173,6 +178,7 @@ Uma linha por arquivo: caminho e propósito. Mantido pelo hook `post-edit`.
 - `skills/archify/SOURCE.md` — Origem
 - `skills/handoff/SKILL.md` — Escreve um handoff curto (máx. ~40 linhas): objetivo, estado atual, arquivos que pode tocar, decisões, critério de pr...
 - `skills/handoff/evals/evals.json` — (sem descrição)
+- `skills/handoff/evals/trigger.json` — (sem descrição)
 - `skills/optional/frontend-design/SKILL.md` — Guidance for distinctive, intentional visual design when building new UI or reshaping an existing one. Helps with aes...
 - `skills/optional/frontend-design/SOURCE.md` — Origem
 - `skills/optional/webapp-testing/SKILL.md` — Toolkit for interacting with and testing local web applications using Playwright. Supports verifying frontend functio...

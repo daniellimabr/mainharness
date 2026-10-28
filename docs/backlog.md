@@ -93,20 +93,21 @@ Itens ainda não planejados. Pedidos dos projetos chegam pelo `inbox/` e `/inbox
 | B083 | `hx task phase` falha em tarefa reaberta por ajuste | inbox: 2026-10-22-dashboard-ia-hx-task-phase-falha-em-tarefa-reaberta-por-ajuste.md | média | novo |
 | B084 | Marca de status no `backlog.md` | inbox: 2026-10-22-dashboard-ia-marca-de-status-no-backlog-md.md | alta | novo |
 | B085 | Marcas de status do backlog nas skills `sprint-plan` e `release-report` | inbox: 2026-10-22-dashboard-ia-marcas-de-status-do-backlog-nas-skills-sprint-plan-e-release.md | média | novo |
-| B086 | Remover a retomada automática agendada de sessão | inbox: 2026-10-22-dashboard-ia-remover-retomada-automatica-agendada-de-sessao.md | alta | planejado (S10) |
-| B087 | Retomada automática após limite de uso não funcionou (Windows) | inbox: 2026-10-22-dashboard-ia-retomada-automatica-apos-limite-de-uso-nao-funcionou-windows.md | alta | planejado (S10) |
+| B086 | Remover a retomada automática agendada de sessão | inbox: 2026-10-22-dashboard-ia-remover-retomada-automatica-agendada-de-sessao.md | alta | feito (S10) |
+| B087 | Retomada automática após limite de uso não funcionou (Windows) | inbox: 2026-10-22-dashboard-ia-retomada-automatica-apos-limite-de-uso-nao-funcionou-windows.md | alta | feito (S10) |
 | B088 | Reviewer com dois nomes nos eventos | inbox: 2026-10-22-dashboard-ia-reviewer-com-dois-nomes-nos-eventos.md | média | novo |
 | B089 | Roadmap não é atualizado no fechamento da sprint | inbox: 2026-10-22-dashboard-ia-roadmap-nao-e-atualizado-no-fechamento-da-sprint.md | alta | novo |
 | B090 | `hx release` não recusa pelo `SNN-release.md` da sprint aberta | inbox: 2026-10-22-main-harness-hx-release-nao-recusa-pelo-snn-release-md-da-sprint-aberta.md | baixa | novo |
 | B091 | `hx setup` e `doctor`: só falar do que mudou | inbox: 2026-10-22-main-harness-hx-setup-e-doctor-so-falar-do-que-mudou.md | média | novo |
 | B092 | Modo auto nega `git status` logo após `hx release` falhar | inbox: 2026-10-22-main-harness-modo-auto-nega-git-status-logo-apos-hx-release-falhar.md | baixa | novo |
 | B093 | Fator de estimativa padrão para a primeira sprint | inbox: 2026-10-23-6thgear-fator-de-estimativa-padrao-para-a-primeira-sprint.md | média | novo |
-| B094 | Clones marcam as fases testes, código e lint | inbox: 2026-10-23-dashboard-ia-clones-marcam-as-fases-testes-codigo-e-lint.md | média | novo |
+| B094 | Clones marcam as fases testes, código e lint | inbox: 2026-10-23-dashboard-ia-clones-marcam-as-fases-testes-codigo-e-lint.md | média | feito (S11) |
 | B095 | `hx sprint approve` substitui a seção Aprovação antiga em vez de falhar quando o plano muda | inbox: 2026-10-23-dashboard-ia-hx-sprint-approve-substitui-a-secao-aprovacao-quando-o-plano.md | média | novo |
 | B096 | Comando `hx shot` para tirar print com navegador headless e apoiar conferência visual do Reviewer | inbox: 2026-10-23-dashboard-ia-reviewer-com-prints-garantidos-hx-shot.md | média | novo |
-| B097 | `workerNudge` guarda lista de sessões para evitar que dois chats perto do limite alternem o aviso | roadmap | baixa | novo |
-| B098 | Aviso de limite considera `resets_at` para não avisar após a janela reiniciar com leitura velha | roadmap | baixa | novo |
+| B097 | `workerNudge` guarda lista de sessões para evitar que dois chats perto do limite alternem o aviso | roadmap | baixa | descartado (S11, ADR 0013) |
+| B098 | Aviso de limite considera `resets_at` para não avisar após a janela reiniciar com leitura velha | roadmap | baixa | descartado (S11, ADR 0013) |
 | B099 | Gravar o lock de `hx worker run` antes do spawn para impedir execução simultânea | roadmap | baixa | novo |
 | B100 | `hx worker status` diz "pronto" com o login do Gemini expirado no OmniRoute: testar uma chamada curta ao modelo | S10/T09 | média | novo |
-| B101 | Handoff da sessão atualizado sozinho em `hx task done/phase` (estado das tarefas e arquivos não commitados) | inbox: 2026-10-27-main-harness-handoff-atualizado-a-cada-tarefa.md | média | novo |
-| B102 | `hx eval`: o `hx` da sandbox é o `cli/dist/hx.js` do repo, não o estável | inbox: 2026-10-27-main-harness-hx-eval-usa-o-hx-do-repo-nao-o-estavel.md | alta | novo |
+| B101 | Handoff da sessão atualizado sozinho em `hx task done/phase` (estado das tarefas e arquivos não commitados) | inbox: 2026-10-27-main-harness-handoff-atualizado-a-cada-tarefa.md | média | feito (S11) |
+| B102 | `hx eval`: o `hx` da sandbox é o `cli/dist/hx.js` do repo, não o estável | inbox: 2026-10-27-main-harness-hx-eval-usa-o-hx-do-repo-nao-o-estavel.md | alta | feito (S11) |
+| B103 | Experimento: a mesma tarefa-desafio (nova, de teste) entregue ao Gemini e a um clone Sonnet; comparar qualidade, tempo, chamadas e consumo da franquia Claude | Daniel (S11) | alta | novo |
