@@ -603,9 +603,12 @@ export function computeMetrics(project: string, sprintId: string, plan: Plan): S
   };
   const waits = waitIntervals(evs);
   m.wait_min = r1(waits.reduce((acc, [s = 0, e = 0]) => acc + e - s, 0) / 60000);
+  const seenMsg = new Set<unknown>(); // a deleted usage-cache re-emits old responses
   for (const e of evs) {
     const d = e.data;
     if (e.type === "usage") {
+      if (d.message_id !== undefined && seenMsg.has(d.message_id)) continue;
+      seenMsg.add(d.message_id);
       m.tokens_input += num(d.input);
       m.tokens_output += num(d.output);
       m.tokens_cache_write += num(d.cache_write);

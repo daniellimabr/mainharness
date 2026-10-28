@@ -12,6 +12,32 @@ beforeEach(() => {
 });
 afterEach(() => env.cleanup());
 
+it("sprint.metrics: two usage events with the same message_id count once", () => {
+  const plan = parsePlan(
+    fs.readFileSync(path.join(REPO_ROOT, "templates", "sprint-plan.md"), "utf8"),
+  );
+  for (let i = 0; i < 2; i++)
+    emit({
+      project: "proj-d",
+      sprint: "S01",
+      task: "T01",
+      type: "usage",
+      data: {
+        model: "claude-sonnet-5-5",
+        input: 10,
+        output: 5,
+        cache_write: 2,
+        cache_read: 100,
+        usd: 0.5,
+        message_id: "dup",
+        transcript: "main",
+      },
+    });
+  const m = computeMetrics("proj-d", "S01", plan);
+  expect(m.usd).toBe(0.5);
+  expect(m.tokens_input).toBe(10);
+});
+
 it("sprint.metrics: cost, tokens and models per model, schema-valid, shown by renderMetrics", () => {
   const plan = parsePlan(
     fs.readFileSync(path.join(REPO_ROOT, "templates", "sprint-plan.md"), "utf8"),

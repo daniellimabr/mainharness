@@ -225,6 +225,25 @@ describe("hx usage", () => {
     }
   });
 
+  it("counts each message_id once even after the usage cache is deleted", () => {
+    const proj = fakeProject();
+    const cfg = tempDir("hx claude");
+    try {
+      const name = path.resolve(proj).replace(/[^A-Za-z0-9-]/g, "-");
+      fs.cpSync(FIX, path.join(cfg, "projects", name), { recursive: true });
+      const opts = { cwd: proj, env: { HARNESS_HOME: env.home, CLAUDE_CONFIG_DIR: cfg } };
+      const acc = (out: string) => out.split("\n").find((l) => l.startsWith("Acumulado"));
+      const first = acc(runHx(["usage"], opts).stdout);
+      fs.rmSync(path.join(env.home, "cache", "usage"), { recursive: true, force: true });
+      const second = runHx(["usage"], opts).stdout;
+      expect(acc(second)).toBe(first);
+      expect(second).toMatch(/Novo nesta leitura \(0 respostas\)/);
+    } finally {
+      rm(proj);
+      rm(cfg);
+    }
+  });
+
   it("puts an unpriced model in a 'fora do Claude' line, outside the Claude total", () => {
     const proj = fakeProject();
     const cfg = tempDir("hx claude");

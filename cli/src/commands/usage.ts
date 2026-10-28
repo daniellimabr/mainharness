@@ -31,7 +31,17 @@ const line = (t: Totals) =>
   `entrada ${fmt(t.input)} · saída ${fmt(t.output)} · cache escrito ${fmt(t.cache_write)} · ` +
   `cache lido ${fmt(t.cache_read)} · US$ ${t.usd.toLocaleString("pt-BR", { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`;
 
-function summary(title: string, all: HarnessEvent[]): string[] {
+/** Keeps the first event of each message_id (a deleted usage-cache re-emits old responses). */
+function uniq(evs: HarnessEvent[]): HarnessEvent[] {
+  const seen = new Set<unknown>();
+  return evs.filter((e) => {
+    const id = e.data.message_id;
+    return id === undefined || (!seen.has(id) && seen.add(id));
+  });
+}
+
+function summary(title: string, events: HarnessEvent[]): string[] {
+  const all = uniq(events);
   const total = zero();
   const spareTotal = zero();
   const by = { agente: new Map<string, Totals>(), modelo: new Map<string, Totals>() };
@@ -90,6 +100,9 @@ export function run(args: string[]): number {
         .readdirSync(dir)
         .filter((f) => f.endsWith(".jsonl"))
         .map((f) => f.slice(0, -6));
+  const known = new Set(
+    readEvents((e) => e.type === "usage" && e.project === ctx.id).map((e) => e.data.message_id),
+  );
   const fresh: HarnessEvent[] = [];
   for (const id of sessions) {
     const transcriptPath = path.join(dir, `${id}.jsonl`);
@@ -110,7 +123,10 @@ export function run(args: string[]): number {
   console.log(
     [
       `Consumo de ${ctx.id} (US$ estimado):`,
-      ...summary("Novo nesta leitura", fresh),
+      ...summary(
+        "Novo nesta leitura",
+        fresh.filter((e) => !known.has(e.data.message_id)),
+      ),
       ...summary("Acumulado", all),
       ...(lim ? [lim] : []),
     ].join("\n"),
