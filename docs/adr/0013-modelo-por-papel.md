@@ -42,5 +42,5 @@ A S10 também trouxe o gatilho de 90%: perto do limite de uso, o harness mandava
 
 - O chat de execução em Sonnet relê contexto a preço de Sonnet; o Opus fica no plano e na revisão, onde erro custa mais.
 - O harness grava modelo e tokens por modelo no `sprint.metrics` (S11/T05) para medir. A S12 é a primeira sprint inteira no modelo novo e compara com a S10 e a S11.
-- O padrão do chat é Opus (decisão de Daniel no teste da S11). Daniel escolhe Sonnet no seletor ao abrir o chat do `sprint-run`, que avisa se não estiver em Sonnet (sem trocar sozinho).
+- O padrão do chat é Opus (decisão de Daniel no teste da S11). Daniel escolhe Sonnet no seletor ao abrir o chat do `sprint-run`, que para na primeira resposta, sem rodar nada, se não estiver em Sonnet (sem trocar sozinho). Um bloqueio por hook, antes de gastar token, não é confiável: o chat do VS Code abre sem informar o modelo ao `SessionStart`.
 - Se a regra errar muito (retrabalho em tarefas de Gemini ou Sonnet), revemos a regra, não voltamos ao gatilho.
