@@ -18,4 +18,5 @@ Horários de Brasília (UTC−3). ✅ feita · 🔄 em andamento · ⬜ a fazer.
 | ✅ | T08 | `hx eval` com o `hx` do repo (B102) | gemini | 17 min | 23:27 | 23:44 | 7 min (fila: 1 min, revisão: 9 min) |
 | ✅ | T09 | `hx request --to <projeto>` + aviso no `session-start` | clone (sonnet) | 21 min | 23:08 | 23:32 | 11 min (fila: 8 min, revisão: 5 min) |
 | 🔄 | T10 | Backlog, CHANGELOG, roadmap e release v0.10.0 | gemini (docs) + tech-lead (`hx release minor`) | 13 min | 23:51 |  |  |
+| 🔄 | Ajuste 1 | 1 ajuste(s) |  |  | 00:33 |  |  |
 | 🔄 | **Total** | 10 tarefas |  | 1 h 12 min | 2026-10-27 23:08 | ~2026-10-28 00:20 (previsto) |  |
