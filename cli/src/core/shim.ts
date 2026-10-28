@@ -8,16 +8,16 @@ import { harnessHome } from "./paths";
 
 export const shimDir = (): string => path.join(harnessHome(), "bin");
 
-/** Writes hx (sh, for Git Bash) and hx.cmd (PowerShell/cmd) that run <stableDir>/cli/dist/hx.js. */
-export function writeShims(stableDir: string): void {
-  const js = path.join(path.resolve(stableDir), "cli", "dist", "hx.js");
+/** Writes hx (sh, for Git Bash) and hx.cmd (PowerShell/cmd) that run <rootDir>/cli/dist/hx.js into `dir`. */
+export function writeShims(rootDir: string, dir = shimDir()): void {
+  const js = path.join(path.resolve(rootDir), "cli", "dist", "hx.js");
   // C:/x form: node is a Windows program, and /c/x only resolves in Git Bash (not Cygwin).
   const posix = js.replace(/\\/g, "/");
-  fs.mkdirSync(shimDir(), { recursive: true });
-  fs.writeFileSync(path.join(shimDir(), "hx"), `#!/bin/sh\nexec node "${posix}" "$@"\n`, {
+  fs.mkdirSync(dir, { recursive: true });
+  fs.writeFileSync(path.join(dir, "hx"), `#!/bin/sh\nexec node "${posix}" "$@"\n`, {
     mode: 0o755,
   });
-  fs.writeFileSync(path.join(shimDir(), "hx.cmd"), `@node "${js}" %*\r\n`);
+  fs.writeFileSync(path.join(dir, "hx.cmd"), `@node "${js}" %*\r\n`);
 }
 
 /** True when some PATH entry holds an hx launcher. */

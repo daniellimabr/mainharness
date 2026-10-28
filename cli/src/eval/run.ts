@@ -4,8 +4,10 @@ import { spawn, spawnSync } from "node:child_process";
 import * as fs from "node:fs";
 import * as os from "node:os";
 import * as path from "node:path";
+import { loadConfig } from "../core/config";
 import { readJson, writeJson } from "../core/fsx";
 import { logError } from "../core/log";
+import { writeShims } from "../core/shim";
 import { emit } from "../events/emit";
 import { type EvalScope, type SkillResults, skillHash, stampSkill } from "../release/skills";
 
@@ -156,6 +158,11 @@ async function claude(prompt: string, cwd: string, extra: string[], ctx: EvalCon
   // hx calls made by the session write to a throwaway home, never the real ~/.harness.
   const env: NodeJS.ProcessEnv = { ...process.env, HARNESS_HOME: path.join(cwd, ".hx-home") };
   delete env.CLAUDECODE;
+  // `hx` in the session runs the harness repo bundle (what will ship), not the stable one.
+  const shims = path.join(cwd, ".hx-home", "bin");
+  writeShims(loadConfig().harnessRepo, shims);
+  const pathKey = Object.keys(env).find((k) => /^path$/i.test(k)) ?? "PATH";
+  env[pathKey] = [shims, env[pathKey]].filter(Boolean).join(path.delimiter);
   // The sandbox must never inherit the real harness paths.
   delete env.HARNESS_REPO;
   delete env.HARNESS_STABLE_DIR;

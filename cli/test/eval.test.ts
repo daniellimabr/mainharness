@@ -40,7 +40,7 @@ let p = ""; process.stdin.on("data", d => p += d).on("end", () => {
   // FAKE_JUDGE_LOG: logs each judge prompt; from the 2nd judge call on, answers FAKE_JUDGE2.
   const log = process.env.FAKE_JUDGE_LOG, again = judge && log && fs.existsSync(log);
   if (judge && log) fs.appendFileSync(log, JSON.stringify(p) + "\\n");
-  out.push({ type: "result", result: judge ? (again ? process.env.FAKE_JUDGE2 : process.env.FAKE_JUDGE) :"ok fixture=" + fs.existsSync("docs/adr/0003-x.md") + " hx=" + process.argv.includes("Bash(hx:*)") + " home=" + (process.env.HARNESS_HOME || "").startsWith(process.cwd()) + " leak=" + ["HARNESS_REPO", "HARNESS_STABLE_DIR", "HARNESS_INBOX"].some(k => k in process.env), session_id: "s-" + process.pid,
+  out.push({ type: "result", result: judge ? (again ? process.env.FAKE_JUDGE2 : process.env.FAKE_JUDGE) :"ok fixture=" + fs.existsSync("docs/adr/0003-x.md") + " hx=" + process.argv.includes("Bash(hx:*)") + " home=" + (process.env.HARNESS_HOME || "").startsWith(process.cwd()) + " leak=" + ["HARNESS_REPO", "HARNESS_STABLE_DIR", "HARNESS_INBOX"].some(k => k in process.env) + " bin=" + JSON.stringify((process.env.Path ?? process.env.PATH ?? "").split(path.delimiter)[0] === path.join(process.cwd(), ".hx-home", "bin")) + " cmd=" + JSON.stringify(fs.existsSync(".hx-home/bin/hx.cmd") ? fs.readFileSync(".hx-home/bin/hx.cmd", "utf8") : ""), session_id: "s-" + process.pid,
     total_cost_usd: 0.01, usage: { input_tokens: 10, output_tokens: 5 },
     modelUsage: { "claude-sonnet-4-5": { inputTokens: 10, outputTokens: 5, cacheReadInputTokens: 2, cacheCreationInputTokens: 1, costUSD: 0.01 } } });
   process.stdout.write(out.map(o => JSON.stringify(o)).join("\\n") + "\\n");
@@ -251,6 +251,27 @@ describe("evalSkill (fake claude)", () => {
     const cases = fs.readFileSync(path.join(repo, "skills/adr/evals/cases-results.json"), "utf8");
     expect(cases).toContain("ok fixture=true hx=true home=true leak=false");
     expect(cases).not.toMatch(/~1/);
+  });
+
+  it("sandbox hx shim runs the harness repo bundle and leads the PATH", async () => {
+    write("skills/adr/SKILL.md", MD("old", "body 5"));
+    write(
+      "skills/adr/evals/evals.json",
+      JSON.stringify({ evals: [{ id: 1, prompt: "p", expectations: ["y"] }] }),
+    );
+    process.env.FAKE_JUDGE = JSON.stringify({ results: [{ id: "1", passed: true }] });
+    const hxRepo = tempDir("hx eval harness repo");
+    process.env.HARNESS_REPO = hxRepo;
+    try {
+      await evalSkill(repo, "skills/adr", evalScope(repo, "skills/adr", "v0.1.0"), ctx);
+    } finally {
+      Reflect.deleteProperty(process.env, "HARNESS_REPO");
+    }
+    const cases = fs.readFileSync(path.join(repo, "skills/adr/evals/cases-results.json"), "utf8");
+    rm(hxRepo);
+    expect(cases).toContain("bin=true");
+    expect(cases).toContain(path.basename(hxRepo));
+    expect(cases).toMatch(/cli.{1,8}dist.{1,8}hx\.js/);
   });
 
   it("warns (without failing) on a case that assumes a connected repo but has no files", async () => {
