@@ -1,10 +1,13 @@
 // hx task start|done <id> and hx task phase <id> <fase>: task times and phase in state and in the "## Execução" table of SNN-release.md, plus events.
+import { execFileSync } from "node:child_process";
 import { flagStr, parseArgs } from "../core/args";
 import { commandContext } from "../core/context";
+import { logError } from "../core/log";
 import { readState, updateState, type TaskTimes } from "../core/state";
 import { emit } from "../events/emit";
 import { atFlag, loadPlan } from "../sprint/cmd";
 import { renderTaskList, taskLine, updateExecution } from "../sprint/index";
+import { refreshAuto } from "./handoff";
 
 const PHASES = ["testes", "código", "lint", "fila", "revisão", "commit"];
 
@@ -62,6 +65,26 @@ export function run(args: string[]): number {
     });
   if (sub === "done" && !prev?.start)
     console.error(`aviso: ${id} não tinha início registrado; duração 0.`);
-  console.log(renderTaskList(ctx.root, sprint));
+
+  const taskList = renderTaskList(ctx.root, sprint);
+  if (sub === "done" || sub === "phase") {
+    try {
+      let uncommitted = "";
+      try {
+        const out = execFileSync("git", ["status", "--porcelain"], {
+          cwd: ctx.root,
+          encoding: "utf8",
+        }).trim();
+        uncommitted = `\n\nArquivos não commitados:\n${out || "nenhum"}`;
+      } catch {
+        // no git: leave the list out
+      }
+      refreshAuto(ctx.id, `## Estado automático (hx)\n\n${taskList}${uncommitted}`);
+    } catch (err) {
+      logError("task-handoff", err);
+    }
+  }
+
+  console.log(taskList);
   return 0;
 }

@@ -1,3 +1,4 @@
+import { execFileSync } from "node:child_process";
 import * as fs from "node:fs";
 import * as path from "node:path";
 import { afterEach, beforeEach, describe, expect, it } from "vitest";
@@ -18,6 +19,7 @@ import {
   totalLine,
 } from "../src/sprint/index";
 import { fakeProject, isolateHome, readEventsIn, REPO_ROOT, rm, runHx } from "./helpers";
+import { updateState } from "../src/core/state";
 
 const S00 = fs.readFileSync(path.join(REPO_ROOT, "docs", "sprints", "S00-plan.md"), "utf8");
 const TEMPLATE = fs.readFileSync(path.join(REPO_ROOT, "templates", "sprint-plan.md"), "utf8");
@@ -549,5 +551,92 @@ describe("pauses, time to review and feedback rounds (B035, B037, B040)", () => 
     );
     ev("task.done", "11:04", { duration_s: p2.duration_s }, "T01");
     expect(computeMetrics("proj-teste", "S01", plan).actual_min_by_task).toEqual({ T01: 10 });
+  });
+});
+
+describe("task handoff auto-refresh", () => {
+  let env: ReturnType<typeof isolateHome>;
+  let dir: string;
+  let plan: string;
+  const hx = (...args: string[]) => runHx(args, { cwd: dir });
+
+  beforeEach(() => {
+    env = isolateHome();
+    dir = fakeProject();
+    plan = path.join(dir, "docs", "sprints", "S01-plan.md");
+    fs.mkdirSync(path.dirname(plan), { recursive: true });
+    fs.copyFileSync(path.join(REPO_ROOT, "templates", "sprint-plan.md"), plan);
+  });
+  afterEach(() => {
+    env.cleanup();
+    rm(dir);
+  });
+
+  it("updates handoff with auto section on task phase and done, replaces it, and ignores when no handoff", () => {
+    hx("sprint", "approve", "S01");
+    hx("sprint", "open", "S01");
+
+    // sem handoff: task phase não cria handoff
+    expect(hx("task", "start", "T01").code).toBe(0);
+    expect(hx("task", "phase", "T01", "código").code).toBe(0);
+    const handoffDir = path.join(env.home, "handoffs", "proj-teste");
+    expect(fs.existsSync(handoffDir) ? fs.readdirSync(handoffDir) : []).toHaveLength(0);
+
+    // criando um handoff manualmente
+    fs.mkdirSync(handoffDir, { recursive: true });
+    const handoffFile = path.join(handoffDir, "20261015-020500.md");
+    fs.writeFileSync(handoffFile, "MEU TEXTO\n");
+
+    updateState("proj-teste", (s) => {
+      s.lastHandoff = { file: handoffFile, at: "2026-10-15T02:05:00Z", consumed: false };
+    });
+
+    // task phase atualiza o handoff com a seção automática
+    expect(hx("task", "phase", "T01", "revisão").code).toBe(0);
+    let content = fs.readFileSync(handoffFile, "utf8");
+    expect(content).toContain("MEU TEXTO");
+    expect(content).toContain("<!-- hx:auto -->");
+    expect(content).toContain("## Estado automático (hx)");
+
+    // task done substitui a seção automática (aparece uma vez só)
+    expect(hx("task", "done", "T01").code).toBe(0);
+    content = fs.readFileSync(handoffFile, "utf8");
+    expect(content).toContain("MEU TEXTO");
+    const matches = content.match(/<!-- hx:auto -->/g);
+    expect(matches).toHaveLength(1);
+    expect(content).toContain("✅");
+  });
+
+  it("keeps the agent's text byte for byte and lists uncommitted files (git repo)", () => {
+    execFileSync("git", ["init", "-q"], { cwd: dir });
+    hx("sprint", "approve", "S01");
+    hx("sprint", "open", "S01");
+    hx("task", "start", "T01");
+    const handoffFile = path.join(env.home, "handoffs", "proj-teste", "h.md");
+    fs.mkdirSync(path.dirname(handoffFile), { recursive: true });
+    const agent = "# Handoff\n\nTexto com $& e $1.\n";
+    fs.writeFileSync(handoffFile, agent);
+    updateState("proj-teste", (s) => {
+      s.lastHandoff = { file: handoffFile, at: "2026-10-15T02:05:00Z", consumed: false };
+    });
+    expect(hx("task", "phase", "T01", "lint").code).toBe(0);
+    fs.writeFileSync(path.join(dir, "novo-arquivo.txt"), "x");
+    expect(hx("task", "done", "T01").code).toBe(0);
+    const content = fs.readFileSync(handoffFile, "utf8");
+    expect(content.startsWith(agent.trimEnd())).toBe(true);
+    expect(content).toContain("Arquivos não commitados:");
+    expect(content).toContain("novo-arquivo.txt");
+  });
+
+  it("a broken handoff never makes hx task fail", () => {
+    hx("sprint", "approve", "S01");
+    hx("sprint", "open", "S01");
+    hx("task", "start", "T01");
+    updateState("proj-teste", (s) => {
+      s.lastHandoff = { file: dir, at: "2026-10-15T02:05:00Z", consumed: false }; // a folder: read throws
+    });
+    const r = hx("task", "done", "T01");
+    expect(r.code).toBe(0);
+    expect(r.stdout).toContain("T01");
   });
 });

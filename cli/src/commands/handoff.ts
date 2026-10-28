@@ -68,3 +68,16 @@ export function run(args: string[]): number {
   console.log(`Handoff gravado: ${file}`);
   return 0;
 }
+
+/** Rewrites the hx:auto section of the last open handoff; the agent's text stays as is. */
+export function refreshAuto(projectId: string, body: string): void {
+  const last = readState(projectId).lastHandoff;
+  if (!last || last.consumed || !fs.existsSync(last.file)) return;
+  const content = fs.readFileSync(last.file, "utf8");
+  const wrapped = `<!-- hx:auto -->\n${body.trim()}\n<!-- /hx:auto -->`;
+  const re = /<!-- hx:auto -->[\s\S]*?<!-- \/hx:auto -->/;
+  const next = re.test(content)
+    ? content.replace(re, () => wrapped) // function: "$" in the body is literal
+    : content.trimEnd() + "\n\n" + wrapped + "\n";
+  fs.writeFileSync(last.file, next);
+}

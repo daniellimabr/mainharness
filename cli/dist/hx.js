@@ -162,6 +162,8 @@ var init_fsx = __esm({
 // cli/src/core/config.ts
 function loadConfig() {
   const file2 = readJson(home.config(), {});
+  if (file2.contextLimit === 25e4) delete file2.contextLimit;
+  if (file2.handoffAt === 23e4) delete file2.handoffAt;
   const cfg = {
     ...DEFAULT_CONFIG,
     ...file2,
@@ -213,19 +215,14 @@ var init_config = __esm({
           cacheRead: 0.1
         }
       },
-      contextLimit: 25e4,
-      handoffAt: 23e4,
+      contextLimit: 14e4,
+      handoffAt: 12e4,
       contextStrategy: "compact",
       harnessRepo: "C:\\Main Harness",
       stableDir: "C:\\harness-stable",
       inboxDir: "C:\\Main Harness\\inbox",
       timezone: "America/Sao_Paulo",
-      worker: {
-        url: "http://localhost:20128",
-        token: "",
-        model: "gemini/gemini-3.5-flash-lite",
-        threshold: 90
-      }
+      worker: { url: "http://localhost:20128", token: "", model: "gemini/gemini-3.5-flash-lite" }
     };
   }
 });
@@ -403,6 +400,21 @@ function checkField(key, f, v, errs) {
             errs.push(`data.${key}.${k}: expected number`);
         }
       break;
+    case "numberRecordMap":
+    case "stringsRecord":
+      if (typeof v !== "object" || Array.isArray(v)) errs.push(`data.${key}: expected object`);
+      else
+        for (const [k, x] of Object.entries(v)) {
+          if (!ID_RE.test(k)) errs.push(`data.${key}.${k}: bad key`);
+          else
+            checkField(
+              `${key}.${k}`,
+              f.type === "stringsRecord" ? { type: "string[]" } : { type: "numberRecord" },
+              x,
+              errs
+            );
+        }
+      break;
   }
 }
 function validateEvent(e) {
@@ -489,7 +501,10 @@ var init_schema = __esm({
         feedback_min: n(opt),
         feedback_usd: n(opt),
         wait_min: n(opt),
-        work_min: n(opt)
+        work_min: n(opt),
+        usd_by_model: { type: "numberRecord", optional: true },
+        tokens_by_model: { type: "numberRecordMap", optional: true },
+        models_by_task: { type: "stringsRecord", optional: true }
       },
       "task.phase": { phase: s() },
       "task.start": { planned_min: n(opt) },
@@ -885,28 +900,12 @@ function limitsLine() {
   if (!l) return null;
   return `Limite: 5 h ${Math.round(l.five_hour)}% \xB7 semana ${Math.round(l.seven_day)}%`;
 }
-function workerNudge(session) {
-  const l = lastLimits();
-  const t = loadConfig().worker.threshold;
-  const hit = !l ? null : l.five_hour >= t ? `${Math.round(l.five_hour)}% (5 h)` : l.seven_day >= t ? `${Math.round(l.seven_day)}% (semana)` : null;
-  if (!hit) return null;
-  const mark = path10.join(harnessHome(), "cache", "worker-nudge.json");
-  try {
-    if (JSON.parse(fs9.readFileSync(mark, "utf8")).session === session)
-      return null;
-  } catch {
-  }
-  fs9.mkdirSync(path10.dirname(mark), { recursive: true });
-  fs9.writeFileSync(mark, JSON.stringify({ session }));
-  return `Uso do Claude em ${hit}. Delegue tarefas de escopo fechado ao trabalhador Gemini (skill worker).`;
-}
 var fs9, path10, URL, EVERY_MS, TIMEOUT_MS;
 var init_limits = __esm({
   "cli/src/usage/limits.ts"() {
     "use strict";
     fs9 = __toESM(require("node:fs"));
     path10 = __toESM(require("node:path"));
-    init_config();
     init_paths();
     init_emit();
     URL = "https://api.anthropic.com/api/oauth/usage";
@@ -1005,8 +1004,7 @@ function stop(input) {
     sprint: c.st.activeSprint,
     data: {}
   });
-  const nudge = workerNudge(c.session);
-  return nudge ? jsonOut({ systemMessage: nudge }) : {};
+  return {};
 }
 function stopBlock(input, c) {
   const cfg = loadConfig();
@@ -2530,7 +2528,10 @@ function computeMetrics(project, sprintId2, plan) {
     feedback_min: r1(rounds.reduce((acc, r) => acc + r.min, 0)),
     feedback_usd: r4(rounds.reduce((acc, r) => acc + r.usd, 0)),
     wait_min: 0,
-    work_min: 0
+    work_min: 0,
+    usd_by_model: {},
+    tokens_by_model: {},
+    models_by_task: {}
   };
   const waits = waitIntervals(evs);
   m.wait_min = r1(waits.reduce((acc, [s2 = 0, e = 0]) => acc + e - s2, 0) / 6e4);
@@ -2547,14 +2548,27 @@ function computeMetrics(project, sprintId2, plan) {
       const task = e.task ?? "sem-tarefa";
       m.usd_by_agent[agent] = (m.usd_by_agent[agent] ?? 0) + usd3;
       m.usd_by_task[task] = (m.usd_by_task[task] ?? 0) + usd3;
+      const model = String(d.model ?? "desconhecido").replace(/[^A-Za-z0-9._:@-]/g, "_").slice(0, 128) || "desconhecido";
+      m.usd_by_model[model] = (m.usd_by_model[model] ?? 0) + usd3;
+      const tk = m.tokens_by_model[model] ??= {
+        input: 0,
+        output: 0,
+        cache_write: 0,
+        cache_read: 0
+      };
+      for (const k of ["input", "output", "cache_write", "cache_read"])
+        tk[k] = (tk[k] ?? 0) + num(d[k]);
+      const ms = m.models_by_task[task] ??= [];
+      if (!ms.includes(model)) ms.push(model);
     } else if (e.type === "sprint.feedback") m.rework += num(d.adjustments);
     else if (e.type === "review.result" && d.result === "fail") m.review_rejections++;
     else if (e.type === "alert.context") m.context_alerts++;
     else if (e.type === "handoff") m.handoffs++;
   }
   m.usd = r4(m.usd);
-  for (const rec of [m.usd_by_agent, m.usd_by_task])
+  for (const rec of [m.usd_by_agent, m.usd_by_task, m.usd_by_model])
     for (const [k, v] of Object.entries(rec)) rec[k] = r4(v);
+  for (const ms of Object.values(m.models_by_task)) ms.sort();
   const ts = (type) => evs.filter((e) => e.type === type).map((e) => Date.parse(e.ts)).sort((a2, b2) => a2 - b2);
   const starts = ts("task.start");
   const ends = ts("task.done");
@@ -2584,6 +2598,10 @@ function renderMetrics(sprintId2, plan, m) {
     return `| ${t.id} | ${fmtMin(t.planned_min)} | ${real} | ${diff} | ${cost === void 0 ? "\u2014" : usd2(cost)} |`;
   });
   const byAgent = Object.entries(m.usd_by_agent).map(([k, v]) => `${k} ${usd2(v)}`).join(" \xB7 ") || "\u2014";
+  const byModel = Object.entries(m.usd_by_model).map(([k, v]) => `${k} ${usd2(v)}`).join(" \xB7 ") || "\u2014";
+  const tokByModel = Object.entries(m.tokens_by_model).map(
+    ([k, t]) => `${k} ${tok(t.input ?? 0)} / ${tok(t.output ?? 0)} / ${tok(t.cache_write ?? 0)} / ${tok(t.cache_read ?? 0)}`
+  ).join(" \xB7 ") || "\u2014";
   return [
     `### Indicadores \u2014 ${sprintId2}`,
     "",
@@ -2602,6 +2620,8 @@ function renderMetrics(sprintId2, plan, m) {
     `| Tokens (entrada / sa\xEDda / escrita em cache / leitura de cache) | ${tok(m.tokens_input)} / ${tok(m.tokens_output)} / ${tok(m.tokens_cache_write)} / ${tok(m.tokens_cache_read)} |`,
     `| Custo total | ${usd2(m.usd)} |`,
     `| Custo por agente | ${byAgent} |`,
+    `| Custo por modelo | ${byModel} |`,
+    `| Tokens por modelo (entrada / sa\xEDda / escrita em cache / leitura de cache) | ${tokByModel} |`,
     `| Retrabalho (ajustes pedidos por Daniel) | ${m.rework} |`,
     `| Rodadas de ajuste (quantidade \xB7 tempo \xB7 custo) | ${m.feedback_rounds} \xB7 ${fmtMin(m.feedback_min)} \xB7 ${usd2(m.feedback_usd)} |`,
     `| Reprova\xE7\xF5es do Reviewer | ${m.review_rejections} |`,
@@ -2712,6 +2732,16 @@ function sessionStart(input) {
     if (done) parts2.push(done);
   } catch (err) {
     logError("hook session-start requests", err);
+  }
+  try {
+    const norm = (s2) => path21.resolve(s2).toLowerCase();
+    if (norm(p.root) !== norm(loadConfig().harnessRepo)) {
+      const dir2 = path21.join(p.root, "inbox");
+      const n2 = fs20.existsSync(dir2) ? fs20.readdirSync(dir2).filter((f) => f.endsWith(".md")).length : 0;
+      if (n2) parts2.push(`Pedidos do harness no inbox/: ${n2}. Leia antes de planejar.`);
+    }
+  } catch (err) {
+    logError("hook session-start inbox", err);
   }
   const index = summarizeIndex(p.root);
   if (index) parts2.push(index);
@@ -2872,12 +2902,101 @@ var init_cmd = __esm({
   }
 });
 
-// cli/src/commands/task.ts
-var task_exports = {};
-__export(task_exports, {
+// cli/src/commands/handoff.ts
+var handoff_exports = {};
+__export(handoff_exports, {
+  refreshAuto: () => refreshAuto,
   run: () => run3
 });
 function run3(args) {
+  const p = parseArgs(args);
+  const ctx = commandContext(process.cwd(), flagStr(p, "agent"));
+  const last = readState(ctx.id).lastHandoff;
+  if (p.flags.show !== void 0 || p.flags.consume !== void 0) {
+    if (!last || !fs22.existsSync(last.file)) {
+      console.log("Nenhum handoff registrado neste projeto.");
+      return 0;
+    }
+    if (p.flags.consume !== void 0) {
+      updateState(ctx.id, (s2) => {
+        if (s2.lastHandoff) s2.lastHandoff.consumed = true;
+      });
+      console.log(`Handoff marcado como consumido: ${last.file}`);
+    } else console.log(fs22.readFileSync(last.file, "utf8"));
+    return 0;
+  }
+  if (process.stdin.isTTY) throw new Error(EMPTY2);
+  let body = "";
+  try {
+    body = fs22.readFileSync(0, "utf8").trim();
+  } catch {
+  }
+  if (!body) throw new Error(EMPTY2);
+  const at = utcStamp();
+  const dir2 = home.handoffs(ctx.id);
+  fs22.mkdirSync(dir2, { recursive: true });
+  const stamp2 = at.slice(0, 19).replace(/[-:]/g, "").replace("T", "-");
+  const header = [
+    `# Handoff \u2014 ${ctx.harness.name || ctx.id}`,
+    "",
+    `- **Projeto:** ${ctx.id}`,
+    `- **Sprint:** ${ctx.sprint ?? "\u2014"}`,
+    `- **Sess\xE3o:** ${ctx.session ?? "\u2014"}`,
+    `- **Data:** ${localDateTime(at)} (hor\xE1rio de Bras\xEDlia)`,
+    ""
+  ].join("\n");
+  const file2 = createNew(dir2, stamp2, `${header}
+${body}
+`);
+  updateState(ctx.id, (s2) => {
+    s2.lastHandoff = { file: file2, at, consumed: false };
+  });
+  emit({
+    type: "handoff",
+    project: ctx.id,
+    session: ctx.session,
+    sprint: ctx.sprint,
+    agent: ctx.agent,
+    ts: at,
+    data: { mode: "manual", file: path23.basename(file2) }
+  });
+  console.log(`Handoff gravado: ${file2}`);
+  return 0;
+}
+function refreshAuto(projectId, body) {
+  const last = readState(projectId).lastHandoff;
+  if (!last || last.consumed || !fs22.existsSync(last.file)) return;
+  const content = fs22.readFileSync(last.file, "utf8");
+  const wrapped = `<!-- hx:auto -->
+${body.trim()}
+<!-- /hx:auto -->`;
+  const re = /<!-- hx:auto -->[\s\S]*?<!-- \/hx:auto -->/;
+  const next = re.test(content) ? content.replace(re, () => wrapped) : content.trimEnd() + "\n\n" + wrapped + "\n";
+  fs22.writeFileSync(last.file, next);
+}
+var fs22, path23, EMPTY2;
+var init_handoff = __esm({
+  "cli/src/commands/handoff.ts"() {
+    "use strict";
+    fs22 = __toESM(require("node:fs"));
+    path23 = __toESM(require("node:path"));
+    init_args();
+    init_context();
+    init_paths();
+    init_state();
+    init_time();
+    init_emit();
+    init_cmd();
+    EMPTY2 = "handoff vazio: envie o texto pela entrada padr\xE3o (ex.: hx handoff <<'EOF' ... EOF)";
+  }
+});
+
+// cli/src/commands/task.ts
+var task_exports = {};
+__export(task_exports, {
+  run: () => run4
+});
+function run4(args) {
   const p = parseArgs(args);
   const [sub, raw] = p._;
   if (sub !== "start" && sub !== "done" && sub !== "phase" || !raw) {
@@ -2927,33 +3046,54 @@ function run3(args) {
     });
   if (sub === "done" && !prev?.start)
     console.error(`aviso: ${id} n\xE3o tinha in\xEDcio registrado; dura\xE7\xE3o 0.`);
-  console.log(renderTaskList(ctx.root, sprint));
-  const nudge = workerNudge(ctx.session);
-  if (nudge) console.log(`
-${nudge}`);
+  const taskList = renderTaskList(ctx.root, sprint);
+  if (sub === "done" || sub === "phase") {
+    try {
+      let uncommitted = "";
+      try {
+        const out = (0, import_node_child_process6.execFileSync)("git", ["status", "--porcelain"], {
+          cwd: ctx.root,
+          encoding: "utf8"
+        }).trim();
+        uncommitted = `
+
+Arquivos n\xE3o commitados:
+${out || "nenhum"}`;
+      } catch {
+      }
+      refreshAuto(ctx.id, `## Estado autom\xE1tico (hx)
+
+${taskList}${uncommitted}`);
+    } catch (err) {
+      logError("task-handoff", err);
+    }
+  }
+  console.log(taskList);
   return 0;
 }
-var PHASES;
+var import_node_child_process6, PHASES;
 var init_task = __esm({
   "cli/src/commands/task.ts"() {
     "use strict";
+    import_node_child_process6 = require("node:child_process");
     init_args();
     init_context();
+    init_log();
     init_state();
     init_emit();
     init_cmd();
     init_sprint();
-    init_limits();
-    PHASES = ["testes", "c\xF3digo", "fila", "revis\xE3o", "commit"];
+    init_handoff();
+    PHASES = ["testes", "c\xF3digo", "lint", "fila", "revis\xE3o", "commit"];
   }
 });
 
 // cli/src/commands/sprint.ts
 var sprint_exports = {};
 __export(sprint_exports, {
-  run: () => run4
+  run: () => run5
 });
-function run4(args) {
+function run5(args) {
   const p = parseArgs(args);
   const force = boolFlag(p, "force");
   const [sub, arg] = p._;
@@ -3101,9 +3241,9 @@ var init_sprint2 = __esm({
 // cli/src/commands/review.ts
 var review_exports = {};
 __export(review_exports, {
-  run: () => run5
+  run: () => run6
 });
-function run5(args) {
+function run6(args) {
   const p = parseArgs(args);
   const [result, raw] = p._;
   if (result !== "pass" && result !== "fail" || !raw) {
@@ -3136,9 +3276,9 @@ var init_review = __esm({
 // cli/src/commands/status.ts
 var status_exports = {};
 __export(status_exports, {
-  run: () => run6
+  run: () => run7
 });
-function run6(args) {
+function run7(args) {
   const p = parseArgs(args);
   const where = flagStr(p, "where");
   const next = flagStr(p, "next");
@@ -3165,83 +3305,6 @@ var init_status = __esm({
     init_context();
     init_emit();
     init_text();
-  }
-});
-
-// cli/src/commands/handoff.ts
-var handoff_exports = {};
-__export(handoff_exports, {
-  run: () => run7
-});
-function run7(args) {
-  const p = parseArgs(args);
-  const ctx = commandContext(process.cwd(), flagStr(p, "agent"));
-  const last = readState(ctx.id).lastHandoff;
-  if (p.flags.show !== void 0 || p.flags.consume !== void 0) {
-    if (!last || !fs22.existsSync(last.file)) {
-      console.log("Nenhum handoff registrado neste projeto.");
-      return 0;
-    }
-    if (p.flags.consume !== void 0) {
-      updateState(ctx.id, (s2) => {
-        if (s2.lastHandoff) s2.lastHandoff.consumed = true;
-      });
-      console.log(`Handoff marcado como consumido: ${last.file}`);
-    } else console.log(fs22.readFileSync(last.file, "utf8"));
-    return 0;
-  }
-  if (process.stdin.isTTY) throw new Error(EMPTY2);
-  let body = "";
-  try {
-    body = fs22.readFileSync(0, "utf8").trim();
-  } catch {
-  }
-  if (!body) throw new Error(EMPTY2);
-  const at = utcStamp();
-  const dir2 = home.handoffs(ctx.id);
-  fs22.mkdirSync(dir2, { recursive: true });
-  const stamp2 = at.slice(0, 19).replace(/[-:]/g, "").replace("T", "-");
-  const header = [
-    `# Handoff \u2014 ${ctx.harness.name || ctx.id}`,
-    "",
-    `- **Projeto:** ${ctx.id}`,
-    `- **Sprint:** ${ctx.sprint ?? "\u2014"}`,
-    `- **Sess\xE3o:** ${ctx.session ?? "\u2014"}`,
-    `- **Data:** ${localDateTime(at)} (hor\xE1rio de Bras\xEDlia)`,
-    ""
-  ].join("\n");
-  const file2 = createNew(dir2, stamp2, `${header}
-${body}
-`);
-  updateState(ctx.id, (s2) => {
-    s2.lastHandoff = { file: file2, at, consumed: false };
-  });
-  emit({
-    type: "handoff",
-    project: ctx.id,
-    session: ctx.session,
-    sprint: ctx.sprint,
-    agent: ctx.agent,
-    ts: at,
-    data: { mode: "manual", file: path23.basename(file2) }
-  });
-  console.log(`Handoff gravado: ${file2}`);
-  return 0;
-}
-var fs22, path23, EMPTY2;
-var init_handoff = __esm({
-  "cli/src/commands/handoff.ts"() {
-    "use strict";
-    fs22 = __toESM(require("node:fs"));
-    path23 = __toESM(require("node:path"));
-    init_args();
-    init_context();
-    init_paths();
-    init_state();
-    init_time();
-    init_emit();
-    init_cmd();
-    EMPTY2 = "handoff vazio: envie o texto pela entrada padr\xE3o (ex.: hx handoff <<'EOF' ... EOF)";
   }
 });
 
@@ -3315,7 +3378,7 @@ async function start(id, file2, deps) {
   const w = await ready(deps);
   if (!w) return 1;
   const m = w.model;
-  const child2 = (deps.spawn ?? import_node_child_process6.spawn)(
+  const child2 = (deps.spawn ?? import_node_child_process7.spawn)(
     process.execPath,
     [deps.hx ?? process.argv[1] ?? "", "worker", "_child", sprint, tnn, handoff],
     {
@@ -3359,17 +3422,20 @@ async function child(sprint, tnn, handoff) {
   const env = { ...process.env };
   delete env.CLAUDECODE;
   const bin = process.env.HX_CLAUDE_BIN || "claude";
-  const r = await new Promise((resolve15) => {
-    const c = (0, import_node_child_process6.spawn)(`${bin} -p --model ${process.env.ANTHROPIC_MODEL} --allowedTools ${TOOLS}`, {
-      env,
-      shell: true,
-      windowsHide: true
-    });
+  const r = await new Promise((resolve16) => {
+    const c = (0, import_node_child_process7.spawn)(
+      `${bin} -p --model ${process.env.ANTHROPIC_MODEL} --agent main-harness:executor --allowedTools ${TOOLS}`,
+      {
+        env,
+        shell: true,
+        windowsHide: true
+      }
+    );
     let out2 = "";
     const timer = setTimeout(() => {
       out2 += "\nTempo esgotado (60 min): trabalhador encerrado.";
       if (process.platform === "win32" && c.pid)
-        (0, import_node_child_process6.spawnSync)("taskkill", ["/T", "/F", "/PID", String(c.pid)]);
+        (0, import_node_child_process7.spawnSync)("taskkill", ["/T", "/F", "/PID", String(c.pid)]);
       else c.kill();
     }, WORKER_TIMEOUT_MS);
     c.on("close", () => clearTimeout(timer));
@@ -3377,9 +3443,9 @@ async function child(sprint, tnn, handoff) {
     });
     c.stdout.setEncoding("utf8").on("data", (d) => out2 += d);
     c.stderr.setEncoding("utf8").on("data", (d) => out2 += d);
-    c.on("error", (e) => resolve15({ code: -1, out: `${out2}
+    c.on("error", (e) => resolve16({ code: -1, out: `${out2}
 ${e.message}` }));
-    c.on("close", (code) => resolve15({ code: code ?? -1, out: out2 }));
+    c.on("close", (code) => resolve16({ code: code ?? -1, out: out2 }));
     c.stdin.end(fs23.readFileSync(handoff, "utf8"));
   });
   const token = process.env.ANTHROPIC_AUTH_TOKEN;
@@ -3396,7 +3462,7 @@ ${out}
   );
   const ctx = commandContext(process.cwd(), "gemini");
   try {
-    run3(["phase", tnn, "fila", "--agent", "gemini"]);
+    run4(["phase", tnn, "fila", "--agent", "gemini"]);
   } catch (e) {
     console.error(String(e));
   }
@@ -3429,11 +3495,11 @@ async function run8(args, deps = {}) {
   console.log(`Trabalhador pronto: OmniRoute em ${w.url}, modelo ${w.model}.`);
   return 0;
 }
-var import_node_child_process6, fs23, path24, TIMEOUT_MS2, WORKER_TIMEOUT_MS, TOOLS, USAGE, dir, lockFile;
+var import_node_child_process7, fs23, path24, TIMEOUT_MS2, WORKER_TIMEOUT_MS, TOOLS, USAGE, dir, lockFile;
 var init_worker = __esm({
   "cli/src/commands/worker.ts"() {
     "use strict";
-    import_node_child_process6 = require("node:child_process");
+    import_node_child_process7 = require("node:child_process");
     fs23 = __toESM(require("node:fs"));
     path24 = __toESM(require("node:path"));
     init_config();
@@ -3464,7 +3530,7 @@ function run9(args) {
   }
   const cmd = parts2.length === 1 ? parts2[0] : parts2.map((a) => /\s/.test(a) ? `"${a}"` : a).join(" ");
   const t0 = Date.now();
-  const r = (0, import_node_child_process7.spawnSync)(cmd, {
+  const r = (0, import_node_child_process8.spawnSync)(cmd, {
     shell: true,
     // Git Bash hands Node "c:\..."; vitest then loads itself twice (c: vs C:) and every suite fails.
     cwd: process.cwd().replace(/^[a-z]:/, (d) => d.toUpperCase()),
@@ -3486,11 +3552,11 @@ ${r.stderr ?? ""}`.replace(ANSI_RE, "").split(/\r?\n/).map((l) => l.trimEnd()).f
   console.log(out.join("\n"));
   return code;
 }
-var import_node_child_process7, SUMMARY_RE, FAIL_RE, ANSI_RE;
+var import_node_child_process8, SUMMARY_RE, FAIL_RE, ANSI_RE;
 var init_run = __esm({
   "cli/src/commands/run.ts"() {
     "use strict";
-    import_node_child_process7 = require("node:child_process");
+    import_node_child_process8 = require("node:child_process");
     SUMMARY_RE = /\b(pass|passed|fail|failed|error|errors|warning|warnings|tests?)\b/i;
     FAIL_RE = /(error|erro|fail|falh|exception|✗|×)/i;
     ANSI_RE = /\x1b\[[0-9;]*[A-Za-z]/g;
@@ -3509,7 +3575,7 @@ function run10(args) {
   const why = flagStr(p, "why");
   if (!title2 || !need || !why) {
     console.error(
-      'uso: hx request --title "..." --need "..." --why "..." [--priority alta|media|baixa] [--example "..."]'
+      'uso: hx request --title "..." --need "..." --why "..." [--priority alta|media|baixa] [--example "..."] [--to <id-de-projeto-conectado>]'
     );
     return 1;
   }
@@ -3517,6 +3583,16 @@ function run10(args) {
   if (!PRIORITIES.includes(raw))
     throw new Error("prioridade deve ser alta, media ou baixa");
   const priority = raw;
+  const to = flagStr(p, "to");
+  let dir2 = loadConfig().inboxDir;
+  if (to !== void 0) {
+    const entry = readProjects().find((e) => e.id === to);
+    if (!entry) {
+      console.error(`projeto "${to}" n\xE3o est\xE1 no registro (~/.harness/projects.json)`);
+      return 1;
+    }
+    dir2 = path25.join(entry.path, "inbox");
+  }
   const ctx = commandContext(process.cwd(), flagStr(p, "agent"));
   const date = utcStamp().slice(0, 10);
   const values = {
@@ -3534,7 +3610,6 @@ function run10(args) {
     "utf8"
   );
   const content = template.replace(/\{\{(\w+)\}\}/g, (m, k) => values[k] ?? m);
-  const dir2 = loadConfig().inboxDir;
   fs24.mkdirSync(dir2, { recursive: true });
   const stem = `${date}-${ctx.id}-${slugify(title2).slice(0, 60).replace(/-+$/, "")}`;
   const file2 = createNew(dir2, stem, content);
@@ -3996,16 +4071,16 @@ var init_setup = __esm({
 });
 
 // cli/src/core/shim.ts
-function writeShims(stableDir) {
-  const js = path31.join(path31.resolve(stableDir), "cli", "dist", "hx.js");
+function writeShims(rootDir, dir2 = shimDir()) {
+  const js = path31.join(path31.resolve(rootDir), "cli", "dist", "hx.js");
   const posix2 = js.replace(/\\/g, "/");
-  fs30.mkdirSync(shimDir(), { recursive: true });
-  fs30.writeFileSync(path31.join(shimDir(), "hx"), `#!/bin/sh
+  fs30.mkdirSync(dir2, { recursive: true });
+  fs30.writeFileSync(path31.join(dir2, "hx"), `#!/bin/sh
 exec node "${posix2}" "$@"
 `, {
     mode: 493
   });
-  fs30.writeFileSync(path31.join(shimDir(), "hx.cmd"), `@node "${js}" %*\r
+  fs30.writeFileSync(path31.join(dir2, "hx.cmd"), `@node "${js}" %*\r
 `);
 }
 function hxOnPath(envPath = process.env.PATH ?? "") {
@@ -4030,19 +4105,19 @@ function addToUserPath(dir2) {
     "/f"
   ]);
   if (add2.status !== 0) return `falha ao gravar o PATH: ${(add2.stderr ?? "").trim()}`;
-  (0, import_node_child_process8.spawnSync)("setx", ["HARNESS_BIN", dir2], { windowsHide: true, stdio: "ignore" });
+  (0, import_node_child_process9.spawnSync)("setx", ["HARNESS_BIN", dir2], { windowsHide: true, stdio: "ignore" });
   return "added";
 }
-var import_node_child_process8, fs30, path31, shimDir, reg;
+var import_node_child_process9, fs30, path31, shimDir, reg;
 var init_shim = __esm({
   "cli/src/core/shim.ts"() {
     "use strict";
-    import_node_child_process8 = require("node:child_process");
+    import_node_child_process9 = require("node:child_process");
     fs30 = __toESM(require("node:fs"));
     path31 = __toESM(require("node:path"));
     init_paths();
     shimDir = () => path31.join(harnessHome(), "bin");
-    reg = (args) => (0, import_node_child_process8.spawnSync)("reg", args, {
+    reg = (args) => (0, import_node_child_process9.spawnSync)("reg", args, {
       encoding: "utf8",
       windowsHide: true,
       stdio: ["ignore", "pipe", "pipe"]
@@ -4063,7 +4138,7 @@ __export(setup_exports, {
 });
 function userHomeVarSet() {
   if (process.platform !== "win32") return true;
-  return (0, import_node_child_process9.spawnSync)("reg", ["query", "HKCU\\Environment", "/v", "HOME"], { windowsHide: true }).status === 0;
+  return (0, import_node_child_process10.spawnSync)("reg", ["query", "HKCU\\Environment", "/v", "HOME"], { windowsHide: true }).status === 0;
 }
 function disablePonytailBand(setx = (a) => process.env.HARNESS_NO_PATH || runTool("setx", a), homeVarSet = userHomeVarSet) {
   fs31.mkdirSync(claudeHome(), { recursive: true });
@@ -4165,11 +4240,11 @@ function run13(args) {
   );
   return 0;
 }
-var import_node_child_process9, fs31, os3, path32, PLACEHOLDER, AUTO_MODE_RULE, RULE_PREFIX, isObj, isHxRule, settingsFile;
+var import_node_child_process10, fs31, os3, path32, PLACEHOLDER, AUTO_MODE_RULE, RULE_PREFIX, isObj, isHxRule, settingsFile;
 var init_setup2 = __esm({
   "cli/src/commands/setup.ts"() {
     "use strict";
-    import_node_child_process9 = require("node:child_process");
+    import_node_child_process10 = require("node:child_process");
     fs31 = __toESM(require("node:fs"));
     os3 = __toESM(require("node:os"));
     path32 = __toESM(require("node:path"));
@@ -4252,7 +4327,7 @@ function spacesWork(hx) {
     const f = path33.join(dir2, "teste com espa\xE7o.txt");
     fs32.writeFileSync(f, "ok");
     if (fs32.readFileSync(f, "utf8") !== "ok") return false;
-    const r = (0, import_node_child_process10.spawnSync)(process.execPath, [hx, "version"], {
+    const r = (0, import_node_child_process11.spawnSync)(process.execPath, [hx, "version"], {
       cwd: dir2,
       encoding: "utf8",
       timeout: TIMEOUT,
@@ -4413,11 +4488,11 @@ function run14(_args) {
   for (const l of r.lines) console.log(l);
   return r.ok ? 0 : 1;
 }
-var import_node_child_process10, fs32, os4, path33, TIMEOUT, SKILLS, THIRD_PARTY;
+var import_node_child_process11, fs32, os4, path33, TIMEOUT, SKILLS, THIRD_PARTY;
 var init_doctor = __esm({
   "cli/src/commands/doctor.ts"() {
     "use strict";
-    import_node_child_process10 = require("node:child_process");
+    import_node_child_process11 = require("node:child_process");
     fs32 = __toESM(require("node:fs"));
     os4 = __toESM(require("node:os"));
     path33 = __toESM(require("node:path"));
@@ -4804,18 +4879,22 @@ async function claude(prompt2, cwd, extra, ctx) {
   const args = ["-p", "--model", "sonnet", "--output-format", "stream-json", "--verbose"];
   const env = { ...process.env, HARNESS_HOME: path36.join(cwd, ".hx-home") };
   delete env.CLAUDECODE;
+  const shims = path36.join(cwd, ".hx-home", "bin");
+  writeShims(loadConfig().harnessRepo, shims);
+  const pathKey = Object.keys(env).find((k) => /^path$/i.test(k)) ?? "PATH";
+  env[pathKey] = [shims, env[pathKey]].filter(Boolean).join(path36.delimiter);
   delete env.HARNESS_REPO;
   delete env.HARNESS_STABLE_DIR;
   delete env.HARNESS_INBOX;
-  const s2 = await new Promise((resolve15, reject) => {
-    const child2 = (0, import_node_child_process11.spawn)([bin, ...args, "--setting-sources", "project", ...extra].join(" "), {
+  const s2 = await new Promise((resolve16, reject) => {
+    const child2 = (0, import_node_child_process12.spawn)([bin, ...args, "--setting-sources", "project", ...extra].join(" "), {
       cwd,
       env,
       shell: true
     });
     const timer = setTimeout(() => {
       if (process.platform === "win32" && child2.pid)
-        (0, import_node_child_process11.spawnSync)("taskkill", ["/T", "/F", "/PID", String(child2.pid)]);
+        (0, import_node_child_process12.spawnSync)("taskkill", ["/T", "/F", "/PID", String(child2.pid)]);
       else child2.kill();
     }, TIMEOUT_MS3);
     child2.on("close", () => clearTimeout(timer));
@@ -4827,7 +4906,7 @@ async function claude(prompt2, cwd, extra, ctx) {
     child2.on("close", (code) => {
       const r = parseStream(out);
       if (!r.sessionId) reject(new Error(`claude -p falhou (${code}): ${err.trim().slice(-300)}`));
-      else resolve15(r);
+      else resolve16(r);
     });
     child2.stdin.end(prompt2);
   });
@@ -5016,16 +5095,18 @@ ${r.answer}
   }
   return stampSkill(repo, skill, { passed: ok, trigger, evals, notes });
 }
-var import_node_child_process11, fs35, os5, path36, PARALLEL, TIMEOUT_MS3, MAX_FILE, safeId2, ASSUMES_REPO, needsFixtures, frac;
+var import_node_child_process12, fs35, os5, path36, PARALLEL, TIMEOUT_MS3, MAX_FILE, safeId2, ASSUMES_REPO, needsFixtures, frac;
 var init_run2 = __esm({
   "cli/src/eval/run.ts"() {
     "use strict";
-    import_node_child_process11 = require("node:child_process");
+    import_node_child_process12 = require("node:child_process");
     fs35 = __toESM(require("node:fs"));
     os5 = __toESM(require("node:os"));
     path36 = __toESM(require("node:path"));
+    init_config();
     init_fsx();
     init_log();
+    init_shim();
     init_emit();
     init_skills3();
     PARALLEL = 3;
@@ -5121,7 +5202,7 @@ function repoRoot() {
 }
 function runChecks(repo) {
   const cmd = process.env.HARNESS_RELEASE_CHECK || "npm run check";
-  const r = (0, import_node_child_process12.spawnSync)(cmd, { cwd: repo, shell: true, encoding: "utf8" });
+  const r = (0, import_node_child_process13.spawnSync)(cmd, { cwd: repo, shell: true, encoding: "utf8" });
   if (r.status !== 0) {
     const tail = `${r.stdout ?? ""}${r.stderr ?? ""}`.trim().split("\n").slice(-25).join("\n");
     throw new Error(`checagens falharam (${cmd}):
@@ -5256,11 +5337,11 @@ function run18(args) {
   console.error("uso: hx release patch|minor|major | check | stamp <skill>");
   return 1;
 }
-var import_node_child_process12, fs36, path38, PROJECT;
+var import_node_child_process13, fs36, path38, PROJECT;
 var init_release = __esm({
   "cli/src/commands/release.ts"() {
     "use strict";
-    import_node_child_process12 = require("node:child_process");
+    import_node_child_process13 = require("node:child_process");
     fs36 = __toESM(require("node:fs"));
     path38 = __toESM(require("node:path"));
     init_setup();
@@ -5348,7 +5429,7 @@ var HELP = `hx <command> [args]
 
   hook <name>                 hooks do Claude Code (stdin JSON)
   task start|done <id>        marca tarefa do sprint ativo
-  task phase <id> <fase>      fase da tarefa em andamento (testes, c\xF3digo, fila, revis\xE3o, commit)
+  task phase <id> <fase>      fase da tarefa em andamento (testes, c\xF3digo, lint, fila, revis\xE3o, commit)
   sprint open|close|approve|feedback|status <id>
   review pass|fail <task>     resultado da revis\xE3o
   status --where t --next t   registra onde o projeto est\xE1 e o pr\xF3ximo passo
