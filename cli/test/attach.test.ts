@@ -217,7 +217,7 @@ describe("hx attach", () => {
     expect(s.env).toEqual({ FOO: "1", ENABLE_STOP_REVIEW: "0", ENABLE_COMMIT_REVIEW: "0" });
     expect(s.permissions?.deny).toEqual(["Bash(rm *)"]);
     expect(s.permissions?.allow).toEqual(["Bash(ls)", "Bash(hx *)", "PowerShell(hx *)"]);
-    expect(s.autoCompactWindow).toBe(250000);
+    expect(s.autoCompactWindow).toBe(140000);
     expect(s.enabledPlugins).toEqual({
       "other@market": true,
       "main-harness@harness-stable": true,

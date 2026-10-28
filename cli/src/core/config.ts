@@ -51,8 +51,8 @@ export const DEFAULT_CONFIG: Config = {
       cacheRead: 0.1,
     },
   },
-  contextLimit: 250000,
-  handoffAt: 230000,
+  contextLimit: 140000,
+  handoffAt: 120000,
   contextStrategy: "compact",
   harnessRepo: "C:\\Main Harness",
   stableDir: "C:\\harness-stable",
@@ -69,6 +69,9 @@ export const DEFAULT_CONFIG: Config = {
 /** Reads config.json merged over defaults; env vars override limits (used by tests). */
 export function loadConfig(): Config {
   const file = readJson<Partial<Config>>(home.config(), {});
+  // Treat old defaults (250000/230000) written by ensureConfig as absent to apply new defaults
+  if (file.contextLimit === 250000) delete file.contextLimit;
+  if (file.handoffAt === 230000) delete file.handoffAt;
   const cfg: Config = {
     ...DEFAULT_CONFIG,
     ...file,

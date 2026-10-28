@@ -65,7 +65,7 @@ describe("e2e with spaces in every path", () => {
     );
     expect(settings.env.ENABLE_STOP_REVIEW).toBe("0");
     expect(settings.env.ENABLE_COMMIT_REVIEW).toBe("0");
-    expect(settings.autoCompactWindow).toBe(250000);
+    expect(settings.autoCompactWindow).toBe(140000);
   });
 
   it("session-start injects context and records session.start", () => {
