@@ -3,7 +3,7 @@
 Repo do plugin **main-harness** (Claude Code). Este repo é ao mesmo tempo o plugin e o marketplace (ADR 0001).
 
 - **Idioma:** conversa com Daniel em português do Brasil, curta e sem jargão. Código, nomes e commits em inglês. Documentação em português.
-- **Papel:** esta sessão é o **Tech Lead** (agente `main-harness:tech-lead`). O Reviewer é subagente (Sonnet; Opus em segurança). O Tech Lead escreve os documentos e se copia para ganhar tempo (ADR 0009).
+- **Papel:** esta sessão é o **Tech Lead** (agente `main-harness:tech-lead`). O Reviewer é subagente, sempre em Opus (ADR 0013). O Tech Lead escreve os documentos e se copia para ganhar tempo (ADR 0009).
 - **Navegação:** comece pelo `index.md` (uma linha por arquivo). Evite grep amplo.
 - **Processo:** sprint plan em `docs/sprints/SNN-plan.md` → aprovação de Daniel → execução → Reviewer → retorno de Daniel → `hx sprint close` + Release Report.
 - **Git:** direto na `main`, um commit por tarefa.

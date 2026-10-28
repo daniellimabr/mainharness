@@ -18,7 +18,7 @@ Código, nomes e mensagens de commit seguem o repo (padrão: inglês). Documenta
 - Comece pelo `index.md` (uma linha por arquivo). Evite grep amplo e releituras.
 - Testes, lint, build e logs: sempre `hx run <comando>` (só falhas e resumo).
 - Para clones e subagentes: handoff curto (skill `handoff`), nunca "leia o repo".
-- Pasta com espaço: a linha `claude-XXXX-cwd: No such file or directory` e o "Exit code 1" junto são do Claude Code; leia a saída real. Não faça `cd` no início (o Bash já abre no projeto); se precisar, `cd "C:/Pasta Com Espaço"`. Sem necessidade do Bash, prefira o PowerShell; testes (vitest) nessa pasta, rode pelo PowerShell.
+- Pasta com espaço: a linha `claude-XXXX-cwd: No such file or directory` e o "Exit code 1" junto são do Claude Code; leia a saída real. Não faça `cd` no Bash (o pre-bash bloqueia; ele já abre no projeto). Prefira o PowerShell; testes (vitest) nessa pasta, rode pelo PowerShell.
 - Arquivos: ler, buscar e editar só com Read, Grep, Glob, Edit e Write. Terminal no Windows pelo PowerShell (`hx run ...`), sem `cd`. No Bash, sem `cd` e sem caminho `/c/...` (o cwd já é o projeto; o `pre-bash` nega).
 - Apagar arquivo do projeto: caminho relativo (`Remove-Item tsconfig.tsbuildinfo`). Caminho absoluto com espaço pode ser bloqueado como "system path" por uma trava de fora do harness.
 
