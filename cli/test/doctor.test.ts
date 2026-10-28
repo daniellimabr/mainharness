@@ -103,6 +103,16 @@ describe("runDoctor", () => {
     expect(line(r.lines, "ativos no projeto")).toMatch(/^✓/);
   });
 
+  it("warns when autoCompactWindow differs from contextLimit", () => {
+    const file = path.join(proj, ".claude", "settings.json");
+    writeJson(file, { autoCompactWindow: 250000 });
+    expect(line(runDoctor({ projectRoot: proj }).lines, "autoCompactWindow")).toMatch(
+      /^⚠ autoCompactWindow 250000.*140000/,
+    );
+    writeJson(file, { autoCompactWindow: 140000 });
+    expect(line(runDoctor({ projectRoot: proj }).lines, "autoCompactWindow")).toMatch(/^✓/);
+  });
+
   it("warns when the project path has a space", () => {
     const r = runDoctor({ projectRoot: proj });
     const w = line(r.lines, "No such file or directory");

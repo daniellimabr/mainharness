@@ -96,6 +96,15 @@ export function mergeSettings(root: string, contextLimit: number): void {
   writeJson(file, s);
 }
 
+/** Keeps an existing .claude/settings.json autoCompactWindow equal to the harness contextLimit. */
+export function syncCompactWindow(root: string, contextLimit: number): void {
+  const file = path.join(root, ".claude", "settings.json");
+  const s = readJson<Record<string, unknown> | null>(file, null);
+  if (!s || s.autoCompactWindow === contextLimit) return;
+  s.autoCompactWindow = contextLimit;
+  writeJson(file, s);
+}
+
 /** Installs the plugins at project scope via the claude CLI; falls back to enabledPlugins. */
 export function installPlugins(root: string): string {
   const failed = PLUGINS.filter(

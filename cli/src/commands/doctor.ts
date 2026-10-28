@@ -4,6 +4,7 @@ import * as fs from "node:fs";
 import * as os from "node:os";
 import * as path from "node:path";
 import { PLUGINS } from "../attach/setup";
+import { loadConfig } from "../core/config";
 import { readJson, readText, samePathKey } from "../core/fsx";
 import { runTool } from "../core/proc";
 import { claudeHome, home, pluginRoot } from "../core/paths";
@@ -211,10 +212,11 @@ export function runDoctor(opts: { projectRoot?: string; homeVarSet?: () => boole
     );
 
   if (root) {
-    const st = readJson<{ enabledPlugins?: Record<string, boolean>; env?: Record<string, string> }>(
-      path.join(root, ".claude", "settings.json"),
-      {},
-    );
+    const st = readJson<{
+      enabledPlugins?: Record<string, boolean>;
+      env?: Record<string, string>;
+      autoCompactWindow?: number;
+    }>(path.join(root, ".claude", "settings.json"), {});
     for (const id of PLUGINS) {
       const have = installedVersion(id, root);
       const want = availableVersion(id);
@@ -239,6 +241,13 @@ export function runDoctor(opts: { projectRoot?: string; homeVarSet?: () => boole
       envOk,
       "ENABLE_STOP_REVIEW e ENABLE_COMMIT_REVIEW desligados",
       'ENABLE_STOP_REVIEW/ENABLE_COMMIT_REVIEW devem ser "0" no .claude/settings.json: rode /attach',
+    );
+    const limit = loadConfig().contextLimit;
+    check(
+      st.autoCompactWindow === limit,
+      `autoCompactWindow ${limit} igual ao contextLimit`,
+      `autoCompactWindow ${st.autoCompactWindow ?? "ausente"} no .claude/settings.json difere do contextLimit ${limit}: abra um chat no projeto (a migração corrige)`,
+      true,
     );
   }
 

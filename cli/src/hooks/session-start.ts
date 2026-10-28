@@ -1,6 +1,7 @@
 // SessionStart: records the session, migrates the project if needed and injects a short context.
 import * as fs from "node:fs";
 import * as path from "node:path";
+import { syncCompactWindow } from "../attach/setup";
 import { migrateProject } from "../commands/migrate";
 import { ensureConfig, loadConfig } from "../core/config";
 import { logError } from "../core/log";
@@ -91,6 +92,12 @@ export function sessionStart(input: HookInput): HookOutcome {
   const parts = [`Main Harness ${version} — projeto ${p.harness.name || p.id} (${p.id}).`];
   const migration = migrationNote(p.root, p.harness.version, version);
   if (migration) parts.push(migration);
+  // Every chat, not only on version change: config.json may change without a release.
+  try {
+    syncCompactWindow(p.root, loadConfig().contextLimit);
+  } catch (err) {
+    logError("hook session-start compact window", err);
+  }
   emit({
     type: "session.start",
     project: p.id,

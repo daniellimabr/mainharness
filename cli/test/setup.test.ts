@@ -9,7 +9,8 @@ import {
   ensureAutoModeRule,
   removeStatusLine,
 } from "../src/commands/setup";
-import { rm, tempDir } from "./helpers";
+import { sessionStart } from "../src/hooks/session-start";
+import { fakeProject, isolateHome, rm, tempDir } from "./helpers";
 
 let claude: string;
 const saved = process.env.CLAUDE_CONFIG_DIR;
@@ -141,6 +142,41 @@ describe("removeStatusLine", () => {
     fs.writeFileSync(settings(), "{ broken");
     expect(removeStatusLine()).toBe(false);
     expect(fs.readFileSync(settings(), "utf8")).toBe("{ broken");
+  });
+});
+
+describe("autoCompactWindow on session start", () => {
+  it("follows the effective contextLimit, even with the old 250000 in config.json", () => {
+    const env = isolateHome();
+    const proj = fakeProject();
+    try {
+      fs.writeFileSync(
+        path.join(env.home, "config.json"),
+        JSON.stringify({ contextLimit: 250000 }),
+      );
+      const file = path.join(proj, ".claude", "settings.json");
+      fs.writeFileSync(file, JSON.stringify({ model: "opus", autoCompactWindow: 250000 }));
+      sessionStart({ cwd: proj, session_id: "s1", source: "startup" });
+      expect(JSON.parse(fs.readFileSync(file, "utf8"))).toEqual({
+        model: "opus",
+        autoCompactWindow: 140000,
+      });
+    } finally {
+      env.cleanup();
+      rm(proj);
+    }
+  });
+
+  it("does not create a settings.json the project does not have", () => {
+    const env = isolateHome();
+    const proj = fakeProject();
+    try {
+      sessionStart({ cwd: proj, session_id: "s1", source: "startup" });
+      expect(fs.existsSync(path.join(proj, ".claude", "settings.json"))).toBe(false);
+    } finally {
+      env.cleanup();
+      rm(proj);
+    }
   });
 });
 

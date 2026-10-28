@@ -33,5 +33,5 @@
     "ponytail@ponytail": true,
     "security-guidance@claude-plugins-official": true
   },
-  "autoCompactWindow": 250000
+  "autoCompactWindow": 140000
 }
