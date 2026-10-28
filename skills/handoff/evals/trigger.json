@@ -1,5 +1,5 @@
 [
-  {"query":"o hook avisou que passamos de 230K, grava o handoff agora","should_trigger":true},
+  {"query":"o hook avisou que passamos de 120K, grava o handoff agora","should_trigger":true},
   {"query":"delega a T04 para um clone e passa o contexto necessário para ele","should_trigger":true},
   {"query":"vou trocar de chat, deixa um bilhete com o estado atual e os próximos passos","should_trigger":true},
   {"query":"faz um resumo de passagem de bastão para quem continuar essa tarefa","should_trigger":true},

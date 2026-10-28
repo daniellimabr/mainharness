@@ -144,12 +144,15 @@ async function child(sprint: string, tnn: string, handoff: string): Promise<numb
   // Same launch as hx eval: fixed flags on the line, shell lets HX_CLAUDE_BIN / claude.cmd work on Windows.
   const bin = process.env.HX_CLAUDE_BIN || "claude";
   const r = await new Promise<{ code: number; out: string }>((resolve) => {
-    // --model: the tech-lead agent pins a full Claude id that the ANTHROPIC_DEFAULT_* aliases don't remap.
-    const c = spawn(`${bin} -p --model ${process.env.ANTHROPIC_MODEL} --allowedTools ${TOOLS}`, {
-      env,
-      shell: true,
-      windowsHide: true,
-    });
+    // --model: the executor agent pins a full Claude id that the ANTHROPIC_DEFAULT_* aliases don't remap.
+    const c = spawn(
+      `${bin} -p --model ${process.env.ANTHROPIC_MODEL} --agent main-harness:executor --allowedTools ${TOOLS}`,
+      {
+        env,
+        shell: true,
+        windowsHide: true,
+      },
+    );
     let out = "";
     // A hung worker would hold the lock forever; spawn's timeout only kills the shell on Windows.
     const timer = setTimeout(() => {

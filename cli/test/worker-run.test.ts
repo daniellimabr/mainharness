@@ -174,6 +174,8 @@ describe("hx worker run: end to end with a fake claude", () => {
       "-p",
       "--model",
       "gemini/gemini-3.5-flash-lite",
+      "--agent",
+      "main-harness:executor",
       "--allowedTools",
       "Read,Edit,Write,Glob,Grep,Bash,PowerShell",
     ]);

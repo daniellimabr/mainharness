@@ -3,7 +3,7 @@
   "evals": [
     {
       "id": 1,
-      "prompt": "O hook avisou que o contexto passou de 230K. Estamos na S02, tarefa T04: o parser da tabela de tarefas está feito, falta tratar linha vazia e rodar o lint. Escreve o handoff.",
+      "prompt": "O hook avisou que o contexto passou de 120K. Estamos na S02, tarefa T04: o parser da tabela de tarefas está feito, falta tratar linha vazia e rodar o lint. Escreve o handoff.",
       "expected_output": "Handoff com as seis seções, até ~40 linhas, gravado com hx handoff via heredoc.",
       "expectations": [
         "O handoff tem Objetivo, Estado atual, Arquivos que pode tocar, Decisões, Critério de pronto e Próximos passos",

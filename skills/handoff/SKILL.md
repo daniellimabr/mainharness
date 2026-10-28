@@ -1,6 +1,6 @@
 ---
 name: handoff
-description: "Escreve um handoff curto (máx. ~40 linhas): objetivo, estado atual, arquivos que pode tocar, decisões, critério de pronto e próximos passos. Use ao delegar trabalho a um clone ou subagente, e SEMPRE que o contexto chegar perto do limite (alerta de 230K/250K, 'escreva o handoff', antes de compactar ou trocar de chat). Grava com 'hx handoff' via heredoc."
+description: "Escreve um handoff curto (máx. ~40 linhas): objetivo, estado atual, arquivos que pode tocar, decisões, critério de pronto e próximos passos. Use ao delegar trabalho a um clone ou subagente, e SEMPRE que o contexto chegar perto do limite (alerta de 120K, 'escreva o handoff', antes de compactar ou trocar de chat). Grava com 'hx handoff' via heredoc."
 argument-hint: "[delegar | contexto]"
 ---
 
@@ -10,7 +10,7 @@ Um handoff é um bilhete para quem continua o trabalho sem ter visto nada do que
 
 ## Dois usos
 
-- **Delegar** a um clone/subagente: ele começa do zero e só sabe o que está no bilhete.
+- **Delegar** a um clone/subagente (`main-harness:executor`): ele começa do zero e só sabe o que está no bilhete.
 - **Limite de contexto:** você mesmo, depois da compactação ou num chat novo. O `hx` reinjeta o handoff (ADR 0006).
 
 ## Formato
@@ -67,7 +67,7 @@ Veja o último com `hx handoff --show`. Também aceita `hx handoff --file <arqui
 
 ## Delegar a um clone
 
-1. Escreva o handoff (mesmo formato) e passe o texto no prompt do subagente.
+1. Escreva o handoff (mesmo formato) e passe o texto no prompt do subagente `main-harness:executor`.
 2. Peça um relatório curto de volta: o que fez, comandos rodados, resultado.
 3. Confira o resultado antes de marcar a tarefa (`hx task done <id>`).
 
