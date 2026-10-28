@@ -106,6 +106,21 @@ export function sessionStart(input: HookInput): HookOutcome {
     logError("hook session-start requests", err);
   }
 
+  // Requests the harness sent to this project (the harness repo has its own inbox notice).
+  try {
+    // Windows paths are case-insensitive (VS Code passes c:\ while config has C:\).
+    const norm = (s: string) => path.resolve(s).toLowerCase();
+    if (norm(p.root) !== norm(loadConfig().harnessRepo)) {
+      const dir = path.join(p.root, "inbox");
+      const n = fs.existsSync(dir)
+        ? fs.readdirSync(dir).filter((f) => f.endsWith(".md")).length
+        : 0;
+      if (n) parts.push(`Pedidos do harness no inbox/: ${n}. Leia antes de planejar.`);
+    }
+  } catch (err) {
+    logError("hook session-start inbox", err);
+  }
+
   const index = summarizeIndex(p.root);
   if (index) parts.push(index);
   if (state.activeSprint) {

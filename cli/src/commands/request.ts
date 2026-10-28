@@ -5,7 +5,7 @@ import { flagStr, parseArgs } from "../core/args";
 import { loadConfig } from "../core/config";
 import { commandContext } from "../core/context";
 import { pluginRoot } from "../core/paths";
-import { slugify } from "../core/projects";
+import { readProjects, slugify } from "../core/projects";
 import { emit, utcStamp } from "../events/emit";
 import { createNew } from "../sprint/cmd";
 
@@ -19,7 +19,7 @@ export function run(args: string[]): number {
   const why = flagStr(p, "why");
   if (!title || !need || !why) {
     console.error(
-      'uso: hx request --title "..." --need "..." --why "..." [--priority alta|media|baixa] [--example "..."]',
+      'uso: hx request --title "..." --need "..." --why "..." [--priority alta|media|baixa] [--example "..."] [--to <id-de-projeto-conectado>]',
     );
     return 1;
   }
@@ -27,6 +27,17 @@ export function run(args: string[]): number {
   if (!PRIORITIES.includes(raw as Priority))
     throw new Error("prioridade deve ser alta, media ou baixa");
   const priority = raw as Priority;
+  // --to only selects a registry entry by exact id; the path never comes from the request.
+  const to = flagStr(p, "to");
+  let dir = loadConfig().inboxDir;
+  if (to !== undefined) {
+    const entry = readProjects().find((e) => e.id === to);
+    if (!entry) {
+      console.error(`projeto "${to}" não está no registro (~/.harness/projects.json)`);
+      return 1;
+    }
+    dir = path.join(entry.path, "inbox");
+  }
   const ctx = commandContext(process.cwd(), flagStr(p, "agent"));
 
   const date = utcStamp().slice(0, 10);
@@ -46,7 +57,6 @@ export function run(args: string[]): number {
   );
   const content = template.replace(/\{\{(\w+)\}\}/g, (m, k: string) => values[k] ?? m);
 
-  const dir = loadConfig().inboxDir;
   fs.mkdirSync(dir, { recursive: true });
   const stem = `${date}-${ctx.id}-${slugify(title).slice(0, 60).replace(/-+$/, "")}`;
   const file = createNew(dir, stem, content);
