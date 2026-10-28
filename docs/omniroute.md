@@ -22,7 +22,7 @@ O harness pode passar tarefas a um **trabalhador**: um `claude -p` em segundo pl
    ```powershell
    node -e "const fs=require('fs'),f=require('os').homedir()+'/.harness/config.json';const c=JSON.parse(fs.readFileSync(f,'utf8'));c.worker={...c.worker,url:'http://localhost:20128',token:process.argv[1]};fs.writeFileSync(f,JSON.stringify(c,null,2))" COLE_AQUI
    ```
-   Opcionais em `worker`: `model` (padrão `gemini/gemini-3.5-flash-lite`) e `threshold` (padrão 90, em %).
+   Opcionais em `worker`: `model` (padrão `gemini/gemini-3.5-flash-lite`).
 5. Confira: `hx worker status` deve dizer **Trabalhador pronto**.
 
 O OmniRoute precisa estar aberto (`omniroute`) enquanto houver trabalhador rodando.
@@ -34,7 +34,7 @@ O OmniRoute precisa estar aberto (`omniroute`) enquanto houver trabalhador rodan
 | `hx worker status` | Diz se está configurado, se o OmniRoute responde e qual modelo (nunca mostra a chave). |
 | `hx worker run TNN <handoff>` | Trabalhador em segundo plano faz a tarefa a partir do handoff. Relatório em `~/.harness/worker/<sprint>-<tarefa>.md`. Um por vez. |
 
-**Na sprint, você não precisa rodar nada disso.** O Tech Lead manda ao trabalhador as tarefas que couberem nele (skill `worker`), revisa a entrega e commita como faz com os clones. Perto do limite (90%), o harness avisa e o Tech Lead despacha tudo o que estiver aberto; quando o limite reiniciar, abra um chat novo com `/main-harness:continue` para recolher os relatórios.
+**Na sprint, você não precisa rodar nada disso.** O Tech Lead manda ao trabalhador as tarefas que couberem nele (skill `worker`), revisa a entrega e commita como faz com os clones. Quem executa cada tarefa é decidido no plano (ADR 0013); o modelo não muda com o % de uso. Perto do limite, o Tech Lead grava o handoff e para; quando o limite reiniciar, abra um chat novo com `/main-harness:continue`.
 
 O dashboard mostra o trabalhador como agente `gemini`.
 

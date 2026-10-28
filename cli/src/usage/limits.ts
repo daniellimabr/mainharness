@@ -2,7 +2,6 @@
 // Undocumented endpoint, accepted as an exception to "official paths only" (ADR 0010).
 import * as fs from "node:fs";
 import * as path from "node:path";
-import { loadConfig } from "../core/config";
 import { claudeHome, harnessHome } from "../core/paths";
 import { emit, readEvents } from "../events/emit";
 
@@ -107,30 +106,6 @@ export function limitsLine(): string | null {
   const l = lastLimits();
   if (!l) return null;
   return `Limite: 5 h ${Math.round(l.five_hour)}% · semana ${Math.round(l.seven_day)}%`;
-}
-
-/** S10/T07: nudge toward the Gemini worker when a window is at the threshold; once per session. */
-export function workerNudge(session: string | null): string | null {
-  const l = lastLimits();
-  const t = loadConfig().worker.threshold;
-  const hit = !l
-    ? null
-    : l.five_hour >= t
-      ? `${Math.round(l.five_hour)}% (5 h)`
-      : l.seven_day >= t
-        ? `${Math.round(l.seven_day)}% (semana)`
-        : null;
-  if (!hit) return null;
-  const mark = path.join(harnessHome(), "cache", "worker-nudge.json");
-  try {
-    if ((JSON.parse(fs.readFileSync(mark, "utf8")) as { session?: unknown }).session === session)
-      return null;
-  } catch {
-    // no mark yet
-  }
-  fs.mkdirSync(path.dirname(mark), { recursive: true });
-  fs.writeFileSync(mark, JSON.stringify({ session }));
-  return `Uso do Claude em ${hit}. Delegue tarefas de escopo fechado ao trabalhador Gemini (skill worker).`;
 }
 
 /** For T05: resets_at of the window that ran out (weekly wins, it lasts longer); null if none. */

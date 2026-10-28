@@ -182,7 +182,8 @@ describe("sprint commands (real bundle, project with spaces)", () => {
     hx("task", "start", "T01", "--at", "2026-10-15T02:05:00Z");
     const bad = hx("task", "phase", "T01", "deploy");
     expect(bad.code).toBe(1);
-    expect(bad.stderr).toContain("testes, código, fila, revisão, commit");
+    expect(bad.stderr).toContain("testes, código, lint, fila, revisão, commit");
+    expect(hx("task", "phase", "T01", "lint").code).toBe(0);
     const ph = hx("task", "phase", "t01", "revisão");
     expect(ph.code).toBe(0);
     expect(ph.stdout).toContain("| 🔄 revisão | T01 | Descrição curta |");

@@ -23,7 +23,7 @@ export interface Config {
   /** IANA timezone for times shown to people (events stay UTC). */
   timezone: string;
   /** Gemini workers via OmniRoute; the token only ever comes from config.json. */
-  worker: { url: string; token: string; model: string; threshold: number };
+  worker: { url: string; token: string; model: string };
 }
 
 export const DEFAULT_CONFIG: Config = {
@@ -58,12 +58,7 @@ export const DEFAULT_CONFIG: Config = {
   stableDir: "C:\\harness-stable",
   inboxDir: "C:\\Main Harness\\inbox",
   timezone: "America/Sao_Paulo",
-  worker: {
-    url: "http://localhost:20128",
-    token: "",
-    model: "gemini/gemini-3.5-flash-lite",
-    threshold: 90,
-  },
+  worker: { url: "http://localhost:20128", token: "", model: "gemini/gemini-3.5-flash-lite" },
 };
 
 /** Reads config.json merged over defaults; env vars override limits (used by tests). */

@@ -36,7 +36,7 @@ const HELP = `hx <command> [args]
 
   hook <name>                 hooks do Claude Code (stdin JSON)
   task start|done <id>        marca tarefa do sprint ativo
-  task phase <id> <fase>      fase da tarefa em andamento (testes, código, fila, revisão, commit)
+  task phase <id> <fase>      fase da tarefa em andamento (testes, código, lint, fila, revisão, commit)
   sprint open|close|approve|feedback|status <id>
   review pass|fail <task>     resultado da revisão
   status --where t --next t   registra onde o projeto está e o próximo passo

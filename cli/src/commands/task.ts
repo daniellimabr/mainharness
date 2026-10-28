@@ -5,9 +5,8 @@ import { readState, updateState, type TaskTimes } from "../core/state";
 import { emit } from "../events/emit";
 import { atFlag, loadPlan } from "../sprint/cmd";
 import { renderTaskList, taskLine, updateExecution } from "../sprint/index";
-import { workerNudge } from "../usage/limits";
 
-const PHASES = ["testes", "código", "fila", "revisão", "commit"];
+const PHASES = ["testes", "código", "lint", "fila", "revisão", "commit"];
 
 export function run(args: string[]): number {
   const p = parseArgs(args);
@@ -64,7 +63,5 @@ export function run(args: string[]): number {
   if (sub === "done" && !prev?.start)
     console.error(`aviso: ${id} não tinha início registrado; duração 0.`);
   console.log(renderTaskList(ctx.root, sprint));
-  const nudge = workerNudge(ctx.session);
-  if (nudge) console.log(`\n${nudge}`);
   return 0;
 }

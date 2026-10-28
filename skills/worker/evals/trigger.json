@@ -1,5 +1,5 @@
 [
-  {"query":"o aviso do harness disse que passamos de 90% do limite, o que faço com as tarefas abertas?","should_trigger":true},
+  {"query":"o relatório do trabalhador da T07 já saiu? recolhe e passa pro Reviewer","should_trigger":true},
   {"query":"a T05 é só atualizar o CHANGELOG, manda pro Gemini em vez de abrir um clone","should_trigger":true},
   {"query":"usa o trabalhador para escrever os testes da T03, quero economizar Claude","should_trigger":true},
   {"query":"abre um clone em Sonnet para a T04","should_trigger":false},

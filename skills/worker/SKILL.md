@@ -1,7 +1,7 @@
 ---
 name: worker
-description: "Passa uma tarefa da sprint a um trabalhador no Gemini (claude -p via OmniRoute, 'hx worker run'), recolhe o relatório, revisa e commita. Use quando a tarefa for simples e bem delimitada (docs, testes, código pequeno sem superfície de segurança), quando o aviso do harness disser que o limite do Claude passou do limiar, ou quando pedirem 'manda pro Gemini', 'usa o trabalhador', 'economiza Claude'. Use também quando pedirem para pôr o chat no Gemini ou o OmniRoute no settings.json (a skill explica por que não e oferece o trabalhador). Não use para clones Claude nem para instalar o OmniRoute (guia em docs/omniroute.md)."
-argument-hint: "[TNN | limite]"
+description: "Passa uma tarefa da sprint a um trabalhador no Gemini (claude -p via OmniRoute, 'hx worker run'), recolhe o relatório, revisa e commita. Use quando a tarefa for simples e bem delimitada (docs, testes, código pequeno sem superfície de segurança), ou quando pedirem 'manda pro Gemini', 'usa o trabalhador', 'economiza Claude'. Use também quando pedirem para pôr o chat no Gemini ou o OmniRoute no settings.json (a skill explica por que não e oferece o trabalhador). Não use para clones Claude nem para instalar o OmniRoute (guia em docs/omniroute.md)."
+argument-hint: "[TNN]"
 ---
 
 # Trabalhador no Gemini
@@ -35,12 +35,3 @@ Fase de avaliação: varie o tipo (docs, testes, código, tela nova ou ajuste de
 1. Relatório em `~/.harness/worker/<SNN>-<TNN>.md`. Leia o relatório e o `git diff`, não confie só no relatório.
 2. Reviewer revisa como a entrega de qualquer clone.
 3. Passou: commit `<tipo>(SNN/TNN): ...` e `hx task done TNN`. Falhou ou ficou ruim: corrija você ou mande a um clone; anote o motivo para o Release Report.
-
-## Perto do limite
-
-Quando o harness avisar que o uso passou do limiar (padrão 90%):
-1. Pare de abrir clones.
-2. Para **cada** tarefa aberta, grave o handoff dela em `.worker/<SNN>-<TNN>-handoff.md` (skill `handoff`), como em Despachar.
-3. Rode `hx worker run` para a primeira (um por vez); as demais ficam na fila.
-4. Grave o handoff da sessão (`hx handoff`) com a fila: tarefa despachada e arquivos de handoff das próximas.
-5. Termine a resposta, sempre (mesmo que algum passo acima tenha falhado), com: "Quando o limite reiniciar, abra um chat novo com `/main-harness:continue` para recolher os relatórios e despachar a próxima."

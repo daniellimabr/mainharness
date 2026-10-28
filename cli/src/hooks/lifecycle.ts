@@ -9,7 +9,7 @@ import { type ProjectState, readState, updateState } from "../core/state";
 import { emit } from "../events/emit";
 import { ID_RE } from "../events/schema";
 import { currentContextTokens, ingestSession } from "../usage/index";
-import { refreshLimits, workerNudge } from "../usage/limits";
+import { refreshLimits } from "../usage/limits";
 import { jsonOut, type HookInput, type HookOutcome } from "./runner";
 
 /** Runtime state plus the compaction mark kept by this module. */
@@ -89,8 +89,7 @@ export function stop(input: HookInput): HookOutcome {
     sprint: c.st.activeSprint,
     data: {},
   });
-  const nudge = workerNudge(c.session);
-  return nudge ? jsonOut({ systemMessage: nudge }) : {};
+  return {};
 }
 
 /** Reason (and message) to keep the agent going; null lets it stop. */
