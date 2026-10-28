@@ -111,7 +111,7 @@ describe("bench.mjs", () => {
       limits_before: null,
       limits_after: null,
       lint: { typecheck: true, eslint: false, format: true },
-      acceptance: { ok: true, passed: 3, failed: 0 },
+      acceptance: { ok: true, passed: 1, failed: 0 },
       hidden: { ok: true, passed: 1, failed: 0 },
     });
     const npm = fs.readFileSync(path.join(bin, "npm.log"), "utf8");
