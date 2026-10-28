@@ -59,7 +59,7 @@ beforeEach(() => {
   fake = path.join(iso.home, "fake claude.js");
   fs.writeFileSync(fake, FAKE);
   process.env.HX_CLAUDE_BIN = `"${process.execPath}" "${fake}"`;
-});
+}, 30_000); // git spawns are slow on Windows under load
 
 afterEach(() => {
   delete process.env.HX_CLAUDE_BIN;

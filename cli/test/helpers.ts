@@ -13,7 +13,7 @@ export function tempDir(label = "hx test"): string {
 }
 
 export function rm(dir: string): void {
-  fs.rmSync(dir, { recursive: true, force: true });
+  fs.rmSync(dir, { recursive: true, force: true, maxRetries: 5, retryDelay: 100 });
 }
 
 /** Points HARNESS_HOME at a fresh temp dir for in-process tests. Returns cleanup. */
