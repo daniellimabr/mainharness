@@ -27,7 +27,7 @@ Fase de avaliação: varie o tipo (docs, testes, código, tela nova ou ajuste de
 
 1. Escreva o handoff da tarefa com a skill `handoff` num arquivo dentro do projeto: `.worker/<SNN>-<TNN>-handoff.md` (fora do git; nunca em `.claude/`, que o Claude Code protege). Inclua: "Ao entregar, rode `hx task phase TNN fila`. Não commite."
 2. `hx task start TNN` (se ainda não começou). Se recusar, siga para o passo 3: o despacho não depende dele.
-3. `hx worker run TNN <arquivo-do-handoff>`. Recusou porque já há um rodando? Use clone ou espere. Falhou por outro motivo? Avise Daniel e mande a tarefa a um clone.
+3. `hx worker run TNN <arquivo-do-handoff>`. Recusou porque já há um rodando? Use clone ou espere. Falhou por outro motivo? Não pergunte: mostre o erro em uma linha, diga "a TNN vai para um clone Claude" e mande a tarefa a um clone com o mesmo handoff.
 4. Avise Daniel: `[TNN] Título: mandei ao Gemini`, e diga o que vem depois: recolher o relatório, passar pelo Reviewer e commitar. É lento (minutos): siga com outras tarefas.
 
 ## Recolher
