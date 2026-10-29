@@ -159,72 +159,6 @@ var init_fsx = __esm({
   }
 });
 
-// cli/src/core/config.ts
-function loadConfig() {
-  const file2 = readJson(home.config(), {});
-  if (file2.contextLimit === 25e4) delete file2.contextLimit;
-  if (file2.handoffAt === 23e4) delete file2.handoffAt;
-  const cfg = {
-    ...DEFAULT_CONFIG,
-    ...file2,
-    prices: { ...DEFAULT_CONFIG.prices, ...file2.prices ?? {} }
-  };
-  const envNum = (k) => process.env[k] ? Number(process.env[k]) : void 0;
-  cfg.contextLimit = envNum("HARNESS_CONTEXT_LIMIT") ?? cfg.contextLimit;
-  cfg.handoffAt = envNum("HARNESS_HANDOFF_AT") ?? Math.min(cfg.handoffAt, cfg.contextLimit);
-  if (process.env.HARNESS_INBOX) cfg.inboxDir = process.env.HARNESS_INBOX;
-  if (process.env.HARNESS_STABLE_DIR) cfg.stableDir = process.env.HARNESS_STABLE_DIR;
-  if (process.env.HARNESS_REPO) cfg.harnessRepo = process.env.HARNESS_REPO;
-  return cfg;
-}
-function ensureConfig() {
-  if (fs4.existsSync(home.config())) return false;
-  writeJson(home.config(), DEFAULT_CONFIG);
-  return true;
-}
-var fs4, DEFAULT_CONFIG;
-var init_config = __esm({
-  "cli/src/core/config.ts"() {
-    "use strict";
-    fs4 = __toESM(require("node:fs"));
-    init_fsx();
-    init_paths();
-    DEFAULT_CONFIG = {
-      prices: {
-        "claude-opus-5-5": { input: 4, output: 20, cacheWrite5m: 5, cacheWrite1h: 8, cacheRead: 0.2 },
-        "claude-sonnet-5-5": {
-          input: 2,
-          output: 10,
-          cacheWrite5m: 2.5,
-          cacheWrite1h: 4,
-          cacheRead: 0.2
-        },
-        "claude-fable-5-1": {
-          input: 10,
-          output: 50,
-          cacheWrite5m: 12.5,
-          cacheWrite1h: 20,
-          cacheRead: 0.25
-        },
-        "claude-haiku-4-5": {
-          input: 1,
-          output: 5,
-          cacheWrite5m: 1.25,
-          cacheWrite1h: 2,
-          cacheRead: 0.1
-        }
-      },
-      contextLimit: 14e4,
-      handoffAt: 12e4,
-      contextStrategy: "compact",
-      harnessRepo: "C:\\Main Harness",
-      stableDir: "C:\\harness-stable",
-      inboxDir: "C:\\Main Harness\\inbox",
-      timezone: "America/Sao_Paulo"
-    };
-  }
-});
-
 // cli/src/core/projects.ts
 function slugify(name) {
   const s2 = name.normalize("NFD").replace(/[̀-ͯ]/g, "").toLowerCase().replace(/[^a-z0-9]+/g, "-").replace(/^-+|-+$/g, "");
@@ -245,7 +179,7 @@ function harnessJsonPath(projectDir) {
 function findProjectRoot(dir) {
   let cur = path4.resolve(dir);
   for (; ; ) {
-    if (fs5.existsSync(harnessJsonPath(cur))) return cur;
+    if (fs4.existsSync(harnessJsonPath(cur))) return cur;
     const up = path4.dirname(cur);
     if (up === cur) return null;
     cur = up;
@@ -265,11 +199,11 @@ function resolveProject(cwd) {
   if (!harness) return null;
   return { id: harness.project, root, harness };
 }
-var fs5, path4;
+var fs4, path4;
 var init_projects = __esm({
   "cli/src/core/projects.ts"() {
     "use strict";
-    fs5 = __toESM(require("node:fs"));
+    fs4 = __toESM(require("node:fs"));
     path4 = __toESM(require("node:path"));
     init_fsx();
     init_paths();
@@ -533,6 +467,12 @@ var init_schema = __esm({
         agent_id: s({ optional: true, nullable: true })
       },
       context: { tokens: n(), limit: n(), last_compact_at: s({ nullable: true }) },
+      attention: {
+        source: s({ enum: ["notification", "permission"] }),
+        kind: s(),
+        agent_id: s({ nullable: true })
+      },
+      error: { source: s({ enum: ["stop", "tool"] }), kind: s(), agent_id: s({ nullable: true }) },
       handoff: { mode: s({ enum: ["compact", "manual", "new-chat"] }), file: s({ nullable: true }) },
       "harness.request": { file: s(), priority: s({ enum: ["alta", "media", "baixa"] }) },
       "harness.release": { version: s(), tag: s(), previous: s({ nullable: true }) },
@@ -588,16 +528,16 @@ function emit(input) {
   const errs = validateEvent(ev);
   if (errs.length) throw new Error(`invalid event ${ev.type}: ${errs.join("; ")}`);
   const dir = home.events();
-  fs6.mkdirSync(dir, { recursive: true });
-  fs6.appendFileSync(path7.join(dir, `${ev.ts.slice(0, 10)}.jsonl`), JSON.stringify(ev) + "\n");
+  fs5.mkdirSync(dir, { recursive: true });
+  fs5.appendFileSync(path7.join(dir, `${ev.ts.slice(0, 10)}.jsonl`), JSON.stringify(ev) + "\n");
   return ev;
 }
 function readEvents(filter) {
   const dir = home.events();
-  if (!fs6.existsSync(dir)) return [];
+  if (!fs5.existsSync(dir)) return [];
   const out = [];
-  for (const f of fs6.readdirSync(dir).filter((x) => x.endsWith(".jsonl")).sort()) {
-    for (const line2 of fs6.readFileSync(path7.join(dir, f), "utf8").split("\n")) {
+  for (const f of fs5.readdirSync(dir).filter((x) => x.endsWith(".jsonl")).sort()) {
+    for (const line2 of fs5.readFileSync(path7.join(dir, f), "utf8").split("\n")) {
       if (!line2.trim()) continue;
       try {
         const e = JSON.parse(line2);
@@ -608,16 +548,82 @@ function readEvents(filter) {
   }
   return out;
 }
-var fs6, path7;
+var fs5, path7;
 var init_emit = __esm({
   "cli/src/events/emit.ts"() {
     "use strict";
-    fs6 = __toESM(require("node:fs"));
+    fs5 = __toESM(require("node:fs"));
     path7 = __toESM(require("node:path"));
     init_paths();
     init_version();
     init_schema();
     init_ulid();
+  }
+});
+
+// cli/src/core/config.ts
+function loadConfig() {
+  const file2 = readJson(home.config(), {});
+  if (file2.contextLimit === 25e4) delete file2.contextLimit;
+  if (file2.handoffAt === 23e4) delete file2.handoffAt;
+  const cfg = {
+    ...DEFAULT_CONFIG,
+    ...file2,
+    prices: { ...DEFAULT_CONFIG.prices, ...file2.prices ?? {} }
+  };
+  const envNum = (k) => process.env[k] ? Number(process.env[k]) : void 0;
+  cfg.contextLimit = envNum("HARNESS_CONTEXT_LIMIT") ?? cfg.contextLimit;
+  cfg.handoffAt = envNum("HARNESS_HANDOFF_AT") ?? Math.min(cfg.handoffAt, cfg.contextLimit);
+  if (process.env.HARNESS_INBOX) cfg.inboxDir = process.env.HARNESS_INBOX;
+  if (process.env.HARNESS_STABLE_DIR) cfg.stableDir = process.env.HARNESS_STABLE_DIR;
+  if (process.env.HARNESS_REPO) cfg.harnessRepo = process.env.HARNESS_REPO;
+  return cfg;
+}
+function ensureConfig() {
+  if (fs6.existsSync(home.config())) return false;
+  writeJson(home.config(), DEFAULT_CONFIG);
+  return true;
+}
+var fs6, DEFAULT_CONFIG;
+var init_config = __esm({
+  "cli/src/core/config.ts"() {
+    "use strict";
+    fs6 = __toESM(require("node:fs"));
+    init_fsx();
+    init_paths();
+    DEFAULT_CONFIG = {
+      prices: {
+        "claude-opus-5-5": { input: 4, output: 20, cacheWrite5m: 5, cacheWrite1h: 8, cacheRead: 0.2 },
+        "claude-sonnet-5-5": {
+          input: 2,
+          output: 10,
+          cacheWrite5m: 2.5,
+          cacheWrite1h: 4,
+          cacheRead: 0.2
+        },
+        "claude-fable-5-1": {
+          input: 10,
+          output: 50,
+          cacheWrite5m: 12.5,
+          cacheWrite1h: 20,
+          cacheRead: 0.25
+        },
+        "claude-haiku-4-5": {
+          input: 1,
+          output: 5,
+          cacheWrite5m: 1.25,
+          cacheWrite1h: 2,
+          cacheRead: 0.1
+        }
+      },
+      contextLimit: 14e4,
+      handoffAt: 12e4,
+      contextStrategy: "compact",
+      harnessRepo: "C:\\Main Harness",
+      stableDir: "C:\\harness-stable",
+      inboxDir: "C:\\Main Harness\\inbox",
+      timezone: "America/Sao_Paulo"
+    };
   }
 });
 
@@ -1068,10 +1074,10 @@ function currentTask(st) {
   return open2.length === 1 ? open2[0]?.[0] ?? null : null;
 }
 function descriptionTask(input) {
-  const { transcript_path: tp, session_id: sid, agent_id: id } = input;
-  if (!tp || !sid || !id || !ID_RE.test(sid) || !ID_RE.test(id)) return null;
+  const { transcript_path: tp, session_id: sid, agent_id: id2 } = input;
+  if (!tp || !sid || !id2 || !ID_RE.test(sid) || !ID_RE.test(id2)) return null;
   const meta = readJson(
-    path11.join(path11.dirname(tp), sid, "subagents", `agent-${id}.meta.json`),
+    path11.join(path11.dirname(tp), sid, "subagents", `agent-${id2}.meta.json`),
     {}
   );
   const d = meta && typeof meta.description === "string" ? meta.description : "";
@@ -1082,12 +1088,12 @@ function taskOf(input, c) {
 }
 function emitAgent(type, input, c) {
   if (!input.agent_id) return;
-  const id = input.agent_id;
+  const id2 = input.agent_id;
   const t = input.agent_type;
   const task = type === "agent.start" ? descriptionTask(input) ?? currentTask(c.st) : taskOf(input, c);
   if (type === "agent.start" && task)
     updateState(c.p.id, (s2) => {
-      const all = { ...s2.agentTasks, [id]: task };
+      const all = { ...s2.agentTasks, [id2]: task };
       s2.agentTasks = Object.fromEntries(Object.entries(all).slice(-AGENT_TASKS_KEEP));
     });
   emit({
@@ -1172,14 +1178,48 @@ var init_lifecycle = __esm({
   }
 });
 
+// cli/src/hooks/attention.ts
+function record(type, source, kind, input) {
+  const p = resolveProject(input.cwd || process.cwd());
+  if (!p) return {};
+  const st = readState(p.id);
+  const agentId = id(input.agent_id);
+  const agentTasks = st.agentTasks;
+  emit({
+    type,
+    project: p.id,
+    session: id(input.session_id),
+    sprint: st.activeSprint,
+    task: agentId && agentTasks?.[agentId] || currentTask(st),
+    data: { source, kind: id(kind) ?? "unknown", agent_id: agentId }
+  });
+  return {};
+}
+var id, notification, permissionRequest, stopFailure, postToolUseFailure;
+var init_attention = __esm({
+  "cli/src/hooks/attention.ts"() {
+    "use strict";
+    init_projects();
+    init_state();
+    init_emit();
+    init_schema();
+    init_lifecycle();
+    id = (v) => typeof v === "string" && ID_RE.test(v) ? v : null;
+    notification = (i) => record("attention", "notification", i.notification_type, i);
+    permissionRequest = (i) => record("attention", "permission", i.tool_name, i);
+    stopFailure = (i) => record("error", "stop", i.error, i);
+    postToolUseFailure = (i) => record("error", "tool", i.tool_name, i);
+  }
+});
+
 // cli/src/lint/index.ts
-function load(req, id) {
+function load(req, id2) {
   try {
-    req.resolve(id);
+    req.resolve(id2);
   } catch {
     return null;
   }
-  return req(id);
+  return req(id2);
 }
 async function format(req, root, file2) {
   const prettier = load(req, "prettier");
@@ -2060,13 +2100,13 @@ function syncCompactWindow(root, contextLimit) {
 }
 function installPlugins(root) {
   const failed = PLUGINS.filter(
-    (id) => !runTool("claude", ["plugin", "install", id, "--scope", "project"], PLUGIN_MS, root).ok
+    (id2) => !runTool("claude", ["plugin", "install", id2, "--scope", "project"], PLUGIN_MS, root).ok
   );
   if (!failed.length) return "plugins: instalados no projeto.";
   const file2 = path19.join(root, ".claude", "settings.json");
   const s2 = readJson(file2, {});
   const enabled = { ...s2.enabledPlugins ?? {} };
-  for (const id of failed) enabled[id] = true;
+  for (const id2 of failed) enabled[id2] = true;
   s2.enabledPlugins = enabled;
   writeJson(file2, s2);
   return `plugins: o comando claude falhou; ${failed.join(", ")} ligados direto no settings.`;
@@ -2075,8 +2115,8 @@ function updatePlugins(roots) {
   const live = roots.filter((r) => fs18.existsSync(r));
   const perProject = live.map(
     (r) => PLUGINS.filter(
-      (id) => !runTool("claude", ["plugin", "update", id, "--scope", "project"], PLUGIN_MS, r).ok
-    ).map((id) => `${r} (${id})`)
+      (id2) => !runTool("claude", ["plugin", "update", id2, "--scope", "project"], PLUGIN_MS, r).ok
+    ).map((id2) => `${r} (${id2})`)
   );
   const ok = perProject.filter((f) => !f.length).length;
   const failed = perProject.flat();
@@ -2431,9 +2471,9 @@ function updateExecution(projectRoot, sprintId2, tasks, lineFor, times) {
     return taskLine(t, { ...x, start: passes[0]?.[0], duration_s: min * 60 }, review, queue);
   };
   const firstTimes = Object.fromEntries(
-    Object.entries(times).map(([id, x]) => [
-      id,
-      x.start ? { ...x, start: earlierPasses(a, sprintId2, id, x.start)[0]?.[0] ?? x.start } : x
+    Object.entries(times).map(([id2, x]) => [
+      id2,
+      x.start ? { ...x, start: earlierPasses(a, sprintId2, id2, x.start)[0]?.[0] ?? x.start } : x
     ])
   );
   const last = a.times.at(-1) ?? 0;
@@ -2505,9 +2545,9 @@ function roundStats(r, a) {
   const e = r.end ? Date.parse(r.end) : Math.max(s2, a.times.at(-1) ?? s2);
   const seen = /* @__PURE__ */ new Set();
   const usd3 = a.evs.filter((x) => x.type === "usage" && Date.parse(x.ts) >= s2 && Date.parse(x.ts) < e).reduce((acc, x) => {
-    const id = x.data.message_id;
-    if (id !== void 0 && seen.has(id)) return acc;
-    seen.add(id);
+    const id2 = x.data.message_id;
+    if (id2 !== void 0 && seen.has(id2)) return acc;
+    seen.add(id2);
     return acc + num(x.data.usd);
   }, 0);
   return { min: (e - s2 - pauseMs(a.times, s2, e)) / 6e4, usd: usd3 };
@@ -2547,11 +2587,11 @@ function section(text, heading) {
 }
 function parseDeps(cell) {
   const out = [];
-  const id = (n2, w) => `T${String(n2).padStart(w, "0")}`;
+  const id2 = (n2, w) => `T${String(n2).padStart(w, "0")}`;
   for (const m of cell.matchAll(/T(\d+)(?:\s*[–-]\s*T?(\d+))?/gi)) {
     const a = Number(m[1]);
     const b2 = m[2] ? Math.min(Number(m[2]), a + 99) : a;
-    for (let n2 = a; n2 <= b2; n2++) out.push(id(n2, m[1]?.length ?? 2));
+    for (let n2 = a; n2 <= b2; n2++) out.push(id2(n2, m[1]?.length ?? 2));
   }
   return out;
 }
@@ -2586,15 +2626,15 @@ function parsePlan(text) {
     for (const row of t.slice(tsec.start, tsec.end).split("\n")) {
       if (!row.trim().startsWith("|")) continue;
       const c = cells(row);
-      const [id = "", title3 = "", agent = "", files = ""] = c;
-      if (/^id$/i.test(id)) {
+      const [id2 = "", title3 = "", agent = "", files = ""] = c;
+      if (/^id$/i.test(id2)) {
         const head = c.findIndex((h) => /^(estimativa|planejado)$/i.test(h));
         if (head > 0) estCol = head;
         depCol = c.findIndex((h) => /^depende de$/i.test(h));
       }
-      if (!/^T\d+/i.test(id)) continue;
+      if (!/^T\d+/i.test(id2)) continue;
       const planned_min = parseEstimate(c[estCol] ?? "");
-      const task = { id: id.toUpperCase(), title: title3, agent, files, planned_min };
+      const task = { id: id2.toUpperCase(), title: title3, agent, files, planned_min };
       if (depCol > 0) task.deps = parseDeps(c[depCol] ?? "");
       tasks.push(task);
     }
@@ -2636,6 +2676,39 @@ function fillApproval(text, a, harness) {
 `;
   const sec = section(t, /^## Aprovação[^\n]*$/m);
   const out = sec ? t.slice(0, sec.start) + block + t.slice(sec.end) : t.replace(/\n*$/, "\n\n") + block;
+  return out.replace(/\n+$/, "\n");
+}
+function dropTask(text, id2, label, why) {
+  let t = lf(text);
+  const sec = section(t, /^## Tarefas[^\n]*$/m);
+  if (sec) {
+    const own = parsePlan(t).tasks.find((x) => x.id === id2)?.deps ?? [];
+    let depCol = -1;
+    const rows = t.slice(sec.start, sec.end).split("\n").map((row) => {
+      if (!row.trim().startsWith("|")) return row;
+      const c = cells(row);
+      const rowId = (c[0] ?? "").toUpperCase();
+      if (rowId === "ID") depCol = c.findIndex((h) => /^depende de$/i.test(h));
+      if (rowId === id2) {
+        c[0] = `~~${id2}~~`;
+        c[1] = `${c[1] ?? ""} **(${label}: ${why})**`;
+      } else {
+        const deps = depCol > 0 && /^T\d+/.test(rowId) ? parseDeps(c[depCol] ?? "") : [];
+        if (!deps.includes(id2)) return row;
+        const next = deps.flatMap((d) => d === id2 ? own : [d]).filter((d) => d !== rowId);
+        c[depCol] = [...new Set(next)].join(", ") || "\u2014";
+      }
+      return `| ${c.map((x) => x.replace(/\|/g, "\\|")).join(" | ")} |`;
+    });
+    t = t.slice(0, sec.start) + rows.join("\n") + t.slice(sec.end);
+  }
+  const block = `## Aprova\xE7\xE3o
+
+Precisa de nova aprova\xE7\xE3o: ${id2} ${label}.
+
+`;
+  const asec = section(t, /^## Aprovação[^\n]*$/m);
+  const out = asec ? t.slice(0, asec.start) + block + t.slice(asec.end) : t.replace(/\n*$/, "\n\n") + block;
   return out.replace(/\n+$/, "\n");
 }
 function taskLine(t, times, reviewMin, queueMin) {
@@ -2940,7 +3013,7 @@ function title(input) {
 }
 function ownerOf(file2, ids) {
   return ids.filter(
-    (id) => /^[a-z0-9-]+$/.test(id) && new RegExp(`^\\d{4}-\\d{2}-\\d{2}-${id}-`).test(file2)
+    (id2) => /^[a-z0-9-]+$/.test(id2) && new RegExp(`^\\d{4}-\\d{2}-\\d{2}-${id2}-`).test(file2)
   ).sort((a, b2) => b2.length - a.length)[0];
 }
 function doneRequests(projectId, version) {
@@ -2952,14 +3025,14 @@ function doneRequests(projectId, version) {
   const ok = [];
   for (const row of fs22.readFileSync(file2, "utf8").split("\n")) {
     const cells2 = row.split(/(?<!\\)\|/).map((c) => c.replaceAll("\\|", "|").trim());
-    const [, id = "", item = "", origin = ""] = cells2;
+    const [, id2 = "", item = "", origin = ""] = cells2;
     const status = cells2[cells2.length - 2] ?? "";
     const inbox = /^inbox:\s*`?([\w.-]+\.md)/.exec(origin)?.[1];
-    if (!/^B\d+$/.test(id) || !/^feito \(S\d+\)$/.test(status) || shown.has(id)) continue;
+    if (!/^B\d+$/.test(id2) || !/^feito \(S\d+\)$/.test(status) || shown.has(id2)) continue;
     if (!inbox || ownerOf(inbox, ids) !== projectId) continue;
-    ok.push(id);
+    ok.push(id2);
     const text = item.replace(/[\p{Cc}`]/gu, " ").slice(0, 160);
-    lines.push(`- ${id} (${status}): ${text}`);
+    lines.push(`- ${id2} (${status}): ${text}`);
   }
   if (!ok.length) return "";
   updateState(projectId, (s2) => {
@@ -3020,9 +3093,9 @@ function sessionStart(input) {
     }
   }
   if (source === "compact") {
-    for (const [id, t] of Object.entries(state.tasks ?? {}))
+    for (const [id2, t] of Object.entries(state.tasks ?? {}))
       if (t?.start && !t.end)
-        parts2.push(`Tarefa em andamento: ${id}${t.phase ? ` (${t.phase})` : ""}.`);
+        parts2.push(`Tarefa em andamento: ${id2}${t.phase ? ` (${t.phase})` : ""}.`);
   }
   const lh = state.lastHandoff;
   if (lh && !lh.consumed && (source === "compact" || source === "startup")) {
@@ -3086,6 +3159,7 @@ var HOOKS;
 var init_hooks = __esm({
   "cli/src/hooks/index.ts"() {
     "use strict";
+    init_attention();
     init_lifecycle();
     init_post_edit();
     init_pre_bash();
@@ -3103,7 +3177,11 @@ var init_hooks = __esm({
       stop,
       "subagent-stop": subagentStop,
       "pre-compact": preCompact,
-      "session-end": sessionEnd
+      "session-end": sessionEnd,
+      notification,
+      "permission-request": permissionRequest,
+      "stop-failure": stopFailure,
+      "post-tool-failure": postToolUseFailure
     };
   }
 });
@@ -3268,51 +3346,87 @@ var task_exports = {};
 __export(task_exports, {
   run: () => run4
 });
-function alreadyDone(id) {
-  console.error(`aviso: ${id} j\xE1 est\xE1 feita; nada a registrar.`);
+function alreadyDone(id2) {
+  console.error(`aviso: ${id2} j\xE1 est\xE1 feita; nada a registrar.`);
   return 0;
 }
 function run4(args) {
   const p = parseArgs(args);
   const [sub, raw] = p._;
-  if (sub !== "start" && sub !== "done" && sub !== "phase" || !raw) {
-    console.error("uso: hx task start|done <id> | hx task phase <id> <fase>");
+  const why = flagStr(p, "why");
+  const drops = sub === "drop" || sub === "defer";
+  if (!sub || !["start", "done", "phase", "drop", "defer"].includes(sub) || !raw || drops && !why) {
+    console.error(
+      'uso: hx task start|done <id> | hx task phase <id> <fase> | hx task drop|defer <id> --why "motivo"'
+    );
     return 1;
   }
   const ctx = commandContext(process.cwd(), flagStr(p, "agent"));
   const sprint = ctx.sprint;
   if (!sprint) throw new Error("nenhuma sprint aberta (rode hx sprint open SNN)");
-  const id = raw.toUpperCase();
+  const id2 = raw.toUpperCase();
   const { plan } = loadPlan(ctx.root, sprint);
-  const task = plan.tasks.find((t) => t.id === id);
-  if (!task) throw new Error(`tarefa ${id} n\xE3o est\xE1 no plano ${sprint}`);
+  const task = plan.tasks.find((t) => t.id === id2);
+  if (!task) throw new Error(`tarefa ${id2} n\xE3o est\xE1 no plano ${sprint}`);
   const at = atFlag(p);
-  const prev = readState(ctx.id).tasks[id];
+  const prev = readState(ctx.id).tasks[id2];
+  if (drops) {
+    if (prev?.end) throw new Error(`tarefa ${id2} j\xE1 est\xE1 feita`);
+    const label = sub === "drop" ? "tirada" : "adiada";
+    const { file: file2, text } = loadPlan(ctx.root, sprint);
+    writePlan2(file2, text, dropTask(text, id2, label, (why ?? "").replace(/\s+/g, " ")));
+    if (prev?.start)
+      updateState(ctx.id, (s2) => {
+        s2.tasks[id2] = { ...prev, end: at, duration_s: 0 };
+      });
+    const next = loadPlan(ctx.root, sprint).plan;
+    const st2 = readState(ctx.id).tasks;
+    updateExecution(
+      ctx.root,
+      sprint,
+      next.tasks,
+      (t) => next.execution[t.id]?.line ?? taskLine(t, st2[t.id]),
+      st2
+    );
+    emit({
+      project: ctx.id,
+      session: ctx.session,
+      sprint,
+      task: id2,
+      agent: ctx.agent,
+      ts: at,
+      type: "task.phase",
+      data: { phase: label }
+    });
+    console.log(renderTaskList(ctx.root, sprint));
+    console.error(`${id2} ${label}. Precisa de nova aprova\xE7\xE3o: hx sprint approve ${sprint}.`);
+    return 0;
+  }
   let times = { start: at };
   if (sub === "phase") {
     const phase = p._[2] ?? "";
     if (!PHASES.includes(phase))
       throw new Error(`fase inv\xE1lida '${phase}' (use: ${PHASES.join(", ")})`);
-    if (!prev?.start) throw new Error(`tarefa ${id} n\xE3o est\xE1 em andamento`);
-    if (prev.end) return alreadyDone(id);
+    if (!prev?.start) throw new Error(`tarefa ${id2} n\xE3o est\xE1 em andamento`);
+    if (prev.end) return alreadyDone(id2);
     times = { ...prev, phase };
   } else if (sub === "done") {
-    if (prev?.end) return alreadyDone(id);
+    if (prev?.end) return alreadyDone(id2);
     const start = prev?.start ?? at;
     const duration_s = Math.max(0, Math.round((Date.parse(at) - Date.parse(start)) / 1e3));
     times = { start, end: at, duration_s };
   }
   const st = updateState(ctx.id, (s2) => {
-    s2.tasks[id] = times;
+    s2.tasks[id2] = times;
   });
   updateExecution(
     ctx.root,
     sprint,
     plan.tasks,
-    (t) => t.id === id ? taskLine(t, times) : plan.execution[t.id]?.line ?? taskLine(t, st.tasks[t.id]),
+    (t) => t.id === id2 ? taskLine(t, times) : plan.execution[t.id]?.line ?? taskLine(t, st.tasks[t.id]),
     st.tasks
   );
-  const ev = { project: ctx.id, session: ctx.session, sprint, task: id, agent: ctx.agent, ts: at };
+  const ev = { project: ctx.id, session: ctx.session, sprint, task: id2, agent: ctx.agent, ts: at };
   if (sub === "phase") emit({ ...ev, type: "task.phase", data: { phase: times.phase ?? "" } });
   else if (sub === "start")
     emit({ ...ev, type: "task.start", data: { planned_min: task.planned_min } });
@@ -3323,7 +3437,7 @@ function run4(args) {
       data: { duration_s: times.duration_s ?? 0, planned_min: task.planned_min }
     });
   if (sub === "done" && !prev?.start)
-    console.error(`aviso: ${id} n\xE3o tinha in\xEDcio registrado; dura\xE7\xE3o 0.`);
+    console.error(`aviso: ${id2} n\xE3o tinha in\xEDcio registrado; dura\xE7\xE3o 0.`);
   const taskList = renderTaskList(ctx.root, sprint);
   if (sub === "done" || sub === "phase") {
     try {
@@ -3377,22 +3491,22 @@ function run5(args) {
   const [sub, arg] = p._;
   const ctx = commandContext(process.cwd(), flagStr(p, "agent"));
   if (sub === "feedback") return feedback(ctx, arg);
-  const id = sprintId(arg) ?? ctx.sprint;
+  const id2 = sprintId(arg) ?? ctx.sprint;
   if (!sub || !["approve", "open", "status", "close"].includes(sub)) {
     console.error("uso: hx sprint approve|open|status|close <id> | hx sprint feedback <n>");
     return 1;
   }
-  if (!id) throw new Error(`informe a sprint: hx sprint ${sub} S01`);
-  if (sub === "approve") return approve(ctx, p, id, force);
-  if (sub === "open") return open(ctx, p, id);
-  if (sub === "close") return close(ctx, p, id, force);
-  const list = renderTaskList(ctx.root, id);
-  if (!list) throw new Error(`plano n\xE3o encontrado: docs/sprints/${id}-plan.md`);
+  if (!id2) throw new Error(`informe a sprint: hx sprint ${sub} S01`);
+  if (sub === "approve") return approve(ctx, p, id2, force);
+  if (sub === "open") return open(ctx, p, id2);
+  if (sub === "close") return close(ctx, p, id2, force);
+  const list = renderTaskList(ctx.root, id2);
+  if (!list) throw new Error(`plano n\xE3o encontrado: docs/sprints/${id2}-plan.md`);
   console.log(list);
   return 0;
 }
-function approve(ctx, p, id, force) {
-  const { file: file2, text, plan } = loadPlan(ctx.root, id);
+function approve(ctx, p, id2, force) {
+  const { file: file2, text, plan } = loadPlan(ctx.root, id2);
   const sha = planHash(text.replace(/\n*$/, "\n\n"));
   let a = plan.approval;
   if (a && a.sha256 !== sha && !force) throw new Error(CHANGED);
@@ -3404,45 +3518,45 @@ function approve(ctx, p, id, force) {
     (e) => e.project === ctx.id && e.type === "sprint.approved" && e.data.sha256 === sha
   );
   if (seen.length) {
-    console.log(`Aprova\xE7\xE3o de ${id} j\xE1 registrada (hash ${sha.slice(0, 12)}\u2026).`);
+    console.log(`Aprova\xE7\xE3o de ${id2} j\xE1 registrada (hash ${sha.slice(0, 12)}\u2026).`);
     return 0;
   }
   const at = new Date(a.at);
   const ts = Number.isNaN(at.getTime()) ? utcStamp() : utcStamp(at);
   emit({
-    ...base(ctx, id),
+    ...base(ctx, id2),
     type: "sprint.approved",
     ts,
-    data: { plan: planRel(id), sha256: sha, approved_at: ts, approver: a.approver }
+    data: { plan: planRel(id2), sha256: sha, approved_at: ts, approver: a.approver }
   });
-  console.log(`Plano ${id} aprovado por ${a.approver} em ${ts} (hash ${sha.slice(0, 12)}\u2026).`);
+  console.log(`Plano ${id2} aprovado por ${a.approver} em ${ts} (hash ${sha.slice(0, 12)}\u2026).`);
   return 0;
 }
-function open(ctx, p, id) {
-  const { text, plan } = loadPlan(ctx.root, id);
+function open(ctx, p, id2) {
+  const { text, plan } = loadPlan(ctx.root, id2);
   if (!plan.approval)
     throw new Error(
-      `plano ${id} ainda n\xE3o aprovado (rode hx sprint approve ${id} ap\xF3s o ok de Daniel)`
+      `plano ${id2} ainda n\xE3o aprovado (rode hx sprint approve ${id2} ap\xF3s o ok de Daniel)`
     );
   if (plan.approval.sha256 !== planHash(text)) throw new Error(CHANGED);
   if (!plan.tasks.length) throw new Error("o plano n\xE3o tem tarefas na se\xE7\xE3o Tarefas");
   const at = atFlag(p);
   const st = updateState(ctx.id, (s2) => {
-    if (s2.activeSprint !== id) {
+    if (s2.activeSprint !== id2) {
       s2.tasks = {};
       s2.sprintOpenedAt = at;
     }
-    s2.activeSprint = id;
+    s2.activeSprint = id2;
     s2.sprintOpenedAt ??= at;
   });
-  refresh(ctx, id, plan, st.tasks);
-  emit({ ...base(ctx, id), type: "sprint.open", ts: at, data: { tasks: plan.tasks.length } });
-  console.log(renderTaskList(ctx.root, id));
+  refresh(ctx, id2, plan, st.tasks);
+  emit({ ...base(ctx, id2), type: "sprint.open", ts: at, data: { tasks: plan.tasks.length } });
+  console.log(renderTaskList(ctx.root, id2));
   return 0;
 }
-function refresh(ctx, id, plan, tasks = readState(ctx.id).tasks) {
+function refresh(ctx, id2, plan, tasks = readState(ctx.id).tasks) {
   const line2 = (t) => plan.execution[t.id]?.line ?? taskLine(t, tasks[t.id]);
-  updateExecution(ctx.root, id, plan.tasks, line2, tasks);
+  updateExecution(ctx.root, id2, plan.tasks, line2, tasks);
 }
 function feedback(ctx, arg) {
   const n2 = Number(arg);
@@ -3454,33 +3568,33 @@ function feedback(ctx, arg) {
   console.log(`Retorno de Daniel registrado: ${n2} ajuste(s).`);
   return 0;
 }
-function close(ctx, p, id, force) {
-  const { plan } = loadPlan(ctx.root, id);
+function close(ctx, p, id2, force) {
+  const { plan } = loadPlan(ctx.root, id2);
   const pending = plan.tasks.filter((t) => !plan.execution[t.id]?.done).map((t) => t.id);
   if (pending.length && !force)
     throw new Error(`faltam tarefas: ${pending.join(", ")} (use --force para fechar assim mesmo)`);
   const at = atFlag(p);
   const st = readState(ctx.id);
-  const opened = st.activeSprint === id && st.sprintOpenedAt ? Date.parse(st.sprintOpenedAt) : NaN;
+  const opened = st.activeSprint === id2 && st.sprintOpenedAt ? Date.parse(st.sprintOpenedAt) : NaN;
   const duration_s = Number.isNaN(opened) ? 0 : Math.max(0, Math.round((Date.parse(at) - opened) / 1e3));
   const done = plan.tasks.length - pending.length;
   emit({
-    ...base(ctx, id),
+    ...base(ctx, id2),
     type: "sprint.close",
     ts: at,
     data: { tasks_done: done, tasks_total: plan.tasks.length, duration_s }
   });
-  refresh(ctx, id, plan, st.tasks);
-  const m = computeMetrics(ctx.id, id, plan);
-  emit({ ...base(ctx, id), type: "sprint.metrics", ts: at, data: { ...m } });
+  refresh(ctx, id2, plan, st.tasks);
+  const m = computeMetrics(ctx.id, id2, plan);
+  emit({ ...base(ctx, id2), type: "sprint.metrics", ts: at, data: { ...m } });
   updateState(ctx.id, (s2) => {
-    if (s2.activeSprint === id) {
+    if (s2.activeSprint === id2) {
       s2.activeSprint = null;
       delete s2.sprintOpenedAt;
     }
   });
   const lastDone = Math.max(
-    ...readEvents((e) => e.project === ctx.id && e.sprint === id && e.type === "task.done").map(
+    ...readEvents((e) => e.project === ctx.id && e.sprint === id2 && e.type === "task.done").map(
       (e) => Date.parse(e.ts)
     )
   );
@@ -3489,9 +3603,9 @@ function close(ctx, p, id, force) {
   const waited = wait >= 1 && Number.isFinite(wait) ? ` (aguardou teste por ${fmtMin(wait)})` : "";
   const work = m.wait_min ? ` \xB7 trabalho ${fmtMin(m.work_min)}, espera por Daniel ${fmtMin(m.wait_min)}` : "";
   console.log(
-    `Sprint ${id} fechada: ${done}/${plan.tasks.length} tarefas em ${fmtMin(m.wall_min)}${paused}${waited}${work}
+    `Sprint ${id2} fechada: ${done}/${plan.tasks.length} tarefas em ${fmtMin(m.wall_min)}${paused}${waited}${work}
 
-${renderMetrics(id, plan, m)}`
+${renderMetrics(id2, plan, m)}`
   );
   return 0;
 }
@@ -3719,17 +3833,17 @@ function run10(args) {
   const p = parseArgs(args);
   const doEmit = boolFlag(p, "emit");
   const ctx = commandContext(process.cwd(), flagStr(p, "agent"));
-  const id = sprintId(p._[0]) ?? ctx.sprint;
-  if (!id) throw new Error("informe a sprint: hx metrics S01");
-  const { plan } = loadPlan(ctx.root, id);
-  const m = computeMetrics(ctx.id, id, plan);
-  console.log(renderMetrics(id, plan, m));
+  const id2 = sprintId(p._[0]) ?? ctx.sprint;
+  if (!id2) throw new Error("informe a sprint: hx metrics S01");
+  const { plan } = loadPlan(ctx.root, id2);
+  const m = computeMetrics(ctx.id, id2, plan);
+  console.log(renderMetrics(id2, plan, m));
   if (doEmit) {
     emit({
       type: "sprint.metrics",
       project: ctx.id,
       session: ctx.session,
-      sprint: id,
+      sprint: id2,
       agent: ctx.agent,
       data: { ...m }
     });
@@ -3763,8 +3877,8 @@ function add(t, d) {
 function uniq(evs) {
   const seen = /* @__PURE__ */ new Set();
   return evs.filter((e) => {
-    const id = e.data.message_id;
-    return id === void 0 || !seen.has(id) && seen.add(id);
+    const id2 = e.data.message_id;
+    return id2 === void 0 || !seen.has(id2) && seen.add(id2);
   });
 }
 function summary(title2, events) {
@@ -3821,16 +3935,16 @@ function run11(args) {
     readEvents((e) => e.type === "usage" && e.project === ctx.id).map((e) => e.data.message_id)
   );
   const fresh = [];
-  for (const id of sessions) {
-    const transcriptPath = path27.join(dir, `${id}.jsonl`);
+  for (const id2 of sessions) {
+    const transcriptPath = path27.join(dir, `${id2}.jsonl`);
     if (!fs26.existsSync(transcriptPath)) {
-      console.error(`Sess\xE3o n\xE3o encontrada: ${id}`);
+      console.error(`Sess\xE3o n\xE3o encontrada: ${id2}`);
       return 1;
     }
     fresh.push(
       ...transcriptSource.ingest({
         transcriptPath,
-        sessionId: id,
+        sessionId: id2,
         project: ctx.id,
         sprint: ctx.sprint
       })
@@ -4203,27 +4317,27 @@ function pythonVersion() {
   }
   return null;
 }
-function pluginAvailable(id) {
+function pluginAvailable(id2) {
   const dir = path32.join(claudeHome(), "plugins");
   const inst = readJson(
     path32.join(dir, "installed_plugins.json"),
     {}
   );
-  if ((inst.plugins ?? inst)[id]) return true;
-  const [name = "", market = ""] = id.split("@");
+  if ((inst.plugins ?? inst)[id2]) return true;
+  const [name = "", market = ""] = id2.split("@");
   return fs31.existsSync(path32.join(dir, "cache", market, name));
 }
-function installedVersion(id, root) {
+function installedVersion(id2, root) {
   const inst = readJson(
     path32.join(claudeHome(), "plugins", "installed_plugins.json"),
     {}
   );
-  const list = inst.plugins?.[id] ?? [];
+  const list = inst.plugins?.[id2] ?? [];
   const hit = list.find((i) => i.projectPath && samePathKey(i.projectPath) === samePathKey(root)) ?? list.find((i) => i.scope === "user");
   return hit ? hit.version ?? "" : null;
 }
-function availableVersion(id) {
-  const [name = "", market = ""] = id.split("@");
+function availableVersion(id2) {
+  const [name = "", market = ""] = id2.split("@");
   const known = readJson(
     path32.join(claudeHome(), "plugins", "known_marketplaces.json"),
     {}
@@ -4337,29 +4451,29 @@ function runDoctor(opts = {}) {
     lines.push(
       '\u26A0 pasta do projeto com espa\xE7o: o Bash do Claude Code imprime "claude-XXXX-cwd: No such file or directory" e "Exit code 1" (\xE9 do Claude Code; leia a sa\xEDda real). N\xE3o fa\xE7a cd no in\xEDcio (o Bash j\xE1 abre no projeto); se precisar, cd "C:/Pasta Com Espa\xE7o"; prefira o PowerShell quando o Bash n\xE3o for necess\xE1rio'
     );
-  for (const id of THIRD_PARTY)
+  for (const id2 of THIRD_PARTY)
     check(
-      pluginAvailable(id),
-      `${id} dispon\xEDvel`,
-      `${id} n\xE3o instalado: claude plugin install ${id}`,
+      pluginAvailable(id2),
+      `${id2} dispon\xEDvel`,
+      `${id2} n\xE3o instalado: claude plugin install ${id2}`,
       !root
     );
   if (root) {
     const st = readJson(path32.join(root, ".claude", "settings.json"), {});
-    for (const id of PLUGINS) {
-      const have = installedVersion(id, root);
-      const want = availableVersion(id);
-      if (have === null) check(false, "", `${id} n\xE3o instalado no projeto: rode /attach`, true);
+    for (const id2 of PLUGINS) {
+      const have = installedVersion(id2, root);
+      const want = availableVersion(id2);
+      if (have === null) check(false, "", `${id2} n\xE3o instalado no projeto: rode /attach`, true);
       else if (want && have !== want)
         check(
           false,
           "",
-          `${id} desatualizado no projeto (${have || "?"}; dispon\xEDvel ${want}): claude plugin update ${id} --scope project`,
+          `${id2} desatualizado no projeto (${have || "?"}; dispon\xEDvel ${want}): claude plugin update ${id2} --scope project`,
           true
         );
-      else lines.push(`\u2713 ${id} ${have} no projeto`);
+      else lines.push(`\u2713 ${id2} ${have} no projeto`);
     }
-    const off = PLUGINS.filter((id) => st.enabledPlugins?.[id] !== true);
+    const off = PLUGINS.filter((id2) => st.enabledPlugins?.[id2] !== true);
     check(
       !off.length,
       "plugins ativos no projeto",
@@ -4442,7 +4556,7 @@ var init_doctor = __esm({
       "tdd-workflow",
       "archify"
     ];
-    THIRD_PARTY = PLUGINS.filter((id) => !id.startsWith("main-harness@"));
+    THIRD_PARTY = PLUGINS.filter((id2) => !id2.startsWith("main-harness@"));
   }
 });
 
@@ -4492,17 +4606,17 @@ function run14(args) {
 `);
   const name = path33.basename(root);
   const prev = readHarnessJson(root);
-  const id = prev?.project ?? slugify(name);
+  const id2 = prev?.project ?? slugify(name);
   const version = harnessVersion();
   const attachedAt = prev?.attachedAt ?? utcStamp();
-  registerProject({ id, name, path: root, version, attachedAt });
+  registerProject({ id: id2, name, path: root, version, attachedAt });
   const pkg = readJson(path33.join(root, "package.json"), null);
   const web = isWebProject(root, pkg);
   const catalog = listCatalog();
   const optionalSkills = prev?.optionalSkills ?? (web ? catalog : []);
   for (const s2 of optionalSkills) if (catalog.includes(s2)) enableSkill(root, s2);
   writeHarnessJson(root, {
-    project: id,
+    project: id2,
     name,
     version,
     attachedAt,
@@ -4510,7 +4624,7 @@ function run14(args) {
     optionalSkills,
     migrations: prev?.migrations ?? []
   });
-  const vars = { project: id, name, version, date: utcStamp().slice(0, 10) };
+  const vars = { project: id2, name, version, date: utcStamp().slice(0, 10) };
   createIfMissing(path33.join(root, "docs", "backlog.md"), render("backlog.md", vars));
   createIfMissing(path33.join(root, "docs", "roadmap.md"), render("roadmap.md", vars));
   for (const d of ["adr", "prd", "sprints"])
@@ -4539,11 +4653,11 @@ function run14(args) {
   } catch {
     doctorMsg = "doctor: falhou (n\xE3o impede o attach).";
   }
-  emit({ type: "session.start", project: id, data: { source: "attach", model: null } });
+  emit({ type: "session.start", project: id2, data: { source: "attach", model: null } });
   console.log(
     [
       "",
-      `Projeto ${name} (${id}) conectado ao harness v${version}.`,
+      `Projeto ${name} (${id2}) conectado ao harness v${version}.`,
       web ? `Projeto web: skills opcionais ligadas (${optionalSkills.join(", ") || "cat\xE1logo vazio"}).` : "Projeto n\xE3o web: sem skills opcionais.",
       lintMsg,
       pluginMsg,
@@ -4944,7 +5058,7 @@ async function evalSkill(repo, skill, scope, ctx, opts = {}) {
       "runs",
       (g) => g.passed || g.baseline
     );
-    const find = (id) => old.find((g) => g.id === id);
+    const find = (id2) => old.find((g) => g.id === id2);
     const done = await pool(
       runs.filter((r) => !find(r.id)),
       PARALLEL,
@@ -4998,7 +5112,7 @@ ${r.answer}
       }
     };
     const graded1 = await judge(done);
-    const has = (vs, id) => vs.some((x) => String(x.id) === id);
+    const has = (vs, id2) => vs.some((x) => String(x.id) === id2);
     const verdicts = [...graded1, ...await judge(done.filter((r) => !has(graded1, r.id)))];
     const fresh = done.map((r) => {
       const v = verdicts.find((x) => String(x.id) === r.id);

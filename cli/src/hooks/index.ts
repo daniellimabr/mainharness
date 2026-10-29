@@ -1,4 +1,5 @@
 // hx hook <name>: dispatches Claude Code hook events (stdin JSON) to their handlers.
+import { notification, permissionRequest, postToolUseFailure, stopFailure } from "./attention";
 import { preCompact, sessionEnd, stop, subagentStart, subagentStop } from "./lifecycle";
 import { postEdit } from "./post-edit";
 import { preBash } from "./pre-bash";
@@ -18,6 +19,10 @@ const HOOKS: Record<string, HookHandler> = {
   "subagent-stop": subagentStop,
   "pre-compact": preCompact,
   "session-end": sessionEnd,
+  notification,
+  "permission-request": permissionRequest,
+  "stop-failure": stopFailure,
+  "post-tool-failure": postToolUseFailure,
 };
 
 export function run(args: string[]): Promise<number> | number {

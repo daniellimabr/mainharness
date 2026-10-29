@@ -100,6 +100,12 @@ export const DATA_SCHEMAS = {
     agent_id: s({ optional: true, nullable: true }),
   },
   context: { tokens: n(), limit: n(), last_compact_at: s({ nullable: true }) },
+  attention: {
+    source: s({ enum: ["notification", "permission"] }),
+    kind: s(),
+    agent_id: s({ nullable: true }),
+  },
+  error: { source: s({ enum: ["stop", "tool"] }), kind: s(), agent_id: s({ nullable: true }) },
   handoff: { mode: s({ enum: ["compact", "manual", "new-chat"] }), file: s({ nullable: true }) },
   "harness.request": { file: s(), priority: s({ enum: ["alta", "media", "baixa"] }) },
   "harness.release": { version: s(), tag: s(), previous: s({ nullable: true }) },

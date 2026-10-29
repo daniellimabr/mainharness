@@ -63,6 +63,7 @@ Uma linha por arquivo: caminho e propósito. Mantido pelo hook `post-edit`.
 - `cli/src/events/emit.ts` — Appends validated events to ~/.harness/events/YYYY-MM-DD.jsonl (UTC day). Append-only.
 - `cli/src/events/schema.ts` — Event schema v1 (contract with the Dashboard, see docs/contracts/events.md).
 - `cli/src/events/ulid.ts` — Minimal ULID (26 chars, Crockford base32): 48-bit time + 80-bit randomness.
+- `cli/src/hooks/attention.ts` — Notification, PermissionRequest, StopFailure, PostToolUseFailure: `attention` and `error` events (B107).
 - `cli/src/hooks/index.ts` — hx hook <name>: dispatches Claude Code hook events (stdin JSON) to their handlers.
 - `cli/src/hooks/lifecycle.ts` — Stop, SubagentStop, PreCompact and SessionEnd: usage ingestion and the managed 250K context cycle.
 - `cli/src/hooks/post-edit.ts` — PostToolUse(Write|Edit|MultiEdit): keeps index.md current, formats and lints the edited file.
@@ -84,6 +85,7 @@ Uma linha por arquivo: caminho e propósito. Mantido pelo hook `post-edit`.
 - `cli/src/usage/price.ts` — US$ estimate for one response from its transcript usage block and the config price table.
 - `cli/src/usage/transcript.ts` — TranscriptSource: reads Claude Code JSONL transcripts incrementally and emits `usage` events.
 - `cli/test/attach.test.ts` — E2E tests for hx attach and hx skills, in temp folders with spaces.
+- `cli/test/attention.test.ts` — S13/T07: `attention` (Notification, PermissionRequest) and `error` (StopFailure, PostToolUseFailure), metadata only.
 - `cli/test/bench.test.ts` — scripts/bench.mjs: one S12 run (challenge x model) in a temp clone, with a fake claude (HX_CLAUDE_BIN).
 - `cli/test/commands.test.ts` — testes de commands
 - `cli/test/config.test.ts` — (sem descrição)
@@ -120,6 +122,7 @@ Uma linha por arquivo: caminho e propósito. Mantido pelo hook `post-edit`.
 - `cli/test/setup.test.ts` — (sem descrição)
 - `cli/test/sprint.test.ts` — testes de sprint
 - `cli/test/stop-typecheck.test.ts` — Stop hook typecheck: tsc runs only when cli/src changed and blocks with its first lines.
+- `cli/test/task-drop.test.ts` — (sem descrição)
 - `cli/test/task.test.ts` — (sem descrição)
 - `cli/test/text-s06.test.ts` — S06 text fixes: hx status cleans where/next like the title (B057); session-start keeps `\|` in backlog items (B058).
 - `cli/test/transcript.test.ts` — (sem descrição)
