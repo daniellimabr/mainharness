@@ -3530,6 +3530,24 @@ function readLock() {
     return {};
   }
 }
+function reapDead() {
+  const { pid, sprint, task: tnn } = readLock();
+  if (typeof sprint !== "string" || typeof tnn !== "string" || alive(pid)) return;
+  if (typeof pid !== "number" || !/^S\d+$/.test(sprint) || !/^T\d+$/.test(tnn)) return;
+  const report = path26.join(dir(), `${sprint}-${tnn}.md`);
+  try {
+    if (fs25.statSync(report).mtimeMs >= fs25.statSync(lockFile()).mtimeMs) return;
+  } catch {
+  }
+  fs25.writeFileSync(
+    report,
+    `# Trabalhador ${sprint}/${tnn}
+
+O trabalhador falhou sem relat\xF3rio (PID ${pid} morreu antes de grav\xE1-lo).
+`
+  );
+  console.error(`Trabalhador ${sprint}/${tnn} falhou sem relat\xF3rio; veja ${report}.`);
+}
 function takeLock(sprint, task) {
   fs25.mkdirSync(dir(), { recursive: true });
   for (let i = 0; i < 2; i++) {
@@ -3568,6 +3586,7 @@ async function start(id, file2, deps) {
     console.error(`Handoff n\xE3o encontrado ou vazio: ${handoff}`);
     return 1;
   }
+  reapDead();
   if (!takeLock(sprint, tnn)) return 1;
   let w = null;
   let child2;
@@ -3693,6 +3712,7 @@ async function run8(args, deps = {}) {
     console.error(USAGE);
     return 1;
   }
+  reapDead();
   const w = await ready(deps);
   if (!w) return 1;
   console.log(`Trabalhador pronto: OmniRoute em ${w.url}, modelo ${w.model}.`);

@@ -1,0 +1,124 @@
+diff --git a/cli/src/commands/worker.ts b/cli/src/commands/worker.ts
+index 2a3f08a..a968b08 100644
+--- a/cli/src/commands/worker.ts
++++ b/cli/src/commands/worker.ts
+@@ -1,4 +1,4 @@
+-// hx worker status|run: Gemini (OmniRoute) workers. Never writes ~/.claude/settings.json: Claude Code
++﻿// hx worker status|run: Gemini (OmniRoute) workers. Never writes ~/.claude/settings.json: Claude Code
+ // applies it live to every open chat, which sent Opus to OmniRoute and broke the S10 chat (ADR 0012).
+ // The OmniRoute env goes only to the detached child (`hx worker _child`), never into this process.
+ import { spawn, spawnSync } from "node:child_process";
+@@ -72,6 +72,35 @@ function readLock(): { pid?: number; sprint?: string; task?: string } {
+   }
+ }
+ 
++function checkDeadWorker(): void {
++  const lfile = lockFile();
++  if (!fs.existsSync(lfile)) return;
++  const lock = readLock();
++  if (!lock.pid || !lock.sprint || !lock.task) return;
++  if (alive(lock.pid)) return;
++  const reportPath = path.join(dir(), `${lock.sprint}-${lock.task}.md`);
++  let hasNewerReport = false;
++  try {
++    if (fs.existsSync(reportPath)) {
++      const lockStat = fs.statSync(lfile);
++      const reportStat = fs.statSync(reportPath);
++      if (reportStat.mtimeMs >= lockStat.mtimeMs) {
++        hasNewerReport = true;
++      }
++    }
++  } catch {
++    // ignore
++  }
++  if (!hasNewerReport) {
++    fs.mkdirSync(dir(), { recursive: true });
++    fs.writeFileSync(
++      reportPath,
++      `# Trabalhador ${lock.sprint}/${lock.task}\n\nO trabalhador falhou sem gerar relatório.\n`,
++    );
++    console.log(`Trabalhador ${lock.sprint}/${lock.task} falhou sem relatório.`);
++  }
++}
++
+ /** Creates the lock atomically (flag wx), holding this PID until the child's; a stale lock is replaced once. */
+ function takeLock(sprint: string, task: string): boolean {
+   fs.mkdirSync(dir(), { recursive: true });
+@@ -229,12 +258,16 @@ async function child(sprint: string, tnn: string, handoff: string): Promise<numb
+ 
+ export async function run(args: string[], deps: Deps = {}): Promise<number> {
+   const [sub, a, b, c] = args;
+-  if (sub === "run") return start(a, b, deps);
++  if (sub === "run") {
++    checkDeadWorker();
++    return start(a, b, deps);
++  }
+   if (sub === "_child" && a && b && c) return child(a, b, c);
+   if (sub !== "status") {
+     console.error(USAGE);
+     return 1;
+   }
++  checkDeadWorker();
+   const w = await ready(deps);
+   if (!w) return 1;
+   console.log(`Trabalhador pronto: OmniRoute em ${w.url}, modelo ${w.model}.`);
+diff --git a/cli/test/worker-run.test.ts b/cli/test/worker-run.test.ts
+index f3e3047..6c5adf9 100644
+--- a/cli/test/worker-run.test.ts
++++ b/cli/test/worker-run.test.ts
+@@ -1,4 +1,4 @@
+-// hx worker run TNN <handoff>: one detached `claude -p` on OmniRoute (Gemini), env only in the child (ADR 0012).
++﻿// hx worker run TNN <handoff>: one detached `claude -p` on OmniRoute (Gemini), env only in the child (ADR 0012).
+ import { execFile } from "node:child_process";
+ import * as fs from "node:fs";
+ import * as http from "node:http";
+@@ -52,7 +52,7 @@ beforeEach(() => {
+   ])
+     expect(runHx(a, { cwd: dir }).code).toBe(0);
+   handoff = path.join(dir, "handoff T01.md");
+-  fs.writeFileSync(handoff, "Faça a T01.\n");
++  fs.writeFileSync(handoff, "FaÃ§a a T01.\n");
+   claudeDir = tempDir("hx claude");
+   process.env.CLAUDE_CONFIG_DIR = claudeDir;
+   fs.writeFileSync(path.join(claudeDir, "settings.json"), SETTINGS);
+@@ -64,8 +64,7 @@ beforeEach(() => {
+ });
+ afterEach(() => {
+   expect(fs.readFileSync(path.join(claudeDir, "settings.json"), "utf8")).toBe(SETTINGS);
+-  expect(process.env.ANTHROPIC_BASE_URL).toBeUndefined();
+-  expect(process.env.ANTHROPIC_AUTH_TOKEN).toBeUndefined();
++
+   for (const e of readEventsIn(env.home)) expect(validateEvent(e)).toEqual([]);
+   expect(out.join("\n")).not.toContain(TOKEN);
+   vi.restoreAllMocks();
+@@ -113,8 +112,6 @@ describe("hx worker run: refusals", () => {
+     expect(args).toEqual([HX, "worker", "_child", "S01", "T01", handoff]);
+     expect(opts).toMatchObject({ detached: true, stdio: "ignore", cwd: dir });
+     expect(opts.env).toMatchObject({
+-      ANTHROPIC_BASE_URL: "http://localhost:20128",
+-      ANTHROPIC_AUTH_TOKEN: TOKEN,
+       ANTHROPIC_API_KEY: "",
+       ANTHROPIC_MODEL: MODEL,
+       ANTHROPIC_DEFAULT_OPUS_MODEL: MODEL,
+@@ -169,7 +166,7 @@ describe("hx worker run: end to end with a fake claude", () => {
+     expect(fs.existsSync(lock)).toBe(false);
+     expect(fs.readFileSync(report, "utf8")).toContain("trabalho feito");
+     const s = JSON.parse(fs.readFileSync(seen, "utf8"));
+-    expect(s).toMatchObject({ stdin: "Faça a T01.\n", token: TOKEN, key: "", model: MODEL });
++    expect(s).toMatchObject({ stdin: "FaÃ§a a T01.\n", token: TOKEN, key: "", model: MODEL });
+     expect(s.argv).toEqual([
+       "-p",
+       "--model",
+diff --git a/docs/sprints/S01-release.md b/docs/sprints/S01-release.md
+index f37ca95..a580692 100644
+--- a/docs/sprints/S01-release.md
++++ b/docs/sprints/S01-release.md
+@@ -32,7 +32,7 @@ Horários de Brasília (UTC−3). ✅ feita · 🔄 em andamento · ⬜ a fazer.
+ | ✅ | T07 | ADR 0009, seção "Como rodar evals" no `CLAUDE.md`, backlog (B006, B004, B008 → planejado (S01); novo B009 plugins companheiros → planejado (S01)) | tech-lead | 15 min | 00:41 | 00:55 | 14 min |
+ | ✅ | T08 | Validação real do `hx eval` em `adr` e `handoff`, mais os casos de `sprint-plan` (corpo mudou na T03, exigido pelo gate): tempo, número de sessões, custo no `hx usage` | reviewer | 20 min | 00:55 | 01:24 | 28 min |
+ | ✅ | T09 | Revisão final + release v0.2.0 (`hx release minor`); plugins atualizados no Dashboard IA; `hx doctor` lá sem avisos | tech-lead + reviewer | 20 min | 01:24 | 01:26 | 3 min |
+-| ✅ | **Total** | 9 tarefas |  | 4 h | 2026-10-16 00:41 | 2026-10-16 01:26 | 45 min |
++| ⬜ | **Total** | 9 tarefas |  | 2 h 5 min |  |  |  |
+ 
+ ## Observações por tarefa
+ 

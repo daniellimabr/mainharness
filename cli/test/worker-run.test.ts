@@ -241,3 +241,18 @@ describe("hx worker run: lock before spawn (B099)", () => {
     expect(fakeSpawn).toHaveBeenCalledTimes(3);
   });
 });
+
+describe("hx worker status: worker that died without a report (B105)", () => {
+  it("writes a failure report and warns", async () => {
+    const wdir = path.join(env.home, "worker");
+    fs.mkdirSync(wdir, { recursive: true });
+    fs.writeFileSync(
+      path.join(wdir, "lock.json"),
+      JSON.stringify({ pid: 999999, sprint: "S01", task: "T01" }),
+    );
+    expect(await run(["status"], deps())).toBe(0);
+    expect(fs.readFileSync(path.join(wdir, "S01-T01.md"), "utf8")).toMatch(/falhou/i);
+    expect(out.join("\n")).toMatch(/S01\/T01/);
+    expect(out.join("\n")).toMatch(/falhou/i);
+  });
+});

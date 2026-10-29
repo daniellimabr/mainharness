@@ -72,6 +72,24 @@ function readLock(): { pid?: number; sprint?: string; task?: string } {
   }
 }
 
+/** Lock left by a dead worker with no report newer than it: writes a failure report and warns, once. */
+function reapDead(): void {
+  const { pid, sprint, task: tnn } = readLock();
+  if (typeof sprint !== "string" || typeof tnn !== "string" || alive(pid)) return;
+  if (typeof pid !== "number" || !/^S\d+$/.test(sprint) || !/^T\d+$/.test(tnn)) return;
+  const report = path.join(dir(), `${sprint}-${tnn}.md`);
+  try {
+    if (fs.statSync(report).mtimeMs >= fs.statSync(lockFile()).mtimeMs) return;
+  } catch {
+    // no report yet
+  }
+  fs.writeFileSync(
+    report,
+    `# Trabalhador ${sprint}/${tnn}\n\nO trabalhador falhou sem relatório (PID ${pid} morreu antes de gravá-lo).\n`,
+  );
+  console.error(`Trabalhador ${sprint}/${tnn} falhou sem relatório; veja ${report}.`);
+}
+
 /** Creates the lock atomically (flag wx), holding this PID until the child's; a stale lock is replaced once. */
 function takeLock(sprint: string, task: string): boolean {
   fs.mkdirSync(dir(), { recursive: true });
@@ -112,6 +130,7 @@ async function start(id: string | undefined, file: string | undefined, deps: Dep
     console.error(`Handoff não encontrado ou vazio: ${handoff}`);
     return 1;
   }
+  reapDead();
   if (!takeLock(sprint, tnn)) return 1;
   let w: Awaited<ReturnType<typeof ready>> = null;
   let child: ReturnType<typeof spawn> | undefined;
@@ -235,6 +254,7 @@ export async function run(args: string[], deps: Deps = {}): Promise<number> {
     console.error(USAGE);
     return 1;
   }
+  reapDead();
   const w = await ready(deps);
   if (!w) return 1;
   console.log(`Trabalhador pronto: OmniRoute em ${w.url}, modelo ${w.model}.`);
