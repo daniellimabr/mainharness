@@ -99,7 +99,7 @@ Contagem sem duplicatas (S12/T08). Fonte: `hx metrics S10|S11|S12` e `hx usage`.
 | Evals | US$ 60,21 | 24% | 25% |
 | Outros (`general-purpose`, `writer`, `claude-code-guide`) | US$ 7,48 | 3% | — |
 
-Por que os números mudaram: o `main-harness:tech-lead` é o **clone** (subagente que o Tech Lead copia, ADR 0009), não o chat. Chat + clones dá cerca de 60%, o número da avaliação de 28/10. Separados, o chat principal fica em 46% e os clones em 14%. Reviewer e evals batem.
+Por que os números mudaram: o `main-harness:tech-lead` é o **clone** (subagente que o Tech Lead copia, ADR 0009), não o chat. Chat + clones dá 59%, o número da avaliação de 28/10. Separados, o chat principal fica em 46% e os clones em 14%. Reviewer e evals batem.
 
 O que se vê nas três sprints: o chat principal caiu de US$ 11,27 (S10) para US$ 3,96 (S12), com o chat de execução em Sonnet. Os clones subiram na S12 porque três tarefas foram Opus de propósito.
 
