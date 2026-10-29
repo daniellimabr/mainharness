@@ -2,6 +2,39 @@
 
 Versões do Main Harness (versionamento semântico; `0.y.z` até a 1.0).
 
+## [0.10.2] - 2026-10-29
+
+### Novidades
+
+- feat(S12/T05): failure report for dead worker, status warns (B105), winner of challenge 2
+- feat(S12/T04): write worker lock before spawn (B099), winner of challenge 1
+- feat(S12/T02): bench.mjs and experiment protocol
+- feat(S12/T09): sync autoCompactWindow with contextLimit in all projects
+
+### Correções
+
+- fix(S12/T08): count each usage message_id once
+
+### Outros
+
+- chore(S12): inbox requests and docs from the sprint
+- docs(S12/T07): roadmap typo
+- docs(S12/T07): fix review findings (roadmap, ADR 0014 wording, statuses)
+- docs(S12/T07): ADR 0014 - Haiku replaces Gemini, Reviewer Sonnet/Opus by risk
+- docs(S12/T07): backlog, ADR 0006 note (140k), roadmap
+- docs(S12/T06): experiment report (models, cost per role, reviewers, baseline)
+- docs(S12/T02): protocol acceptance command
+- test(S12/T02): acceptance runs only worker-run tests
+- docs(S12/T03): experiment challenges, acceptance and hidden tests
+- docs(S12/T10): Reviewer always Opus, drop cd in tech-lead
+- test(S12/T01): stabilize Windows tests (eval timeout, rm retries)
+- docs(S12): add prompt-audit fixes (T10) to sprint plan
+- docs(S12): sprint plan approved
+- chore(inbox): move 3 requests to backlog
+- chore(S11): index
+- docs(S11): release report and harness requests
+- chore(harness): migrate to v0.10.1
+
 ## [0.10.1] - 2026-10-28
 
 ### Correções
