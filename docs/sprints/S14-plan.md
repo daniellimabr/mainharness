@@ -141,3 +141,10 @@ Tarefas da S13 que servem de referência:
 - Soma: 3 h 50 min brutas, **3 h 37 min** depois de calibrar (× 0,94).
 - Relógio do agente: o caminho T01 → T05 → T06 → T07 tem 150 min brutos, cerca de **2 h 36 min** com o fator 1,04. A conta não inclui as esperas por Daniel.
 - Custo extra fora do Claude: zero, porque só usa provedores grátis.
+
+## Aprovação
+
+- **Aprovado por:** Daniel
+- **Data/hora:** 2026-10-29 16:46:33 (horário de Brasília) — UTC 2026-10-29T19:46:33Z
+- **Hash SHA-256 do plano** (conteúdo antes desta seção, finais de linha normalizados para LF): `9f548f335d1d361e4733735fd5e782e37ae69d9b6eb3b1490692223a1727be05`
+- **Versão do harness:** 0.11.0
