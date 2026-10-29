@@ -376,6 +376,45 @@ export function fillApproval(text: string, a: Approval, harness: string): string
   return out.replace(/\n+$/, "\n");
 }
 
+/**
+ * B117: strikes a task out of the plan (reason in the title), points tasks that depended on it to its
+ * own dependencies and voids the approval (no hash: "hx sprint approve" is needed again).
+ */
+export function dropTask(text: string, id: string, label: string, why: string): string {
+  let t = lf(text);
+  const sec = section(t, /^## Tarefas[^\n]*$/m);
+  if (sec) {
+    const own = parsePlan(t).tasks.find((x) => x.id === id)?.deps ?? [];
+    let depCol = -1;
+    const rows = t
+      .slice(sec.start, sec.end)
+      .split("\n")
+      .map((row) => {
+        if (!row.trim().startsWith("|")) return row;
+        const c = cells(row);
+        const rowId = (c[0] ?? "").toUpperCase();
+        if (rowId === "ID") depCol = c.findIndex((h) => /^depende de$/i.test(h));
+        if (rowId === id) {
+          c[0] = `~~${id}~~`;
+          c[1] = `${c[1] ?? ""} **(${label}: ${why})**`;
+        } else {
+          const deps = depCol > 0 && /^T\d+/.test(rowId) ? parseDeps(c[depCol] ?? "") : [];
+          if (!deps.includes(id)) return row;
+          const next = deps.flatMap((d) => (d === id ? own : [d])).filter((d) => d !== rowId);
+          c[depCol] = [...new Set(next)].join(", ") || "—";
+        }
+        return `| ${c.map((x) => x.replace(/\|/g, "\\|")).join(" | ")} |`;
+      });
+    t = t.slice(0, sec.start) + rows.join("\n") + t.slice(sec.end);
+  }
+  const block = `## Aprovação\n\nPrecisa de nova aprovação: ${id} ${label}.\n\n`;
+  const asec = section(t, /^## Aprovação[^\n]*$/m);
+  const out = asec
+    ? t.slice(0, asec.start) + block + t.slice(asec.end)
+    : t.replace(/\n*$/, "\n\n") + block;
+  return out.replace(/\n+$/, "\n");
+}
+
 const DONE = "✅";
 const DOING = "🔄";
 const TODO = "⬜";
