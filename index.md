@@ -96,11 +96,14 @@ Uma linha por arquivo: caminho e propósito. Mantido pelo hook `post-edit`.
 - `cli/test/global-setup.ts` — Builds cli/dist/hx.js once before the suite, so integration tests run the real bundle.
 - `cli/test/helpers.ts` — Test helpers: temp folders WITH SPACES, isolated HARNESS_HOME, running the built hx.js.
 - `cli/test/hooks.test.ts` — testes de hooks
+- `cli/test/lifecycle.test.ts` — S13/T06: TNN on agent.start, agent_id + task on alert.context, `context` on every Stop, task on usage.
 - `cli/test/limits.test.ts` — B064: plan usage % (5 h and weekly) from the OAuth usage endpoint, throttled in the Stop.
 - `cli/test/lint.test.ts` — testes de lint
 - `cli/test/metrics.test.ts` — (sem descrição)
 - `cli/test/migrate.test.ts` — testes de migrate
+- `cli/test/no-worker.test.ts` — S13/T01 (ADR 0014): the Gemini worker is gone; its old events and config stay readable.
 - `cli/test/paths.test.ts` — testes de paths (HARNESS_HOME)
+- `cli/test/post-edit.test.ts` — post-edit hook: drops index.md entries whose files no longer exist.
 - `cli/test/pre-bash-s04.test.ts` — pre-bash S04: cd to /c/... denied, stale bundle on commit asks, Remove-Item with spaces inside the repo allowed.
 - `cli/test/pre-bash-s05.test.ts` — pre-bash S05 (B046, B047): git --output, redirects and PowerShell writers follow the pre-edit rule.
 - `cli/test/pre-bash-s06.test.ts` — pre-bash S06 (B054): Tee-Object and git format-patch -o follow the pre-edit rule.
@@ -113,10 +116,13 @@ Uma linha por arquivo: caminho e propósito. Mantido pelo hook `post-edit`.
 - `cli/test/review-security.test.ts` — testes de segurança do pre-bash (achados do Reviewer)
 - `cli/test/run.test.ts` — (sem descrição)
 - `cli/test/session-start-requests.test.ts` — session-start shows, once, the project's harness requests marked `feito (SNN)` in the harness backlog.
+- `cli/test/session-start.test.ts` — session-start after a compaction brings back the task in progress and the hx state, not only the handoff.
 - `cli/test/setup.test.ts` — (sem descrição)
 - `cli/test/sprint.test.ts` — testes de sprint
 - `cli/test/stop-typecheck.test.ts` — Stop hook typecheck: tsc runs only when cli/src changed and blocks with its first lines.
+- `cli/test/task.test.ts` — (sem descrição)
 - `cli/test/text-s06.test.ts` — S06 text fixes: hx status cleans where/next like the title (B057); session-start keeps `\|` in backlog items (B058).
+- `cli/test/transcript.test.ts` — (sem descrição)
 - `cli/test/turn-end.test.ts` — B045: the Stop hook emits turn.end only when it lets the agent stop.
 - `cli/test/usage.test.ts` — testes de usage
 - `cli/test/worker-run.test.ts` — hx worker run TNN <handoff>: one detached `claude -p` on OmniRoute (Gemini), env only in the child (ADR 0012).
@@ -146,6 +152,7 @@ Uma linha por arquivo: caminho e propósito. Mantido pelo hook `post-edit`.
 - `docs/avaliacao-observabilidade.md` — Avaliação de observabilidade: Main Harness e Dashboard IA
 - `docs/backlog.md` — Backlog do Main Harness
 - `docs/contracts/events.md` — Contrato de eventos: Main Harness e Dashboard IA
+- `docs/decisoes-daniel.md` — Decisões de Daniel
 - `docs/experiments/S12-protocolo.md` — S12 — Protocolo do experimento de modelos
 - `docs/experiments/S12-resultado.md` — S12 — Resultado do experimento: Opus × Sonnet × Gemini
 - `docs/experiments/S12/desafio-1.md` — Handoff — S12 / Desafio 1 (B099): lock do `hx worker run` antes do spawn
@@ -178,6 +185,7 @@ Uma linha por arquivo: caminho e propósito. Mantido pelo hook `post-edit`.
 - `docs/sprints/S11-plan.md` — S11 — Backlog pendente, todo executado pelo trabalhador Gemini
 - `docs/sprints/S11-release.md` — S11 — Release Report
 - `docs/sprints/S12-plan.md` — S12 — Experimento: Opus × Sonnet × Gemini na mesma tarefa
+- `docs/sprints/S13-plan.md` — S13 — Harness mais limpo e eventos para o Dashboard
 - `eslint.config.js` — ESLint flat config
 - `hooks/hooks.json` — hooks do plugin (forma exec chamando o hx)
 - `package-lock.json` — versões travadas das dependências de desenvolvimento

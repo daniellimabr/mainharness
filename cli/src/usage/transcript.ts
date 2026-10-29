@@ -15,6 +15,8 @@ export interface IngestOptions {
   project: string;
   sprint: string | null;
   task?: string | null;
+  /** Task of each subagent by agent id (from its `agent.start`); main transcript uses `task`. */
+  agentTasks?: Record<string, string>;
 }
 
 /** A source of per-response usage (transcripts today, OpenTelemetry later). */
@@ -101,15 +103,21 @@ function ingestTranscripts(opts: IngestOptions): HarnessEvent[] {
     // no subagents
   }
   const files = [
-    { key: "main", file: opts.transcriptPath, agent: null as string | null },
+    {
+      key: "main",
+      file: opts.transcriptPath,
+      agent: null as string | null,
+      task: opts.task ?? null,
+    },
     ...subs.map((f) => ({
       key: `subagents/${f}`,
       file: path.join(subDir, f),
       agent: subagentName(path.join(subDir, f)),
+      task: opts.agentTasks?.[f.replace(/^agent-|\.jsonl$/g, "")] ?? null,
     })),
   ];
 
-  for (const { key, file, agent } of files) {
+  for (const { key, file, agent, task } of files) {
     const { lines, offset } = readNew(file, cache.offsets[key] ?? 0);
     const parsed = lines.map(parseAssistant);
     // A streamed message writes one line per part (same id, growing output_tokens); only the
@@ -143,7 +151,7 @@ function ingestTranscripts(opts: IngestOptions): HarnessEvent[] {
             project: opts.project,
             session: opts.sessionId,
             sprint: opts.sprint,
-            task: opts.task ?? null,
+            task,
             agent: agent ?? (side ? "subagent" : "tech-lead"),
             ts: o.timestamp && TS_RE.test(o.timestamp) ? o.timestamp : undefined,
             data: {

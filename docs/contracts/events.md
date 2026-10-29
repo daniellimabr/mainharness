@@ -48,8 +48,8 @@ Notação: `?` = campo opcional (pode faltar); `| null` = pode ser `null`. Núme
 | ~~`session.resume`~~ | `ok` booleano, da v0.8.0 à v0.8.x | **Saiu na v0.9.0** junto com o `hx resume` (ADR 0011 substituído). Não é mais gravado nem aceito; linhas antigas no log ficam como estão |
 | `prompt` | nenhum (`{}`) | Cada comando de Daniel (hook `UserPromptSubmit`). Só horário e sessão: **o texto do prompt nunca é gravado** |
 | `turn.end` | nenhum (`{}`) | Fim da vez do agente (hook `Stop`), só quando o Stop deixa parar (não quando bloqueia). Do último `turn.end` até o próximo `prompt` da mesma sessão é espera por Daniel (desde a v0.6.0) |
-| `agent.start` | `agent_id` texto | Subagente começou (hook `SubagentStart`). `agent` do envelope = tipo do agente (ex.: `main-harness:reviewer`; `null` se vazio); `task` = a tarefa em andamento quando há exatamente uma, senão `null` |
-| `agent.end` | `agent_id` texto | Subagente terminou (hook `SubagentStop`); mesmo envelope do `agent.start` |
+| `agent.start` | `agent_id` texto | Subagente começou (hook `SubagentStart`). `agent` do envelope = tipo do agente (ex.: `main-harness:reviewer`; `null` se vazio); `task` = o `TNN` da descrição do Agent (ex.: `T06 eventos`, `[T06] ...`, lida do `agent-<id>.meta.json`, desde a v0.11.0); sem `TNN` na descrição, a tarefa em andamento quando há exatamente uma; senão `null` |
+| `agent.end` | `agent_id` texto | Subagente terminou (hook `SubagentStop`); mesmo envelope do `agent.start` (`task` = a do `agent.start` do mesmo `agent_id`) |
 | `project.status` | `where` texto; `next` texto | `hx status --where <onde estamos> --next <próximo passo>` (opcional, quem quiser registra) |
 | `statusline` | `five_hour` número \| null (% usado do limite de 5 h); `seven_day` número \| null (% usado do limite semanal); `title?` texto (título do chat, inclusive o automático), desde a v0.7.0 | **Obsoleto desde a v0.8.0** (o `hx statusline` foi removido; o % de uso vem do `usage.limits`). Eventos antigos continuam válidos. Era gravado pelo `hx statusline` (`rate_limits.*.used_percentage` e `session_name`) |
 | `sprint.approved` | `plan` texto; `sha256` texto; `approved_at` texto; `approver` texto | `hx sprint approve` |
@@ -60,12 +60,13 @@ Notação: `?` = campo opcional (pode faltar); `| null` = pode ser `null`. Núme
 | `task.start` | `planned_min?` número | `hx task start` |
 | `task.phase` | `phase` texto (`testes`, `código`, `revisão`, `commit`) | `hx task phase <id> <fase>` (tarefa em andamento) |
 | `task.done` | `duration_s` número; `planned_min?` número | `hx task done` |
-| `worker.start` | `model` texto (agente `gemini`) | `hx worker run TNN <handoff>`, ao disparar o trabalhador no OmniRoute (ADR 0012), desde a v0.9.0 |
-| `worker.end` | `model` texto; `exit_code` número; `duration_s` número (agente `gemini`) | Fim do `claude -p` do trabalhador; junto vem `task.phase` `fila` |
+| ~~`worker.start`~~ | `model` texto (agente `gemini`) | **Legado:** o `hx worker` saiu na v0.11.0; o tipo não é mais gravado nem aceito. Só aparece em logs antigos (até a v0.10) |
+| ~~`worker.end`~~ | `model` texto; `exit_code` número; `duration_s` número (agente `gemini`) | **Legado**, como o `worker.start`: só em logs até a v0.10 |
 | `review.result` | `result`: `pass` ou `fail` | `hx review pass\|fail` |
-| `usage` | `model` texto; `input`, `output`, `cache_write`, `cache_read` número; `usd` número \| null; `message_id` texto; `transcript`: `main` ou `subagent` | Uma resposta nova do modelo (ADR 0007) |
+| `usage` | `model` texto; `input`, `output`, `cache_write`, `cache_read` número; `usd` número \| null; `message_id` texto; `transcript`: `main` ou `subagent` | Uma resposta nova do modelo (ADR 0007). `task` do envelope (desde a v0.11.0): resposta de subagente = `task` do `agent.start` do mesmo agente; resposta da sessão principal = a tarefa em andamento quando há exatamente uma; senão `null` |
 | `usage.limits` | `five_hour` número (% usado do limite de 5 h); `five_hour_resets_at` texto \| null (reinício da janela, ISO-8601 UTC); `seven_day` número (% usado do limite semanal); `seven_day_resets_at` texto \| null, desde a v0.8.0 | Hook `Stop`, no máximo a cada 5 min, com o valor de `GET api.anthropic.com/api/oauth/usage` (ADR 0010). Falha (sem login, rede, resposta inválida, mais de 3 s) não grava nada. Os limites são da conta: o `project` é só o do chat que leu. Mapeia para a `limit_window` do Dashboard (janela `five_hour`/`seven_day`, %, `resets_at`) |
-| `alert.context` | `tokens` número; `limit` número; `handoff` booleano | Contexto passou de `handoffAt` (ADR 0006) |
+| `alert.context` | `tokens` número; `limit` número; `handoff` booleano; `agent_id?` texto \| null (desde a v0.11.0; `null` na sessão principal) | Contexto passou de `handoffAt` (ADR 0006). `task` do envelope: a do `agent.start` do `agent_id`, senão a tarefa em andamento quando há exatamente uma (desde a v0.11.0) |
+| `context` | `tokens` número; `limit` número; `last_compact_at` texto \| null (última compactação, ISO-8601 UTC) | Cada hook `Stop` com transcrito legível, desde a v0.11.0: tamanho atual do contexto da sessão principal. `task` como no `alert.context` |
 | `handoff` | `mode`: `compact`, `manual` ou `new-chat`; `file` texto \| null | Handoff gravado ou compactação |
 | `harness.request` | `file` texto; `priority`: `alta`, `media` ou `baixa` | `hx request` |
 | `harness.release` | `version` texto; `tag` texto; `previous` texto \| null | `hx release` |
@@ -78,7 +79,7 @@ Notas:
 - `usd_by_agent`, `usd_by_task` e `actual_min_by_task` têm chaves no formato de id (`[A-Za-z0-9._:@-]`, até 128 caracteres).
 - `sprint.approved.sha256` é o hash do plano no momento da aprovação. Plano alterado depois exige nova aprovação e novo evento.
 - A contagem de compactações é o número de eventos `handoff` com `mode: "compact"`.
-- `agent.start`/`agent.end` se casam pelo `data.agent_id`. Com clones em paralelo (várias tarefas em andamento), `task` fica `null`.
+- `agent.start`/`agent.end` se casam pelo `data.agent_id`. Com clones em paralelo (várias tarefas em andamento) e sem `TNN` na descrição do Agent, `task` fica `null`.
 - **% do limite de uso (janela de 5 h e semanal):** vem do evento `usage.limits` (desde a v0.8.0). Os hooks do Claude Code não recebem esse dado; a fonte é o endpoint interno que o `/usage` usa, não documentado (exceção aceita no ADR 0010). O token do login vai só no cabeçalho da chamada e nunca é gravado.
 
 ## Privacidade

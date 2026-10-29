@@ -526,7 +526,13 @@ var init_schema = __esm({
         seven_day: n(),
         seven_day_resets_at: s({ nullable: true })
       },
-      "alert.context": { tokens: n(), limit: n(), handoff: b() },
+      "alert.context": {
+        tokens: n(),
+        limit: n(),
+        handoff: b(),
+        agent_id: s({ optional: true, nullable: true })
+      },
+      context: { tokens: n(), limit: n(), last_compact_at: s({ nullable: true }) },
       handoff: { mode: s({ enum: ["compact", "manual", "new-chat"] }), file: s({ nullable: true }) },
       "harness.request": { file: s(), priority: s({ enum: ["alta", "media", "baixa"] }) },
       "harness.release": { version: s(), tag: s(), previous: s({ nullable: true }) },
@@ -690,14 +696,20 @@ function ingestTranscripts(opts) {
   } catch {
   }
   const files = [
-    { key: "main", file: opts.transcriptPath, agent: null },
+    {
+      key: "main",
+      file: opts.transcriptPath,
+      agent: null,
+      task: opts.task ?? null
+    },
     ...subs.map((f) => ({
       key: `subagents/${f}`,
       file: path8.join(subDir, f),
-      agent: subagentName(path8.join(subDir, f))
+      agent: subagentName(path8.join(subDir, f)),
+      task: opts.agentTasks?.[f.replace(/^agent-|\.jsonl$/g, "")] ?? null
     }))
   ];
-  for (const { key, file: file2, agent } of files) {
+  for (const { key, file: file2, agent, task } of files) {
     const { lines, offset } = readNew(file2, cache.offsets[key] ?? 0);
     const parsed = lines.map(parseAssistant);
     let keep = lines.length;
@@ -727,7 +739,7 @@ function ingestTranscripts(opts) {
             project: opts.project,
             session: opts.sessionId,
             sprint: opts.sprint,
-            task: opts.task ?? null,
+            task,
             agent: agent ?? (side ? "subagent" : "tech-lead"),
             ts: o.timestamp && TS_RE2.test(o.timestamp) ? o.timestamp : void 0,
             data: {
@@ -964,7 +976,9 @@ function ingest(input, c) {
       transcriptPath: input.transcript_path,
       sessionId: input.session_id,
       project: c.p.id,
-      sprint: c.st.activeSprint
+      sprint: c.st.activeSprint,
+      task: currentTask(c.st),
+      agentTasks: c.st.agentTasks
     });
   } catch (err) {
     logError("hook ingest", err);
@@ -996,8 +1010,22 @@ function stop(input) {
   const c = context(input);
   if (!c) return {};
   ingest(input, c);
+  const tokens = tokensOf(input);
+  if (tokens !== null)
+    emit({
+      type: "context",
+      project: c.p.id,
+      session: c.session,
+      sprint: c.st.activeSprint,
+      task: taskOf(input, c),
+      data: {
+        tokens,
+        limit: loadConfig().contextLimit,
+        last_compact_at: c.st.lastCompactAt ?? null
+      }
+    });
   void refreshLimits({ project: c.p.id, session: c.session, sprint: c.st.activeSprint });
-  const block = stopBlock(input, c);
+  const block = stopBlock(input, c, tokens);
   if (block) return jsonOut({ decision: "block", ...block });
   emit({
     type: "turn.end",
@@ -1008,14 +1036,13 @@ function stop(input) {
   });
   return {};
 }
-function stopBlock(input, c) {
+function stopBlock(input, c, tokens) {
   const cfg = loadConfig();
   if (!input.stop_hook_active && path11.relative(c.p.root, cfg.harnessRepo) === "") {
     const reason = typecheckReason(c.p.root);
     if (reason) return { reason };
   }
   if (cfg.contextStrategy !== "compact" || input.stop_hook_active) return null;
-  const tokens = tokensOf(input);
   if (tokens === null || tokens < cfg.handoffAt) return null;
   const alerted = c.st.lastContextAlertAt;
   if (alerted && !(time(alerted) < time(c.st.lastCompactAt))) return null;
@@ -1024,7 +1051,8 @@ function stopBlock(input, c) {
     project: c.p.id,
     session: c.session,
     sprint: c.st.activeSprint,
-    data: { tokens, limit: cfg.contextLimit, handoff: false }
+    task: taskOf(input, c),
+    data: { tokens, limit: cfg.contextLimit, handoff: false, agent_id: input.agent_id ?? null }
   });
   updateState(c.p.id, (s2) => {
     s2.lastContextAlertAt = (/* @__PURE__ */ new Date()).toISOString();
@@ -1039,15 +1067,35 @@ function currentTask(st) {
   const open2 = Object.entries(st.tasks).filter(([, t]) => t.start && !t.end);
   return open2.length === 1 ? open2[0]?.[0] ?? null : null;
 }
+function descriptionTask(input) {
+  const { transcript_path: tp, session_id: sid, agent_id: id } = input;
+  if (!tp || !sid || !id || !ID_RE.test(sid) || !ID_RE.test(id)) return null;
+  const meta = readJson(
+    path11.join(path11.dirname(tp), sid, "subagents", `agent-${id}.meta.json`),
+    {}
+  );
+  const d = meta && typeof meta.description === "string" ? meta.description : "";
+  return /\b(T\d{2,3})\b/.exec(d)?.[1] ?? null;
+}
+function taskOf(input, c) {
+  return input.agent_id && c.st.agentTasks?.[input.agent_id] || currentTask(c.st);
+}
 function emitAgent(type, input, c) {
   if (!input.agent_id) return;
+  const id = input.agent_id;
   const t = input.agent_type;
+  const task = type === "agent.start" ? descriptionTask(input) ?? currentTask(c.st) : taskOf(input, c);
+  if (type === "agent.start" && task)
+    updateState(c.p.id, (s2) => {
+      const all = { ...s2.agentTasks, [id]: task };
+      s2.agentTasks = Object.fromEntries(Object.entries(all).slice(-AGENT_TASKS_KEEP));
+    });
   emit({
     type,
     project: c.p.id,
     session: c.session,
     sprint: c.st.activeSprint,
-    task: currentTask(c.st),
+    task,
     agent: t && ID_RE.test(t) ? t : null,
     data: { agent_id: input.agent_id }
   });
@@ -1075,8 +1123,13 @@ function preCompact(input) {
   if (fresh) {
     emit({ ...base2, type: "handoff", data: { mode: "compact", file: path11.basename(lh.file) } });
   } else {
-    const data = { tokens: tokensOf(input) ?? 0, limit: cfg.contextLimit, handoff: false };
-    emit({ ...base2, type: "alert.context", data });
+    const data = {
+      tokens: tokensOf(input) ?? 0,
+      limit: cfg.contextLimit,
+      handoff: false,
+      agent_id: input.agent_id ?? null
+    };
+    emit({ ...base2, type: "alert.context", task: taskOf(input, c), data });
     emit({ ...base2, type: "handoff", data: { mode: "compact", file: null } });
   }
   updateState(c.p.id, (s2) => {
@@ -1097,7 +1150,7 @@ function sessionEnd(input) {
   });
   return {};
 }
-var import_node_child_process, fs11, path11, time;
+var import_node_child_process, fs11, path11, AGENT_TASKS_KEEP, time;
 var init_lifecycle = __esm({
   "cli/src/hooks/lifecycle.ts"() {
     "use strict";
@@ -1107,12 +1160,14 @@ var init_lifecycle = __esm({
     init_config();
     init_log();
     init_projects();
+    init_fsx();
     init_state();
     init_emit();
     init_schema();
     init_usage();
     init_limits();
     init_runner();
+    AGENT_TASKS_KEEP = 50;
     time = (s2) => s2 ? Date.parse(s2) : NaN;
   }
 });
