@@ -41,6 +41,11 @@ Formato: **Decisão** · **Porquê** · **Descartado** · **Contraponto**.
 - **Descartado:** assinar o Pro agora.
 - **Contraponto:** a cota diária do Gemini CLI no Pro é maior; se o Argon passar, o Pro pode sair mais barato que a API em volume.
 
+### Teste sem nenhum investimento: só modelos grátis do OmniRoute (S14)
+- **Porquê:** evitar pôr crédito em provedores. Em 2026-10-29 o OmniRoute respondeu de graça com DeepSeek V4 Pro, Kimi K2.7 Code e GLM-5.2.
+- **Descartado:** crédito na DeepSeek, Kimi ou GLM; o Argon pela API paga (a conta grátis dá 429).
+- **Contraponto:** provedor grátis tem limite diário e pode cair; o Kimi K3 e o GLM-5.3 não responderam. O Argon só entra pelo mês grátis do Google AI Pro, e só se o DeepSeek decepcionar.
+
 ### S14 só com o foco em modelos (S14)
 - **Porquê:** a sprint fica enxuta: trabalhador externo, teste e custo por tarefa (B126, B127, B131), que é o que permite comparar os modelos.
 - **Descartado:** ajustes rápidos do inbox (B128, B130, B132), B109, B123, que ficam para a próxima.

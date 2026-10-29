@@ -6,7 +6,7 @@
 
 ## Objetivo
 
-Daniel descobre, com números, se algum modelo de fora (DeepSeek V4 Pro, Gemini 4 Argon pela API, Kimi K3 ou GLM-5.3) faz o trabalho pesado com qualidade de Sonnet. Se fizer, ele passa a gastar menos do limite de 5 h e do semanal do Claude. Para isso a sprint traz de volta um trabalhador externo genérico, uma trava contra arquivo com acento quebrado e o custo por tarefa confiável. Ela fecha com um teste cego contra Sonnet e Opus e com a decisão sobre o Google AI Pro (decisões em `docs/decisoes-daniel.md`, S14).
+Daniel descobre, com números e **sem gastar nada**, se algum modelo de fora acessível de graça pelo OmniRoute (DeepSeek V4 Pro, Kimi K2.7 Code ou GLM-5.2) faz o trabalho pesado com qualidade de Sonnet. Se fizer, ele passa a gastar menos do limite de 5 h e do semanal do Claude. Para isso a sprint traz de volta um trabalhador externo genérico, uma trava contra arquivo com acento quebrado e o custo por tarefa confiável. Ela fecha com um teste cego contra Sonnet e Opus. Se o DeepSeek decepcionar, propõe testar o Gemini 4 Argon no mês grátis do Google AI Pro (decisões em `docs/decisoes-daniel.md`, S14).
 
 ## Escopo
 
@@ -22,14 +22,16 @@ Daniel descobre, com números, se algum modelo de fora (DeepSeek V4 Pro, Gemini 
    - trabalhadores externos;
    - chat principal: com uma tarefa em andamento, vai inteiro para ela; com várias em paralelo, é rateado igualmente, e o rateio é marcado como tal.
    - "sem-tarefa" fica só para o que acontece fora de tarefa.
-4. **Guia de configuração (`docs/omniroute.md`).** Como pôr no OmniRoute (ou direto) cada candidato: DeepSeek, Gemini API (AI Studio), Kimi e GLM. Inclui o preço de cada um e como conferir com `hx worker check`. Daniel cria as chaves (US$ 5 a 10 de crédito por provedor bastam).
+4. **Guia (`docs/omniroute.md`).** Explica como usar os modelos grátis que o OmniRoute já tem: `cfp/deepseek-ai/deepseek-v4-pro-0813`, `cfp/moonshotai/kimi-k2.7-code` e `cfp/zai-org/glm-5.2`. Também cobre os roteadores `auto/*`, os limites dos provedores grátis e a conferência com `hx worker check`.
+   - Fica registrado o que não funcionou em 2026-10-29: `dva/*` (erro 500), `zc/glm-5.3` (502) e `gemini/gemini-4-argon` (429, a conta grátis não libera).
+   - Nenhuma chave nova e nenhum crédito: usa só o token do OmniRoute que já está em `~/.harness/config.json`.
 5. **Teste cego (`docs/experiments/S14-protocolo.md`).** Mesmo método da S12: desafios com testes escondidos, nota de 0 a 25 e juiz que não sabe o modelo.
    - Desafios: os 2 da S12 mais 1 novo, com texto em português e caminho de erro, para pegar acento e borda.
-   - Concorrentes: DeepSeek V4 Pro, Gemini 4 Argon, Kimi K3 ou GLM-5.3 (o que estiver no OmniRoute).
+   - Concorrentes, todos grátis: DeepSeek V4 Pro, Kimi K2.7 Code e GLM-5.2. Se o Kimi K3 ou o GLM-5.3 voltarem a responder na hora do teste, substituem a versão anterior.
    - Linha de base: Sonnet 5.5 e Opus 5.5 vêm da S12 nos desafios 1 e 2 e rodam só o desafio 3, para economizar.
    - Juiz: Reviewer Sonnet, às cegas. Na S12 ele deu o mesmo ranking que o Opus, pela metade do custo.
-   - Medidas: nota, tempo, US$ e quanto do limite do Claude cada um gastou (zero para os externos, fora o juiz).
-6. **Resultado e decisão.** O `docs/experiments/S14-resultado.md` traz o ranking. Um ADR 0015 propõe onde cada externo pode executar (ou "nenhum", se ninguém chegar perto do Sonnet). Daniel decide o ADR e o Google AI Pro com esses números, e as duas decisões vão para `docs/decisoes-daniel.md`.
+   - Medidas: nota, tempo, US$, quanto do limite do Claude cada um gastou (zero para os externos, fora o juiz) e falhas do provedor grátis (limite, lentidão, queda).
+6. **Resultado e decisão.** O `docs/experiments/S14-resultado.md` traz o ranking. Um ADR 0015 propõe onde cada externo pode executar (ou "nenhum", se ninguém chegar perto do Sonnet). Se o DeepSeek decepcionar, o resultado propõe testar o Argon no mês grátis do Google AI Pro, numa próxima sprint. Daniel decide e as decisões vão para `docs/decisoes-daniel.md`.
 7. **Release v0.12.0** (minor: volta um comando). Backlog, CHANGELOG e roadmap.
    - Se o ADR 0015 for aceito, o `tech-lead.md` e o `sprint-plan` aceitam `worker (<apelido>)` na coluna Agente, o que resolve B130 nesse caso.
    - Se não for, só a release.
@@ -39,7 +41,8 @@ Daniel descobre, com números, se algum modelo de fora (DeepSeek V4 Pro, Gemini 
 - Ajustes rápidos do inbox (B128, B130 fora do caso acima, B132), aviso no Windows (B109) e `hx shot` (B123). Ficam para a próxima sprint, por decisão de Daniel.
 - GPT-6 Astra: pede ChatGPT Plus (descartado).
 - Gemini 4 Carbon: não está aberto ao público.
-- Assinar o Google AI Pro antes do teste.
+- Gemini 4 Argon: a conta grátis não libera. Só entra pelo mês grátis do Google AI Pro, e só se o DeepSeek decepcionar.
+- Qualquer gasto com crédito ou assinatura.
 - Mudar quem executa nos outros projetos durante a sprint: só depois do ADR 0015.
 
 ## Critérios de aceite
@@ -48,9 +51,9 @@ Daniel descobre, com números, se algum modelo de fora (DeepSeek V4 Pro, Gemini 
 2. `hx worker run` roda um handoff num modelo externo, grava `agent.start`, `usage` e `agent.stop` com o modelo e a tarefa, e não muda `~/.claude/settings.json` (há teste para isso).
 3. Editar um arquivo com BOM ou com `Ã§` faz o `post-edit` acusar o problema. Arquivo em UTF-8 limpo não gera aviso.
 4. `hx metrics` de uma sprint de teste com clones, Reviewer, trabalhador e duas tarefas em paralelo mostra US$ e chamadas por tarefa, marca o rateio e deixa "sem-tarefa" só fora de tarefa.
-5. O guia `docs/omniroute.md` cobre os quatro provedores, e cada candidato configurado passa no `hx worker check`.
+5. O guia `docs/omniroute.md` cobre os três modelos grátis, e cada um passa no `hx worker check`.
 6. O protocolo e o resultado do teste cego estão em `docs/experiments/`, com nota, tempo e US$ por modelo e desafio.
-7. O ADR 0015 está escrito, e as decisões de Daniel (ADR e Google AI Pro) estão em `docs/decisoes-daniel.md`.
+7. O ADR 0015 está escrito, e a decisão de Daniel está em `docs/decisoes-daniel.md`.
 8. Release v0.12.0 publicada; B100, B116, B126, B127 e B131 marcados como `feito (S14)` (e B130, se o ADR 0015 for aceito).
 9. **Lint e tipos: zero erros e zero avisos.**
 
@@ -73,9 +76,9 @@ Daniel descobre, com números, se algum modelo de fora (DeepSeek V4 Pro, Gemini 
 | T01 | Trabalhador externo genérico: `hx worker run\|check`, apelidos na config, consumo em `usage` (B100) | clone (opus) | `cli/src/commands/worker.ts`, `cli/src/core/config.ts`, `cli/src/events/schema.ts`, `cli/test/worker.test.ts` | — | 45 min | 42 min |
 | T02 | Trava de codificação no `post-edit` (BOM e texto quebrado) | clone (opus) | `cli/src/hooks/post-edit.ts`, `cli/test/post-edit-encoding.test.ts` | — | 20 min | 19 min |
 | T03 | Custo e chamadas por tarefa: clones, Reviewer, trabalhador e rateio do chat (B126, B127, B131, B116) | clone (opus) | `cli/src/sprint/index.ts`, `cli/test/metrics-task.test.ts` | — | 40 min | 38 min |
-| T04 | Guia `docs/omniroute.md`: DeepSeek, Gemini API, Kimi e GLM, com preço e conferência | clone (sonnet) | `docs/omniroute.md` | — | 20 min | 19 min |
+| T04 | Guia `docs/omniroute.md`: modelos grátis (DeepSeek V4 Pro, Kimi K2.7, GLM-5.2), limites e conferência | clone (sonnet) | `docs/omniroute.md` | — | 20 min | 19 min |
 | T05 | Teste cego: protocolo, desafio 3, corridas dos 3 externos + linha de base, nota do juiz | tech-lead (sonnet) + trabalhadores + reviewer (sonnet) | `docs/experiments/S14-protocolo.md`, `docs/experiments/S14/` | T01, T02, T03, T04 | 60 min | 56 min |
-| T06 | Resultado, ADR 0015 e decisões de Daniel (ADR e Google AI Pro) | tech-lead (opus) | `docs/experiments/S14-resultado.md`, `docs/adr/0015-*.md`, `docs/decisoes-daniel.md` | T05 | 25 min | 24 min |
+| T06 | Resultado, ADR 0015 e decisão de Daniel | tech-lead (opus) | `docs/experiments/S14-resultado.md`, `docs/adr/0015-*.md`, `docs/decisoes-daniel.md` | T05 | 25 min | 24 min |
 | T07 | Revisão final, regra do Agente (se o ADR 0015 for aceito), backlog, CHANGELOG, roadmap e release v0.12.0 | tech-lead (sonnet) + reviewer (opus) | `agents/tech-lead.md`, `skills/sprint-plan/`, `docs/backlog.md`, `CHANGELOG.md`, `docs/roadmap.md` | T06 | 20 min | 19 min |
 
 **Por que esses agentes:**
@@ -83,7 +86,7 @@ Daniel descobre, com números, se algum modelo de fora (DeepSeek V4 Pro, Gemini 
 - T01 é Opus: muda um contrato do `hx` (comando, config, eventos), lida com chave e processo filho e tem caminho de erro.
 - T02 é Opus: lógica nova em hook.
 - T03 é Opus: muda o contrato do `sprint.metrics`, e a atribuição usa dado lido do log de eventos.
-- T04 é Sonnet, não Haiku: o texto do guia ainda não está decidido, porque depende do que cada provedor oferece hoje.
+- T04 é Sonnet, não Haiku: o texto do guia ainda não está decidido, porque depende dos limites atuais dos provedores grátis.
 - T05: o Tech Lead orquestra. Os concorrentes rodam como trabalhadores e o juiz é o Reviewer Sonnet às cegas, como na S12.
 - T06 é Opus: é uma decisão de desenho (ADR).
 
@@ -108,9 +111,9 @@ Daniel descobre, com números, se algum modelo de fora (DeepSeek V4 Pro, Gemini 
 
 **Espera por Daniel:**
 
-- (a) Criar as chaves e pôr crédito nos provedores durante a onda 1. O guia da T04 sai primeiro para isso.
-- (b) Decidir o ADR 0015 e o Google AI Pro na T06.
-- (c) O teste final.
+- (a) Decidir o ADR 0015 na T06.
+- (b) O teste final.
+- Nenhuma chave nova e nenhum crédito.
 
 **Git:** um commit por tarefa na `main`, no formato `<tipo>(S14/TNN): <resumo>`.
 
@@ -137,4 +140,4 @@ Tarefas da S13 que servem de referência:
 
 - Soma: 3 h 50 min brutas, **3 h 37 min** depois de calibrar (× 0,94).
 - Relógio do agente: o caminho T01 → T05 → T06 → T07 tem 150 min brutos, cerca de **2 h 36 min** com o fator 1,04. A conta não inclui as esperas por Daniel.
-- Custo extra fora do Claude: cerca de US$ 15 a 30 de crédito nos provedores.
+- Custo extra fora do Claude: zero, porque só usa provedores grátis.
