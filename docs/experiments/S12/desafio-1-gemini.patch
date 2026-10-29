@@ -1,0 +1,140 @@
+diff --git a/cli/src/commands/worker.ts b/cli/src/commands/worker.ts
+index 0777451..cda6c58 100644
+--- a/cli/src/commands/worker.ts
++++ b/cli/src/commands/worker.ts
+@@ -94,32 +94,43 @@ async function start(id: string | undefined, file: string | undefined, deps: Dep
+     console.error(`Já há um trabalhador rodando (${lock.sprint}/${lock.task}, PID ${lock.pid}).`);
+     return 1;
+   }
++  fs.mkdirSync(dir(), { recursive: true });
++  fs.writeFileSync(lockFile(), JSON.stringify({ pid: process.pid, sprint, task: tnn }));
++
+   const w = await ready(deps);
+-  if (!w) return 1;
++  if (!w) {
++    if (readLock().pid === process.pid) fs.rmSync(lockFile(), { force: true });
++    return 1;
++  }
+   const m = w.model;
+-  const child = (deps.spawn ?? spawn)(
+-    process.execPath,
+-    [deps.hx ?? process.argv[1] ?? "", "worker", "_child", sprint, tnn, handoff],
+-    {
+-      cwd: ctx.root,
+-      detached: true, // own process group: survives the parent chat
+-      stdio: "ignore",
+-      windowsHide: true,
+-      env: {
+-        ...process.env,
+-        ANTHROPIC_BASE_URL: w.url,
+-        ANTHROPIC_AUTH_TOKEN: w.token,
+-        ANTHROPIC_API_KEY: "",
+-        ANTHROPIC_MODEL: m,
+-        ANTHROPIC_DEFAULT_OPUS_MODEL: m,
+-        ANTHROPIC_DEFAULT_SONNET_MODEL: m,
+-        ANTHROPIC_DEFAULT_HAIKU_MODEL: m,
+-        CLAUDE_CODE_SUBAGENT_MODEL: m,
++  let child;
++  try {
++    child = (deps.spawn ?? spawn)(
++      process.execPath,
++      [deps.hx ?? process.argv[1] ?? "", "worker", "_child", sprint, tnn, handoff],
++      {
++        cwd: ctx.root,
++        detached: true, // own process group: survives the parent chat
++        stdio: "ignore",
++        windowsHide: true,
++        env: {
++          ...process.env,
++          ANTHROPIC_BASE_URL: w.url,
++          ANTHROPIC_AUTH_TOKEN: w.token,
++          ANTHROPIC_API_KEY: "",
++          ANTHROPIC_MODEL: m,
++          ANTHROPIC_DEFAULT_OPUS_MODEL: m,
++          ANTHROPIC_DEFAULT_SONNET_MODEL: m,
++          ANTHROPIC_DEFAULT_HAIKU_MODEL: m,
++          CLAUDE_CODE_SUBAGENT_MODEL: m,
++        },
+       },
+-    },
+-  );
++    );
++  } catch {
++    if (readLock().pid === process.pid) fs.rmSync(lockFile(), { force: true });
++    return 1;
++  }
+   child.unref();
+-  fs.mkdirSync(dir(), { recursive: true });
+   fs.writeFileSync(lockFile(), JSON.stringify({ pid: child.pid, sprint, task: tnn }));
+   emit({
+     project: ctx.id,
+diff --git a/cli/test/worker-run.test.ts b/cli/test/worker-run.test.ts
+index 7709ffa..51d8c9e 100644
+--- a/cli/test/worker-run.test.ts
++++ b/cli/test/worker-run.test.ts
+@@ -27,6 +27,8 @@ let dir: string;
+ let claudeDir: string;
+ let handoff: string;
+ let out: string[];
++let prevBaseUrl: string | undefined;
++let prevAuthToken: string | undefined;
+ 
+ const up = vi.fn(async () => new Response("{}", { status: 200 }));
+ const fakeSpawn = vi.fn(() => ({ pid: 999999, unref: () => undefined }));
+@@ -40,6 +42,10 @@ function writeConfig(url = "http://localhost:20128"): void {
+ }
+ 
+ beforeEach(() => {
++  prevBaseUrl = process.env.ANTHROPIC_BASE_URL;
++  prevAuthToken = process.env.ANTHROPIC_AUTH_TOKEN;
++  delete process.env.ANTHROPIC_BASE_URL;
++  delete process.env.ANTHROPIC_AUTH_TOKEN;
+   env = isolateHome();
+   dir = fakeProject();
+   const plan = path.join(dir, "docs", "sprints", "S01-plan.md");
+@@ -66,6 +72,8 @@ afterEach(() => {
+   expect(fs.readFileSync(path.join(claudeDir, "settings.json"), "utf8")).toBe(SETTINGS);
+   expect(process.env.ANTHROPIC_BASE_URL).toBeUndefined();
+   expect(process.env.ANTHROPIC_AUTH_TOKEN).toBeUndefined();
++  if (prevBaseUrl !== undefined) process.env.ANTHROPIC_BASE_URL = prevBaseUrl;
++  if (prevAuthToken !== undefined) process.env.ANTHROPIC_AUTH_TOKEN = prevAuthToken;
+   for (const e of readEventsIn(env.home)) expect(validateEvent(e)).toEqual([]);
+   expect(out.join("\n")).not.toContain(TOKEN);
+   vi.restoreAllMocks();
+@@ -103,7 +111,9 @@ describe("hx worker run: refusals", () => {
+   });
+ 
+   it("spawns a detached child with the OmniRoute env only there", async () => {
++    console.log("BEFORE RUN", process.env.ANTHROPIC_BASE_URL);
+     expect(await run(["run", "t01", handoff], deps())).toBe(0);
++    console.log("AFTER RUN", process.env.ANTHROPIC_BASE_URL);
+     const [bin, args, opts] = fakeSpawn.mock.calls[0] as unknown as [
+       string,
+       string[],
+diff --git a/docs/sprints/S12-release.md b/docs/sprints/S12-release.md
+new file mode 100644
+index 0000000..0d4e0d1
+--- /dev/null
++++ b/docs/sprints/S12-release.md
+@@ -0,0 +1,21 @@
++# S12 — Release Report
++
++> Sprint em andamento. A tabela de execução abaixo é atualizada pelo `hx` a cada tarefa; o Tech Lead completa o restante no fechamento (skill release-report), mantendo esta tabela.
++
++## Execução
++
++Horários de Brasília (UTC−3). ✅ feita · 🔄 em andamento · ⬜ a fazer.
++
++| Status | Id | Tarefa | Agente | Planejado | Início | Fim | Duração |
++|---|---|---|---|---|---|---|---|
++| ⬜ | T01 | Testes estáveis no Windows (B106) | clone (sonnet) | 12 min |  |  |  |
++| ⬜ | T02 | Protocolo e `bench.mjs` | clone (opus) | 28 min |  |  |  |
++| ⬜ | T03 | Desafios: handoffs, aceite e testes ocultos | clone (opus) | 24 min |  |  |  |
++| 🔄 código | T04 | Desafio 1 (B099): 3 corridas, nota cega, vencedor na `main` | tech-lead (sonnet) + reviewer (opus) + reviewer (sonnet) | 44 min | 20:36 |  |  |
++| ⬜ | T05 | Desafio 2 (B105): 3 corridas, nota cega, vencedor na `main` | tech-lead (sonnet) + reviewer (opus) + reviewer (sonnet) | 52 min |  |  |  |
++| ⬜ | T06 | Relatório: experimento, custo por papel, Reviewers, linha de base do chat principal | clone (opus) | 32 min |  |  |  |
++| ⬜ | T07 | Backlog, CHANGELOG, roadmap e release v0.10.2 | tech-lead (sonnet) | 12 min |  |  |  |
++| ⬜ | T08 | `hx usage` e `hx metrics` sem duplicatas (`message_id`) | clone (sonnet) | 16 min |  |  |  |
++| ⬜ | T09 | Compactar aos 140 mil em todos os projetos (migração + `hx doctor`) | clone (opus) | 24 min |  |  |  |
++| ⬜ | T10 | Ajustes da auditoria de prompts (Reviewer em Opus, `cd` no `tech-lead.md`) | clone (sonnet) | 8 min |  |  |  |
++| 🔄 | **Total** | 10 tarefas |  | 2 h 48 min | 2026-10-28 20:36 | ~23:24 (previsto) |  |

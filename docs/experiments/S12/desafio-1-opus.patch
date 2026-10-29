@@ -1,0 +1,172 @@
+diff --git a/cli/src/commands/worker.ts b/cli/src/commands/worker.ts
+index 0777451..2a3f08a 100644
+--- a/cli/src/commands/worker.ts
++++ b/cli/src/commands/worker.ts
+@@ -66,12 +66,35 @@ function alive(pid: unknown): boolean {
+ 
+ function readLock(): { pid?: number; sprint?: string; task?: string } {
+   try {
+-    return JSON.parse(fs.readFileSync(lockFile(), "utf8")) as { pid?: number };
++    return (JSON.parse(fs.readFileSync(lockFile(), "utf8")) as { pid?: number } | null) ?? {};
+   } catch {
+     return {};
+   }
+ }
+ 
++/** Creates the lock atomically (flag wx), holding this PID until the child's; a stale lock is replaced once. */
++function takeLock(sprint: string, task: string): boolean {
++  fs.mkdirSync(dir(), { recursive: true });
++  for (let i = 0; i < 2; i++) {
++    try {
++      fs.writeFileSync(lockFile(), JSON.stringify({ pid: process.pid, sprint, task }), {
++        flag: "wx",
++      });
++      return true;
++    } catch (e) {
++      if ((e as NodeJS.ErrnoException).code !== "EEXIST") throw e;
++    }
++    const lock = readLock();
++    if (alive(lock.pid)) {
++      console.error(`Já há um trabalhador rodando (${lock.sprint}/${lock.task}, PID ${lock.pid}).`);
++      return false;
++    }
++    fs.rmSync(lockFile(), { force: true }); // dead PID, empty or invalid JSON
++  }
++  console.error("Outro hx worker run pegou o lock ao mesmo tempo.");
++  return false;
++}
++
+ async function start(id: string | undefined, file: string | undefined, deps: Deps) {
+   if (!id || !/^T\d{2}$/i.test(id) || !file) {
+     console.error(USAGE);
+@@ -89,37 +112,42 @@ async function start(id: string | undefined, file: string | undefined, deps: Dep
+     console.error(`Handoff não encontrado ou vazio: ${handoff}`);
+     return 1;
+   }
+-  const lock = readLock();
+-  if (alive(lock.pid)) {
+-    console.error(`Já há um trabalhador rodando (${lock.sprint}/${lock.task}, PID ${lock.pid}).`);
++  if (!takeLock(sprint, tnn)) return 1;
++  let w: Awaited<ReturnType<typeof ready>> = null;
++  let child: ReturnType<typeof spawn> | undefined;
++  try {
++    w = await ready(deps);
++    if (w)
++      child = (deps.spawn ?? spawn)(
++        process.execPath,
++        [deps.hx ?? process.argv[1] ?? "", "worker", "_child", sprint, tnn, handoff],
++        {
++          cwd: ctx.root,
++          detached: true, // own process group: survives the parent chat
++          stdio: "ignore",
++          windowsHide: true,
++          env: {
++            ...process.env,
++            ANTHROPIC_BASE_URL: w.url,
++            ANTHROPIC_AUTH_TOKEN: w.token,
++            ANTHROPIC_API_KEY: "",
++            ANTHROPIC_MODEL: w.model,
++            ANTHROPIC_DEFAULT_OPUS_MODEL: w.model,
++            ANTHROPIC_DEFAULT_SONNET_MODEL: w.model,
++            ANTHROPIC_DEFAULT_HAIKU_MODEL: w.model,
++            CLAUDE_CODE_SUBAGENT_MODEL: w.model,
++          },
++        },
++      );
++  } catch (e) {
++    console.error(`Falha ao iniciar o trabalhador: ${(e as Error).message}`);
++  }
++  if (!w || !child) {
++    fs.rmSync(lockFile(), { force: true }); // gave up: leave no lock behind
+     return 1;
+   }
+-  const w = await ready(deps);
+-  if (!w) return 1;
+   const m = w.model;
+-  const child = (deps.spawn ?? spawn)(
+-    process.execPath,
+-    [deps.hx ?? process.argv[1] ?? "", "worker", "_child", sprint, tnn, handoff],
+-    {
+-      cwd: ctx.root,
+-      detached: true, // own process group: survives the parent chat
+-      stdio: "ignore",
+-      windowsHide: true,
+-      env: {
+-        ...process.env,
+-        ANTHROPIC_BASE_URL: w.url,
+-        ANTHROPIC_AUTH_TOKEN: w.token,
+-        ANTHROPIC_API_KEY: "",
+-        ANTHROPIC_MODEL: m,
+-        ANTHROPIC_DEFAULT_OPUS_MODEL: m,
+-        ANTHROPIC_DEFAULT_SONNET_MODEL: m,
+-        ANTHROPIC_DEFAULT_HAIKU_MODEL: m,
+-        CLAUDE_CODE_SUBAGENT_MODEL: m,
+-      },
+-    },
+-  );
+   child.unref();
+-  fs.mkdirSync(dir(), { recursive: true });
+   fs.writeFileSync(lockFile(), JSON.stringify({ pid: child.pid, sprint, task: tnn }));
+   emit({
+     project: ctx.id,
+diff --git a/cli/test/worker-run.test.ts b/cli/test/worker-run.test.ts
+index 7709ffa..f3e3047 100644
+--- a/cli/test/worker-run.test.ts
++++ b/cli/test/worker-run.test.ts
+@@ -188,3 +188,56 @@ describe("hx worker run: end to end with a fake claude", () => {
+     expect(evs.find((e) => e.type === "task.phase")).toMatchObject({ data: { phase: "fila" } });
+   }, 30000);
+ });
++
++describe("hx worker run: lock before spawn (B099)", () => {
++  it("the lock already exists when the child is spawned", async () => {
++    const lock = path.join(env.home, "worker", "lock.json");
++    let seen: unknown;
++    fakeSpawn.mockImplementationOnce(() => {
++      seen = JSON.parse(fs.readFileSync(lock, "utf8"));
++      return { pid: 999999, unref: () => undefined };
++    });
++    expect(await run(["run", "T01", handoff], deps())).toBe(0);
++    expect(seen).toMatchObject({ sprint: "S01", task: "T01" });
++    expect(JSON.parse(fs.readFileSync(lock, "utf8"))).toMatchObject({
++      pid: 999999,
++      sprint: "S01",
++      task: "T01",
++    });
++  });
++
++  it("two simultaneous runs spawn only one worker", async () => {
++    const codes = await Promise.all([
++      run(["run", "T01", handoff], deps()),
++      run(["run", "T01", handoff], deps()),
++    ]);
++    expect(fakeSpawn).toHaveBeenCalledTimes(1);
++    expect(codes.sort()).toEqual([0, 1]);
++  });
++
++  it("leaves no lock when it gives up after taking it", async () => {
++    const lock = path.join(env.home, "worker", "lock.json");
++    const down = vi.fn(async () => new Response("", { status: 503 }));
++    expect(await run(["run", "T01", handoff], { ...deps(), fetch: down })).toBe(1);
++    expect(fs.existsSync(lock)).toBe(false);
++    fs.writeFileSync(path.join(env.home, "config.json"), "{}");
++    expect(await run(["run", "T01", handoff], deps())).toBe(1);
++    expect(fs.existsSync(lock)).toBe(false);
++    writeConfig();
++    fakeSpawn.mockImplementationOnce(() => {
++      throw new Error("spawn failed");
++    });
++    expect(await run(["run", "T01", handoff], deps())).toBe(1);
++    expect(fs.existsSync(lock)).toBe(false);
++  });
++
++  it("an empty or invalid lock does not block a new run", async () => {
++    const lock = path.join(env.home, "worker", "lock.json");
++    fs.mkdirSync(path.dirname(lock), { recursive: true });
++    for (const bad of ["", "{oops", "null"]) {
++      fs.writeFileSync(lock, bad);
++      expect(await run(["run", "T01", handoff], deps())).toBe(0);
++    }
++    expect(fakeSpawn).toHaveBeenCalledTimes(3);
++  });
++});

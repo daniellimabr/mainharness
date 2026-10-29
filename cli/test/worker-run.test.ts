@@ -188,3 +188,56 @@ describe("hx worker run: end to end with a fake claude", () => {
     expect(evs.find((e) => e.type === "task.phase")).toMatchObject({ data: { phase: "fila" } });
   }, 30000);
 });
+
+describe("hx worker run: lock before spawn (B099)", () => {
+  it("the lock already exists when the child is spawned", async () => {
+    const lock = path.join(env.home, "worker", "lock.json");
+    let seen: unknown;
+    fakeSpawn.mockImplementationOnce(() => {
+      seen = JSON.parse(fs.readFileSync(lock, "utf8"));
+      return { pid: 999999, unref: () => undefined };
+    });
+    expect(await run(["run", "T01", handoff], deps())).toBe(0);
+    expect(seen).toMatchObject({ sprint: "S01", task: "T01" });
+    expect(JSON.parse(fs.readFileSync(lock, "utf8"))).toMatchObject({
+      pid: 999999,
+      sprint: "S01",
+      task: "T01",
+    });
+  });
+
+  it("two simultaneous runs spawn only one worker", async () => {
+    const codes = await Promise.all([
+      run(["run", "T01", handoff], deps()),
+      run(["run", "T01", handoff], deps()),
+    ]);
+    expect(fakeSpawn).toHaveBeenCalledTimes(1);
+    expect(codes.sort()).toEqual([0, 1]);
+  });
+
+  it("leaves no lock when it gives up after taking it", async () => {
+    const lock = path.join(env.home, "worker", "lock.json");
+    const down = vi.fn(async () => new Response("", { status: 503 }));
+    expect(await run(["run", "T01", handoff], { ...deps(), fetch: down })).toBe(1);
+    expect(fs.existsSync(lock)).toBe(false);
+    fs.writeFileSync(path.join(env.home, "config.json"), "{}");
+    expect(await run(["run", "T01", handoff], deps())).toBe(1);
+    expect(fs.existsSync(lock)).toBe(false);
+    writeConfig();
+    fakeSpawn.mockImplementationOnce(() => {
+      throw new Error("spawn failed");
+    });
+    expect(await run(["run", "T01", handoff], deps())).toBe(1);
+    expect(fs.existsSync(lock)).toBe(false);
+  });
+
+  it("an empty or invalid lock does not block a new run", async () => {
+    const lock = path.join(env.home, "worker", "lock.json");
+    fs.mkdirSync(path.dirname(lock), { recursive: true });
+    for (const bad of ["", "{oops", "null"]) {
+      fs.writeFileSync(lock, bad);
+      expect(await run(["run", "T01", handoff], deps())).toBe(0);
+    }
+    expect(fakeSpawn).toHaveBeenCalledTimes(3);
+  });
+});

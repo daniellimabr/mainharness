@@ -66,10 +66,33 @@ function alive(pid: unknown): boolean {
 
 function readLock(): { pid?: number; sprint?: string; task?: string } {
   try {
-    return JSON.parse(fs.readFileSync(lockFile(), "utf8")) as { pid?: number };
+    return (JSON.parse(fs.readFileSync(lockFile(), "utf8")) as { pid?: number } | null) ?? {};
   } catch {
     return {};
   }
+}
+
+/** Creates the lock atomically (flag wx), holding this PID until the child's; a stale lock is replaced once. */
+function takeLock(sprint: string, task: string): boolean {
+  fs.mkdirSync(dir(), { recursive: true });
+  for (let i = 0; i < 2; i++) {
+    try {
+      fs.writeFileSync(lockFile(), JSON.stringify({ pid: process.pid, sprint, task }), {
+        flag: "wx",
+      });
+      return true;
+    } catch (e) {
+      if ((e as NodeJS.ErrnoException).code !== "EEXIST") throw e;
+    }
+    const lock = readLock();
+    if (alive(lock.pid)) {
+      console.error(`Já há um trabalhador rodando (${lock.sprint}/${lock.task}, PID ${lock.pid}).`);
+      return false;
+    }
+    fs.rmSync(lockFile(), { force: true }); // dead PID, empty or invalid JSON
+  }
+  console.error("Outro hx worker run pegou o lock ao mesmo tempo.");
+  return false;
 }
 
 async function start(id: string | undefined, file: string | undefined, deps: Deps) {
@@ -89,37 +112,42 @@ async function start(id: string | undefined, file: string | undefined, deps: Dep
     console.error(`Handoff não encontrado ou vazio: ${handoff}`);
     return 1;
   }
-  const lock = readLock();
-  if (alive(lock.pid)) {
-    console.error(`Já há um trabalhador rodando (${lock.sprint}/${lock.task}, PID ${lock.pid}).`);
+  if (!takeLock(sprint, tnn)) return 1;
+  let w: Awaited<ReturnType<typeof ready>> = null;
+  let child: ReturnType<typeof spawn> | undefined;
+  try {
+    w = await ready(deps);
+    if (w)
+      child = (deps.spawn ?? spawn)(
+        process.execPath,
+        [deps.hx ?? process.argv[1] ?? "", "worker", "_child", sprint, tnn, handoff],
+        {
+          cwd: ctx.root,
+          detached: true, // own process group: survives the parent chat
+          stdio: "ignore",
+          windowsHide: true,
+          env: {
+            ...process.env,
+            ANTHROPIC_BASE_URL: w.url,
+            ANTHROPIC_AUTH_TOKEN: w.token,
+            ANTHROPIC_API_KEY: "",
+            ANTHROPIC_MODEL: w.model,
+            ANTHROPIC_DEFAULT_OPUS_MODEL: w.model,
+            ANTHROPIC_DEFAULT_SONNET_MODEL: w.model,
+            ANTHROPIC_DEFAULT_HAIKU_MODEL: w.model,
+            CLAUDE_CODE_SUBAGENT_MODEL: w.model,
+          },
+        },
+      );
+  } catch (e) {
+    console.error(`Falha ao iniciar o trabalhador: ${(e as Error).message}`);
+  }
+  if (!w || !child) {
+    fs.rmSync(lockFile(), { force: true }); // gave up: leave no lock behind
     return 1;
   }
-  const w = await ready(deps);
-  if (!w) return 1;
   const m = w.model;
-  const child = (deps.spawn ?? spawn)(
-    process.execPath,
-    [deps.hx ?? process.argv[1] ?? "", "worker", "_child", sprint, tnn, handoff],
-    {
-      cwd: ctx.root,
-      detached: true, // own process group: survives the parent chat
-      stdio: "ignore",
-      windowsHide: true,
-      env: {
-        ...process.env,
-        ANTHROPIC_BASE_URL: w.url,
-        ANTHROPIC_AUTH_TOKEN: w.token,
-        ANTHROPIC_API_KEY: "",
-        ANTHROPIC_MODEL: m,
-        ANTHROPIC_DEFAULT_OPUS_MODEL: m,
-        ANTHROPIC_DEFAULT_SONNET_MODEL: m,
-        ANTHROPIC_DEFAULT_HAIKU_MODEL: m,
-        CLAUDE_CODE_SUBAGENT_MODEL: m,
-      },
-    },
-  );
   child.unref();
-  fs.mkdirSync(dir(), { recursive: true });
   fs.writeFileSync(lockFile(), JSON.stringify({ pid: child.pid, sprint, task: tnn }));
   emit({
     project: ctx.id,
