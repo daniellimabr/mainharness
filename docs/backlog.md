@@ -133,3 +133,4 @@ Itens ainda não planejados. Pedidos dos projetos chegam pelo `inbox/` e `/inbox
 | B123 | Reviewer vê o app de forma garantida (ex.: `hx shot <url>` com Chrome headless) | inbox: 2026-10-28-dashboard-ia-reviewer-sem-navegador-de-novo-reforco.md | média | novo |
 | B124 | Eventos `usage` deduplicados por `message_id` na gravação (transcript.ts) e `roundStats` sem soma duplicada | inbox: 2026-10-29-main-harness-eventos-usage-gravados-em-duplicata-transcript-ts-e-roundsta.md | média | feito (S13) |
 | B125 | Estabilizar `worker-run.test.ts` no Windows sob carga (retryDelay maior ou esperar o filho) | inbox: 2026-10-29-main-harness-worker-run-test-ts-oscila-no-windows-sob-carga.md | média | feito (S13) |
+| B126 | Critério na S14: `hx metrics` mostra custo por tarefa (S13 rodou nos ganchos 0.10.2, por isso ficou "sem-tarefa"; sem recalcular a S13) | Daniel, 2026-10-29 | alta | novo |
