@@ -134,3 +134,9 @@ Itens ainda não planejados. Pedidos dos projetos chegam pelo `inbox/` e `/inbox
 | B124 | Eventos `usage` deduplicados por `message_id` na gravação (transcript.ts) e `roundStats` sem soma duplicada | inbox: 2026-10-29-main-harness-eventos-usage-gravados-em-duplicata-transcript-ts-e-roundsta.md | média | feito (S13) |
 | B125 | Estabilizar `worker-run.test.ts` no Windows sob carga (retryDelay maior ou esperar o filho) | inbox: 2026-10-29-main-harness-worker-run-test-ts-oscila-no-windows-sob-carga.md | média | feito (S13) |
 | B126 | Critério na S14: `hx metrics` mostra custo por tarefa (S13 rodou nos ganchos 0.10.2, por isso ficou "sem-tarefa"; sem recalcular a S13) | Daniel, 2026-10-29 | alta | novo |
+| B127 | Atribuir custo e chamadas de clones e Reviewer à tarefa em andamento, inclusive em paralelo (6thgear S03: 1533 chamadas "sem-tarefa") | inbox: 2026-10-29-6thgear-atribuir-custo-e-chamadas-as-tarefas.md | alta | novo |
+| B128 | `hx sprint approve` barrado: dizer que Daniel precisa rodar o comando no terminal dele | inbox: 2026-10-29-6thgear-mensagem-do-sprint-approve-bloqueado.md | média | novo |
+| B129 | Revisão da tarefa final não conta o tempo em que outras tarefas ou ajustes correm | inbox: 2026-10-29-6thgear-tempo-de-revisao-da-tarefa-final-inflado.md | baixa | novo |
+| B130 | `sprint-plan` (template e validação) recusa `gemini` na coluna Agente (ADR 0014) | inbox: 2026-10-29-dashboard-ia-sprint-plan-recusar-o-agente-gemini.md | baixa | novo |
+| B131 | Custo do chat principal com várias tarefas em andamento: atribuir ou ratear, em vez de "sem-tarefa" | inbox: 2026-10-29-main-harness-custo-do-tech-lead-em-tarefas-paralelas-fica-sem-tarefa.md | média | novo |
+| B132 | Evento `handoff` único por arquivo (dedupe), hoje duplica na compactação | inbox: 2026-10-29-main-harness-evento-handoff-gravado-em-duplicata-na-compactacao.md | média | novo |
