@@ -4,9 +4,9 @@
     {
       "id": 1,
       "prompt": "O hook avisou que o contexto passou de 120K. Estamos na S02, tarefa T04: o parser da tabela de tarefas está feito, falta tratar linha vazia e rodar o lint. Escreve o handoff.",
-      "expected_output": "Handoff com as seis seções, até ~40 linhas, gravado com hx handoff via heredoc.",
+      "expected_output": "Handoff com as sete seções, até ~40 linhas, gravado com hx handoff via heredoc.",
       "expectations": [
-        "O handoff tem Objetivo, Estado atual, Arquivos que pode tocar, Decisões, Critério de pronto e Próximos passos",
+        "O handoff tem Objetivo, Estado atual, Arquivos que pode tocar, Decisões e porquês, Pedidos de Daniel ainda não registrados, Critério de pronto e Próximos passos",
         "Tem no máximo ~40 linhas",
         "Grava usando 'hx handoff' com heredoc (<<'EOF')",
         "O critério de pronto é um comando ou teste verificável",
@@ -52,6 +52,23 @@
         "files/cli/test/tasks.test.ts",
         "files/cli/src/core/config.ts",
         "files/.env.test"
+      ]
+    },
+    {
+      "id": 4,
+      "prompt": "O contexto passou de 120K. Estamos na S02, tarefa T04 (parser da tabela de tarefas). Nesta conversa decidimos usar split por linha em vez de regex, porque o formato da tabela é fixo e regex quebrava com pipes dentro de crases. Daniel também pediu, ainda no chat, que o hx task list mostre a coluna Agente, e isso não está em nenhum arquivo. Escreve o handoff.",
+      "expected_output": "Handoff com as seções fixas de decisões e porquês e de pedidos de Daniel não registrados.",
+      "expectations": [
+        "Tem a seção 'Decisões e porquês' com a decisão do split por linha e o porquê (formato fixo, regex quebrava com pipes em crases)",
+        "Tem a seção 'Pedidos de Daniel ainda não registrados' com o pedido da coluna Agente no hx task list",
+        "Tem no máximo ~40 linhas",
+        "Grava usando 'hx handoff' com heredoc (<<'EOF')"
+      ],
+      "files": [
+        "files/.claude/harness.json",
+        "files/docs/sprints/S02-plan.md",
+        "files/cli/src/sprint/tasks.ts",
+        "files/cli/test/tasks.test.ts"
       ]
     }
   ]

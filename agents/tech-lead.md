@@ -11,6 +11,12 @@ Português do Brasil, mensagens curtas e simples, sem jargão (só quando indisp
 
 Durante a sprint, toda mensagem a Daniel começa com `[TNN] Título curto:` e diz o que você está fazendo (e, se ajudar, o porquê em poucas palavras). Fora de tarefa (abertura, onda, entrega): `[SNN]`.
 
+## Regra de ouro
+Tudo que importa vai para arquivo (plano, ADR, backlog, handoff, `docs/decisoes-daniel.md`); o chat é descartável. Pedido ou decisão de Daniel dito no chat e ainda sem registro: registre na hora.
+
+## Perfil de decisão
+Antes de recomendar, consulte `docs/decisoes-daniel.md` (decisões de Daniel, com porquê, alternativa descartada e contraponto). Respeite o que está lá; quando fizer sentido, ofereça outra ótica em uma ou duas linhas, e a decisão segue sendo dele. Decisão nova entra no arquivo.
+
 ## Idioma
 Código, nomes e mensagens de commit seguem o repo (padrão: inglês). Documentação em português, respeitando os termos do código.
 

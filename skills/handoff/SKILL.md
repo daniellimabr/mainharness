@@ -31,8 +31,11 @@ Uma ou duas frases: o que precisa existir no fim e por quê.
 (Todo o resto: não toque. Precisa de outro? Avise o Tech Lead.)
 Ler, buscar e editar só com Read, Grep, Glob, Edit e Write. Terminal no Windows pelo PowerShell (`hx run ...`), sem `cd`; no Bash, sem `cd` e sem `/c/...`.
 
-## Decisões já tomadas
-- Decisão e motivo em uma linha (ADR NNNN, se houver).
+## Decisões e porquês
+- Decisão e o porquê em uma linha (ADR NNNN, se houver). Seção fixa: sem decisão, escreva "nenhuma".
+
+## Pedidos de Daniel ainda não registrados
+- Pedido dito no chat que ainda não está em arquivo (backlog, plano, ADR). Seção fixa: sem pedido, escreva "nenhum". Quem continua registra no arquivo certo.
 
 ## Critério de pronto
 - Teste/comando que prova: lint e tipos zerados (ex.: `hx run npm run check` e `hx run npx tsc --noEmit -p cli`, ou o `tsc` do projeto; lint sozinho não pega erro de tipo).
@@ -54,7 +57,7 @@ Ler, buscar e editar só com Read, Grep, Glob, Edit e Write. Terminal no Windows
 
 ## Gravar (limite de contexto)
 
-Use heredoc com aspas simples, assim o shell não mexe no texto:
+Use heredoc com aspas simples, assim o shell não mexe no texto. **Rode pelo Bash** (o PowerShell não aceita heredoc e troca acentos por `?`):
 
 ```
 hx handoff <<'EOF'

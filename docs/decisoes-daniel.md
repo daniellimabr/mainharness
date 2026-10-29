@@ -1,0 +1,59 @@
+# Decisões de Daniel
+
+Perfil de decisão: o que Daniel já decidiu, por quê, o que foi descartado e o contraponto. O Tech Lead consulta este arquivo **antes de recomendar** e, quando fizer sentido, oferece outra ótica (sem insistir: a decisão é de Daniel). Decisão nova ou revista entra aqui no mesmo dia.
+
+Formato: **Decisão** · **Porquê** · **Descartado** · **Contraponto**.
+
+## Custo e qualidade
+
+### Haiku não entra em evals nem no Reviewer (S09, ADR 0009)
+- **Porquê:** perda de qualidade percebida; prefere pagar Sonnet.
+- **Descartado:** Haiku nos evals e no Reviewer (mais barato).
+- **Contraponto:** a conta de evals e revisão cai mais com Haiku; só a medição prova a perda. Na S11 o Haiku passou a valer para texto já decidido (ADR 0014), então a medição ainda é possível.
+
+### Sonnet na rotina, Opus onde a segurança ou o desenho pedem (S09, ADR 0009)
+- **Porquê:** corta a maior parte do custo sem perder qualidade relevante.
+- **Descartado:** tudo em Opus (caro) e tudo em Sonnet (plano e revisão de segurança pioram).
+- **Contraponto:** erro de plano custa mais que a economia; por isso o planejamento fica em Opus.
+
+### Um modelo fixo por papel, sem troca pelo % de uso (S11, ADR 0013)
+- **Porquê:** a escolha de modelo virou reação ao limite de uso, e não decisão do plano; trocar modelo no meio do chat relê o contexto sem cache.
+- **Descartado:** gatilho de 90% mandando tarefas ao Gemini; tudo em Opus.
+- **Contraponto:** perto do limite o chat para em vez de seguir mais barato; vale o handoff e a retomada (ADR 0011).
+
+### Gemini desligado (S12, ADR 0014)
+- **Porquê:** no experimento cego da S12, estourou tempo, saiu do escopo e estragou a codificação (BOM, acentos), mesmo sendo de graça.
+- **Descartado:** manter o trabalhador Gemini (ADR 0012); remoção do código foi para o backlog (B115).
+- **Contraponto:** base pequena (2 desafios, 1 corrida); outros modelos do OmniRoute só entram depois de novo teste.
+
+### Quem executa: Opus em caminho de erro e dado de arquivo; Haiku só texto fechado; Sonnet no resto (S12, ADR 0014)
+- **Porquê:** o Sonnet errou um caso de borda em cada desafio; o Opus venceu os dois.
+- **Descartado:** Sonnet em tudo que não é área sensível.
+- **Contraponto:** o Opus custa mais; repetir a comparação antes de apertar a regra.
+
+## Processo
+
+### Reviewer enxuto: uma revisão por onda, máximo 2 reprovações por tarefa (S09, ADR 0009)
+- **Porquê:** na S00, caçar desvios gerou reprovações em série e custo sem ganho.
+- **Descartado:** revisão por tarefa sem limite.
+- **Contraponto:** onda grande esconde qual tarefa falhou; o `hx review` segue por tarefa.
+
+### Sem Writer: o Tech Lead escreve os documentos e se copia para ganhar tempo (S09, ADR 0009)
+- **Porquê:** o contexto de um agente novo custa mais que a escrita.
+- **Descartado:** delegar documentos a um modelo mais barato.
+- **Contraponto:** o Tech Lead gasta contexto principal; a cópia dele resolve quando o volume é grande.
+
+### `pre-bash` protege contra acidente, não contra ataque (S09, ADR 0009)
+- **Porquê:** o Claude Code já tem permissões próprias; caçar desvios deliberados não compensa.
+- **Descartado:** endurecer o `pre-bash` até cobrir todo desvio.
+- **Contraponto:** um comando destrutivo comum que passe é reprovação; é o único critério.
+
+### Retomada automática após o limite de uso (S11, ADR 0011)
+- **Porquê:** Daniel não quer ficar de babá; o trabalho continua sozinho depois do reset.
+- **Descartado:** esperar Daniel voltar e pedir a retomada.
+- **Contraponto:** depende do handoff estar bom; daí a regra de ouro (tudo que importa vai para arquivo).
+
+### Regra de ouro: tudo que importa vai para arquivo; o chat é descartável (S13)
+- **Porquê:** compactação e chat novo perdem o que só estava na conversa (decisões, pedidos de Daniel).
+- **Descartado:** confiar na memória do chat e no resumo da compactação.
+- **Contraponto:** mais arquivos para manter; o handoff e este arquivo existem para isso ser barato.

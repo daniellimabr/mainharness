@@ -35,7 +35,9 @@ O que fica para depois (vai para o backlog).
 | T02 | Descrição curta | tech-lead | `caminho/arquivo` | T01 | 2 h | 1 h |
 | T03 | Revisão final e release: lint e tipos zerados, testes, critérios de aceite | tech-lead + reviewer | `CHANGELOG.md` | T02 | 1 h | 30 min |
 
-**Ondas:** quais tarefas rodam juntas. O Reviewer revisa cada onda dentro das tarefas (sem linha própria na tabela).
+**Ondas:** onda 1 = T01, T02; onda 2 = T03
+
+Formato único (`onda N = Txx, Txx; onda M = ...`): quais tarefas rodam juntas. O Reviewer revisa cada onda dentro das tarefas (sem linha própria na tabela).
 
 **Histórico (hx metrics):**
 
