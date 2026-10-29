@@ -5,7 +5,7 @@ import { loadConfig } from "../core/config";
 import { readJson, writeJson } from "../core/fsx";
 import { logError } from "../core/log";
 import { home } from "../core/paths";
-import { emit } from "../events/emit";
+import { emit, readEvents } from "../events/emit";
 import type { HarnessEvent } from "../events/schema";
 import { type TranscriptUsage, usd } from "./price";
 
@@ -82,6 +82,11 @@ function subagentName(file: string): string {
 function ingestTranscripts(opts: IngestOptions): HarnessEvent[] {
   const cacheFile = path.join(home.usageCache(), `${safeId(opts.sessionId)}.json`);
   const cache = readJson<Cache>(cacheFile, { offsets: {}, seen: [] });
+  // Cache lost: the event log is the source of truth for what was already recorded.
+  if (!fs.existsSync(cacheFile)) {
+    for (const e of readEvents((e) => e.type === "usage" && e.session === opts.sessionId))
+      if (typeof e.data.message_id === "string") cache.seen.push(e.data.message_id);
+  }
   const seen = new Set(cache.seen);
   const order = [...cache.seen];
   const prices = loadConfig().prices;
