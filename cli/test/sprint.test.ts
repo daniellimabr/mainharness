@@ -196,7 +196,7 @@ describe("sprint commands (real bundle, project with spaces)", () => {
       "| ✅ | T01 | Descrição curta | tech-lead | 20 min | 23:05 | 23:25 |",
     );
     expect(d.stdout).toContain("1/3 feitas");
-    expect(hx("task", "phase", "T01", "commit").code).toBe(1);
+    expect(hx("task", "phase", "T01", "commit").stderr).toContain("já está feita");
   });
 
   it("open, task start/done update the execution list and emit durations; close computes metrics", () => {

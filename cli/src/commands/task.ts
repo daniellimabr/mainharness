@@ -11,6 +11,11 @@ import { refreshAuto } from "./handoff";
 
 const PHASES = ["testes", "código", "lint", "fila", "revisão", "commit"];
 
+function alreadyDone(id: string): number {
+  console.error(`aviso: ${id} já está feita; nada a registrar.`);
+  return 0;
+}
+
 export function run(args: string[]): number {
   const p = parseArgs(args);
   const [sub, raw] = p._;
@@ -33,9 +38,11 @@ export function run(args: string[]): number {
     const phase = p._[2] ?? "";
     if (!PHASES.includes(phase))
       throw new Error(`fase inválida '${phase}' (use: ${PHASES.join(", ")})`);
-    if (!prev?.start || prev.end) throw new Error(`tarefa ${id} não está em andamento`);
+    if (!prev?.start) throw new Error(`tarefa ${id} não está em andamento`);
+    if (prev.end) return alreadyDone(id);
     times = { ...prev, phase };
   } else if (sub === "done") {
+    if (prev?.end) return alreadyDone(id);
     const start = prev?.start ?? at;
     const duration_s = Math.max(0, Math.round((Date.parse(at) - Date.parse(start)) / 1000));
     times = { start, end: at, duration_s };
