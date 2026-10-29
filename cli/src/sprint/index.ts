@@ -207,9 +207,15 @@ export function feedbackRounds(sprintEvs: HarnessEvent[]): Round[] {
 function roundStats(r: Round, a: Activity): { min: number; usd: number } {
   const s = Date.parse(r.start);
   const e = r.end ? Date.parse(r.end) : Math.max(s, a.times.at(-1) ?? s);
+  const seen = new Set<unknown>(); // a re-emitted response counts once
   const usd = a.evs
     .filter((x) => x.type === "usage" && Date.parse(x.ts) >= s && Date.parse(x.ts) < e)
-    .reduce((acc, x) => acc + num(x.data.usd), 0);
+    .reduce((acc, x) => {
+      const id = x.data.message_id;
+      if (id !== undefined && seen.has(id)) return acc;
+      seen.add(id);
+      return acc + num(x.data.usd);
+    }, 0);
   return { min: (e - s - pauseMs(a.times, s, e)) / 60000, usd };
 }
 
@@ -521,6 +527,9 @@ export interface SprintMetrics {
   usd_by_model: Record<string, number>;
   tokens_by_model: Record<string, Record<string, number>>;
   models_by_task: Record<string, string[]>;
+  /** T08: usage responses per task, and cost per executor (Haiku, Sonnet, Opus by model name). */
+  calls_by_task: Record<string, number>;
+  usd_by_executor: Record<string, number>;
 }
 
 /** B045: wait intervals [turn end, next prompt] per session, overlaps merged, sorted. */
@@ -600,6 +609,8 @@ export function computeMetrics(project: string, sprintId: string, plan: Plan): S
     usd_by_model: {},
     tokens_by_model: {},
     models_by_task: {},
+    calls_by_task: {},
+    usd_by_executor: {},
   };
   const waits = waitIntervals(evs);
   m.wait_min = r1(waits.reduce((acc, [s = 0, e = 0]) => acc + e - s, 0) / 60000);
@@ -632,6 +643,10 @@ export function computeMetrics(project: string, sprintId: string, plan: Plan): S
       });
       for (const k of ["input", "output", "cache_write", "cache_read"])
         tk[k] = (tk[k] ?? 0) + num(d[k]);
+      m.calls_by_task[task] = (m.calls_by_task[task] ?? 0) + 1;
+      const fam = /haiku|sonnet|opus/i.exec(model)?.[0].toLowerCase();
+      const exec = fam ? fam[0]?.toUpperCase() + fam.slice(1) : "Outro";
+      m.usd_by_executor[exec] = (m.usd_by_executor[exec] ?? 0) + usd;
       const ms = (m.models_by_task[task] ??= []);
       if (!ms.includes(model)) ms.push(model);
     } else if (e.type === "sprint.feedback") m.rework += num(d.adjustments);
@@ -640,7 +655,7 @@ export function computeMetrics(project: string, sprintId: string, plan: Plan): S
     else if (e.type === "handoff") m.handoffs++;
   }
   m.usd = r4(m.usd);
-  for (const rec of [m.usd_by_agent, m.usd_by_task, m.usd_by_model])
+  for (const rec of [m.usd_by_agent, m.usd_by_task, m.usd_by_model, m.usd_by_executor])
     for (const [k, v] of Object.entries(rec)) rec[k] = r4(v);
   for (const ms of Object.values(m.models_by_task)) ms.sort();
   const ts = (type: string) =>
@@ -669,6 +684,11 @@ export function computeMetrics(project: string, sprintId: string, plan: Plan): S
 
 const usd = (x: number) => `US$ ${x.toFixed(2)}`;
 const tok = (x: number) => x.toLocaleString("pt-BR");
+
+const joinUsd = (r: Record<string, number> = {}) =>
+  Object.entries(r)
+    .map(([k, v]) => `${k} ${usd(v)}`)
+    .join(" · ") || "—";
 
 /** Markdown indicators block (goes into the Release Report). */
 export function renderMetrics(sprintId: string, plan: Plan, m: SprintMetrics): string {
@@ -716,6 +736,12 @@ export function renderMetrics(sprintId: string, plan: Plan, m: SprintMetrics): s
     `| Tokens (entrada / saída / escrita em cache / leitura de cache) | ${tok(m.tokens_input)} / ${tok(m.tokens_output)} / ${tok(m.tokens_cache_write)} / ${tok(m.tokens_cache_read)} |`,
     `| Custo total | ${usd(m.usd)} |`,
     `| Custo por agente | ${byAgent} |`,
+    `| Custo por executor | ${joinUsd(m.usd_by_executor)} |`,
+    `| Chamadas por tarefa | ${
+      Object.entries(m.calls_by_task ?? {})
+        .map(([k, v]) => `${k} ${v}`)
+        .join(" · ") || "—"
+    } |`,
     `| Custo por modelo | ${byModel} |`,
     `| Tokens por modelo (entrada / saída / escrita em cache / leitura de cache) | ${tokByModel} |`,
     `| Retrabalho (ajustes pedidos por Daniel) | ${m.rework} |`,
