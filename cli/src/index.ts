@@ -10,7 +10,6 @@ const COMMANDS: Record<string, () => Promise<{ run: Run }>> = {
   review: () => import("./commands/review"),
   status: () => import("./commands/status"),
   handoff: () => import("./commands/handoff"),
-  worker: () => import("./commands/worker"),
   run: () => import("./commands/run"),
   request: () => import("./commands/request"),
   metrics: () => import("./commands/metrics"),
@@ -41,8 +40,6 @@ const HELP = `hx <command> [args]
   review pass|fail <task>     resultado da revisão
   status --where t --next t   registra onde o projeto está e o próximo passo
   handoff [--show|--consume]  grava (stdin)/mostra o handoff
-  worker status               trabalhador no Gemini (OmniRoute): configurado e no ar?
-  worker run TNN <handoff>    roda a tarefa num trabalhador Gemini em segundo plano
   run <cmd...>                roda e mostra só falhas e resumo
   request --title t ...       cria pedido no inbox do harness
   metrics [sprint]            indicadores da sprint

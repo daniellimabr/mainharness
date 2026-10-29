@@ -1,6 +1,6 @@
 # ADR 0012 — Trabalhadores no Gemini pelo OmniRoute
 
-- **Status:** aceito; desligado pelo ADR 0014
+- **Status:** substituído pelo ADR 0014 (código, skill `worker` e guia do OmniRoute removidos na S13)
 - **Data:** 2026-10-23
 - **Harness:** 0.9.0
 

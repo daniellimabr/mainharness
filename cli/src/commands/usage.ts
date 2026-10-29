@@ -45,7 +45,7 @@ function summary(title: string, events: HarnessEvent[]): string[] {
   const total = zero();
   const spareTotal = zero();
   const by = { agente: new Map<string, Totals>(), modelo: new Map<string, Totals>() };
-  // Non-Claude model outside the price table (e.g. Gemini workers via OmniRoute): own line, not Claude total.
+  // Non-Claude model outside the price table (e.g. old Gemini worker logs): own line, not Claude total.
   const isSpare = (e: HarnessEvent) =>
     e.data.usd === null && !String(e.data.model).startsWith("claude");
   const evs = all.filter((e) => !isSpare(e));
