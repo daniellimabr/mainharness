@@ -2,6 +2,33 @@
 
 Versões do Main Harness (versionamento semântico; `0.y.z` até a 1.0).
 
+## [0.11.0] - 2026-10-29
+
+### Novidades
+
+- feat(S13/T07): attention and error events from async hooks
+- feat(S13/T04): hx task drop/defer
+- feat(S13/T06): task on agent.start, agent_id on alert.context, context event per Stop
+- feat(S13/T08): cost per task and per executor in metrics
+- feat(S13/T10): session-start after compact shows the task in progress
+- feat(S13/T05): post-edit prunes stale lines from index.md
+- feat(S13/T01): remove Gemini worker (hx worker, skill, config, guide)
+
+### Correções
+
+- fix(S13/T03): task done/phase on a finished task only warns
+- fix(S13/T02): no duplicate usage events on re-ingest without cache
+
+### Outros
+
+- docs(S13): release table update
+- docs(S13/T11): backlog, roadmap, contract and index cleanup
+- docs(S13/T09): golden rule, decision profile, better handoff, waves format
+- docs(S13): sprint plan
+- chore(inbox): move 10 requests to backlog
+- docs(S12): release report and harness requests
+- chore(harness): migrate to v0.10.2
+
 ## [0.10.2] - 2026-10-29
 
 ### Novidades
