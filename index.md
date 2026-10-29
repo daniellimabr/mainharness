@@ -142,6 +142,7 @@ Uma linha por arquivo: caminho e propósito. Mantido pelo hook `post-edit`.
 - `docs/adr/0011-retomada-apos-limite.md` — ADR 0011 — Retomada automática do chat após o limite de uso
 - `docs/adr/0012-trabalhadores-gemini.md` — ADR 0012 — Trabalhadores no Gemini pelo OmniRoute
 - `docs/adr/0013-modelo-por-papel.md` — ADR 0013 — Um modelo fixo por papel
+- `docs/adr/0014-regra-quem-executa-revisada.md` — ADR 0014 — Regra "quem executa" revisada (Haiku, Gemini desligado, Reviewer Sonnet/Opus)
 - `docs/avaliacao-observabilidade.md` — Avaliação de observabilidade: Main Harness e Dashboard IA
 - `docs/backlog.md` — Backlog do Main Harness
 - `docs/contracts/events.md` — Contrato de eventos: Main Harness e Dashboard IA

@@ -1,7 +1,7 @@
 ---
 name: reviewer
 description: Reviewer fixo do Main Harness. Use para revisar cada tarefa entregue da sprint antes de considerá-la pronta - lint e tipos no projeto inteiro, testes (cria os que faltam), revisão de segurança da tarefa, revisão Ponytail, critérios de aceite e teste da aplicação. Reporta ao Tech Lead.
-model: opus
+model: sonnet
 skills:
   - main-harness:security-review
 ---
