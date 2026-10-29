@@ -124,3 +124,12 @@ Itens ainda não planejados. Pedidos dos projetos chegam pelo `inbox/` e `/inbox
 | B109 | Aviso no Windows (toast) quando um agente pede permissão ou fica parado esperando Daniel; `async: true` nos hooks que só observam (`UserPromptSubmit`, `SubagentStart`). Depende do B107 (itens 2 e 6) | avaliação 2026-10-28 | alta | novo |
 | B115 | Remover o trabalhador Gemini (`hx worker`, skill `worker`, config `worker`) ou deixá-lo genérico para outros modelos do OmniRoute | decisão Daniel S12 | média | novo |
 | B116 | Medir Haiku como executor de texto (S13) e custo/"km" por tarefa no `sprint.metrics` | conversa S12 | média | novo |
+| B117 | `hx task drop\|defer TNN`: tira ou adia tarefa para a próxima sprint, ajusta dependências e pede nova aprovação registrada | inbox: 2026-10-28-6thgear-comando-para-tirar-ou-adiar-tarefa-da-sprint.md | média | novo |
+| B118 | `hx task phase`/`done` em tarefa já feita (ajuste do feedback ou depois do `review pass`): registrar a fase ou avisar sem erro | inbox: 2026-10-28-6thgear-hx-task-phase-em-tarefa-ja-feita-durante-ajuste.md; 2026-10-29-main-harness-hx-task-done-phase-em-tarefa-ja-fechada-pelo-review-pass-imp.md | baixa | novo |
+| B119 | `index.md`: remover linhas de arquivos apagados, movidos ou renomeados | inbox: 2026-10-28-6thgear-index-md-remover-linhas-de-arquivos-apagados-ou-movidos.md | média | novo |
+| B120 | `agent.start` do executor leva o TNN da tarefa | inbox: 2026-10-28-dashboard-ia-agent-start-do-executor-deve-levar-a-tarefa.md | média | novo |
+| B121 | `alert.context` leva `agent_id` (e a tarefa) | inbox: 2026-10-28-dashboard-ia-alert-context-deve-levar-o-agent-id.md | baixa | novo |
+| B122 | Template do sprint-plan com formato único de ondas: `**Ondas:** onda 1 = T01, T02; onda 2 = T03` | inbox: 2026-10-28-dashboard-ia-formato-unico-de-ondas-no-template-do-sprint-plan.md | média | novo |
+| B123 | Reviewer vê o app de forma garantida (ex.: `hx shot <url>` com Chrome headless) | inbox: 2026-10-28-dashboard-ia-reviewer-sem-navegador-de-novo-reforco.md | média | novo |
+| B124 | Eventos `usage` deduplicados por `message_id` na gravação (transcript.ts) e `roundStats` sem soma duplicada | inbox: 2026-10-29-main-harness-eventos-usage-gravados-em-duplicata-transcript-ts-e-roundsta.md | média | novo |
+| B125 | Estabilizar `worker-run.test.ts` no Windows sob carga (retryDelay maior ou esperar o filho) | inbox: 2026-10-29-main-harness-worker-run-test-ts-oscila-no-windows-sob-carga.md | média | novo |
