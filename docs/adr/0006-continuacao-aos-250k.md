@@ -46,3 +46,7 @@ Passos:
 - Sprint segue sem parar para Daniel ao bater o limite.
 - O id da sessão não muda após a compactação; o Dashboard conta "compactações" pelo evento `handoff` com `mode: "compact"`.
 - O teste automatizado usa limites reduzidos via `HARNESS_CONTEXT_LIMIT`/`HARNESS_HANDOFF_AT`.
+
+## Nota (S12, 2026-10-28): limite atual de 140 mil
+
+O limite efetivo passou a ser **140 mil** (`contextLimit`; `handoffAt` em 120 mil). O motivo é o custo: cada passo do agente relê o contexto inteiro, então o custo por resposta cresce com o tamanho dele. O `autoCompactWindow` do `settings.json` de cada projeto agora segue o `contextLimit` efetivo, mesmo com o 250000 antigo no `config.json`: a migração roda ao abrir um chat e o `hx doctor` avisa se os valores divergirem.

@@ -146,6 +146,7 @@ Uma linha por arquivo: caminho e propósito. Mantido pelo hook `post-edit`.
 - `docs/backlog.md` — Backlog do Main Harness
 - `docs/contracts/events.md` — Contrato de eventos: Main Harness e Dashboard IA
 - `docs/experiments/S12-protocolo.md` — S12 — Protocolo do experimento de modelos
+- `docs/experiments/S12-resultado.md` — S12 — Resultado do experimento: Opus × Sonnet × Gemini
 - `docs/experiments/S12/desafio-1.md` — Handoff — S12 / Desafio 1 (B099): lock do `hx worker run` antes do spawn
 - `docs/experiments/S12/desafio-2.md` — Handoff — S12 / Desafio 2 (B105): trabalhador que morre sem relatório
 - `docs/experiments/S12/hidden/d1-hidden.test.ts` — S12 hidden tests, challenge 1 (B099): the lock of `hx worker run` is taken before the spawn.

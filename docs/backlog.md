@@ -1,4 +1,4 @@
-# Backlog do Main Harness
+﻿# Backlog do Main Harness
 
 Itens ainda não planejados. Pedidos dos projetos chegam pelo `inbox/` e `/inbox` os traz para cá. Melhorias vindas de retrospectivas entram via `hx request`.
 
@@ -106,11 +106,18 @@ Itens ainda não planejados. Pedidos dos projetos chegam pelo `inbox/` e `/inbox
 | B096 | Comando `hx shot` para tirar print com navegador headless e apoiar conferência visual do Reviewer | inbox: 2026-10-23-dashboard-ia-reviewer-com-prints-garantidos-hx-shot.md | média | novo |
 | B097 | `workerNudge` guarda lista de sessões para evitar que dois chats perto do limite alternem o aviso | roadmap | baixa | descartado (S11, ADR 0013) |
 | B098 | Aviso de limite considera `resets_at` para não avisar após a janela reiniciar com leitura velha | roadmap | baixa | descartado (S11, ADR 0013) |
-| B099 | Gravar o lock de `hx worker run` antes do spawn para impedir execução simultânea | roadmap | baixa | novo |
+| B099 | Gravar o lock de `hx worker run` antes do spawn para impedir execução simultânea | roadmap | baixa | feito (S12) |
 | B100 | `hx worker status` diz "pronto" com o login do Gemini expirado no OmniRoute: testar uma chamada curta ao modelo | S10/T09 | média | novo |
 | B101 | Handoff da sessão atualizado sozinho em `hx task done/phase` (estado das tarefas e arquivos não commitados) | inbox: 2026-10-27-main-harness-handoff-atualizado-a-cada-tarefa.md | média | feito (S11) |
 | B102 | `hx eval`: o `hx` da sandbox é o `cli/dist/hx.js` do repo, não o estável | inbox: 2026-10-27-main-harness-hx-eval-usa-o-hx-do-repo-nao-o-estavel.md | alta | feito (S11) |
-| B103 | Experimento: mesma tarefa-desafio no Opus, Sonnet e Gemini (qualidade, tempo, tokens/custo, chamadas, franquia) | S11-release | alta | novo |
+| B103 | Experimento: mesma tarefa-desafio no Opus, Sonnet e Gemini (qualidade, tempo, tokens/custo, chamadas, franquia) | S11-release | alta | feito (S12) |
 | B104 | `hx release` negado pelo modo automático: regra de permissão no `hx setup`/docs ou pedir a Daniel no resumo de entrega | inbox: 2026-10-28-main-harness-hx-release-e-bloqueado-pelo-modo-automatico-production-deplo.md | baixa | novo |
-| B105 | `hx worker run`: trabalhador que morre sem relatório grava relatório de falha e `hx worker status` avisa | inbox: 2026-10-28-main-harness-hx-worker-run-trabalhador-que-morre-sem-relatorio-fica-invis.md | média | novo |
-| B106 | Testes instáveis no Windows sob carga: timeout maior no `eval.test.ts` e `rm` com `maxRetries` no `helpers.ts` | inbox: 2026-10-28-main-harness-testes-instaveis-no-windows-sob-carga-timeout-e-eperm.md | média | novo |
+| B105 | `hx worker run`: trabalhador que morre sem relatório grava relatório de falha e `hx worker status` avisa | inbox: 2026-10-28-main-harness-hx-worker-run-trabalhador-que-morre-sem-relatorio-fica-invis.md | média | feito (S12) |
+| B106 | Testes instáveis no Windows sob carga: timeout maior no `eval.test.ts` e `rm` com `maxRetries` no `helpers.ts` | inbox: 2026-10-28-main-harness-testes-instaveis-no-windows-sob-carga-timeout-e-eperm.md | média | feito (S12) |
+| B107 | Captar quando o agente trava ou erra: hooks `async` `Notification`, `StopFailure`, `PostToolUseFailure` e `PermissionRequest` emitindo eventos novos `attention` e `error` no contrato, só metadados (ver `docs/avaliacao-observabilidade.md`, itens 5, 6 e 13). Base do B109 e do painel "Aguardando você" do Dashboard. A confirmar: se o painel do VS Code dispara `Notification` | avaliação 2026-10-28 | alta | novo |
+| B108 | Evento `context` a cada `Stop` (tokens, limite, marca de compactação) para o Dashboard mostrar o contexto atualizado; hoje só sai `alert.context` ≥120 mil e nunca é atualizado (item 4) | avaliação 2026-10-28 | alta | novo |
+| B110 | `hx usage` e `hx metrics` sem duplicatas: somar cada resposta uma vez pelo `message_id` (item 12 da avaliação) | avaliação 2026-10-28 | alta | feito (S12) |
+| B111 | Compactar aos 140 mil em todos os projetos: `autoCompactWindow` dos projetos ainda em 250000 porque a migração do padrão antigo não chega ao `settings.json`; `hx doctor` avisa divergência | avaliação 2026-10-28 | alta | feito (S12) |
+| B112 | Perfil de decisão do Daniel: o Tech Lead registra em arquivo (`docs/decisoes-daniel.md`) cada decisão com o porquê, a alternativa que ele descartou e o contraponto, consulta antes de recomendar e, quando fizer sentido, oferece uma ótica diferente para provocar a decisão (preferências e crenças são refutáveis, não verdades) | conversa S12 | média | novo |
+| B113 | Regra de ouro no harness: tudo que importa vai para arquivo (plano, ADR, handoff, perfil de decisão); o chat é descartável. Entra no `CLAUDE.md`, no `agents/tech-lead.md` e na skill `handoff` | conversa S12 | média | novo |
+| B114 | Handoff melhor: seções fixas "decisões e porquês" e "pedidos de Daniel ainda não registrados"; `session-start` com `source=compact` devolve também a tarefa em andamento e o estado do `hx` (hoje só devolve o handoff) | conversa S12 | média | novo || B109 | Aviso no Windows (toast) quando um agente pede permissão ou fica parado esperando Daniel; `async: true` nos hooks que só observam (`UserPromptSubmit`, `SubagentStart`). Depende do B107 (itens 2 e 6) | avaliação 2026-10-28 | alta | novo |
