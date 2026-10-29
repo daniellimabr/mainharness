@@ -138,6 +138,11 @@ export function sessionStart(input: HookInput): HookOutcome {
       logError("hook session-start tasks", err);
     }
   }
+  // After a compaction the chat lost which task it was on: state has it (start without end).
+  if (source === "compact")
+    for (const [id, t] of Object.entries(state.tasks ?? {}))
+      if (t?.start && !t.end)
+        parts.push(`Tarefa em andamento: ${id}${t.phase ? ` (${t.phase})` : ""}.`);
 
   const lh = state.lastHandoff;
   if (lh && !lh.consumed && (source === "compact" || source === "startup")) {
