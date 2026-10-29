@@ -31,6 +31,20 @@ Formato: **Decisão** · **Porquê** · **Descartado** · **Contraponto**.
 - **Descartado:** Sonnet em tudo que não é área sensível.
 - **Contraponto:** o Opus custa mais; repetir a comparação antes de apertar a regra.
 
+### Modelos externos para o trabalho pesado, Claude como juiz (S14)
+- **Porquê:** produzir mais nos projetos sem esbarrar no limite de 5 h e semanal do Claude, sem perder qualidade. Régua mínima: capacidade de Sonnet.
+- **Candidatos:** DeepSeek V4 Pro, Gemini 4 Argon, Kimi K3 / GLM-5.3, pelo OmniRoute. Descartado: GPT-6 Astra (pede ChatGPT Plus).
+- **Contraponto:** nos índices independentes de out/2026, nenhum externo disponível alcança o Sonnet 5.5; só o teste cego decide. O teste do Gemini na S12 usou o `flash-lite` (modelo leve), então não vale como veredito sobre o Gemini.
+
+### Google: sem upgrade antes do teste (S14)
+- **Porquê:** Daniel tem o Google AI Plus; o Pro somado ao Claude pesa no orçamento; prefere evitar. Testa o Argon pela API (paga por uso) e decide com números.
+- **Descartado:** assinar o Pro agora.
+- **Contraponto:** a cota diária do Gemini CLI no Pro é maior; se o Argon passar, o Pro pode sair mais barato que a API em volume.
+
+### S14 só com o foco em modelos (S14)
+- **Porquê:** a sprint fica enxuta: trabalhador externo, teste e custo por tarefa (B126, B127, B131), que é o que permite comparar os modelos.
+- **Descartado:** ajustes rápidos do inbox (B128, B130, B132), B109, B123, que ficam para a próxima.
+
 ## Processo
 
 ### Reviewer enxuto: uma revisão por onda, máximo 2 reprovações por tarefa (S09, ADR 0009)
