@@ -1,6 +1,6 @@
 # ADR 0012 — Trabalhadores no Gemini pelo OmniRoute
 
-- **Status:** aceito
+- **Status:** aceito; desligado pelo ADR 0014
 - **Data:** 2026-10-23
 - **Harness:** 0.9.0
 

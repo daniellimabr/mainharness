@@ -55,7 +55,7 @@ Opus planeja e revisa, Sonnet orquestra a execução, e quem executa cada tarefa
 
 ## 10. Experimento Opus × Sonnet × Gemini (feito na S12, v0.10.2)
 
-A mesma tarefa em 3 modelos, com nota cega de dois Reviewers. Opus venceu os dois desafios; o Gemini ficou lento e entregou falhas que lint e testes não pegam. Há uma proposta de ajuste da regra "quem executa" em `docs/experiments/S12-resultado.md`, que vira ADR só se Daniel aprovar. A sprint também tirou duplicatas do `hx usage`/`hx metrics`, passou a compactar aos 140 mil em todos os projetos e fixou o Reviewer em Opus. Próximo passo: medir o efeito dos 140 mil contra a linha de base.
+A mesma tarefa em 3 modelos, com nota cega de dois Reviewers. Opus venceu os dois desafios; o Gemini ficou lento e entregou falhas que lint e testes não pegam. Daniel aprovou a proposta de `docs/experiments/S12-resultado.md`: o ADR 0014 põe Haiku no lugar do Gemini (desligado) e o Reviewer em Sonnet na rotina e Opus em área sensível e na revisão final. A sprint também tirou duplicatas do `hx usage`/`hx metrics`, passou a compactar aos 140 mil em todos os projetos. Próximo passo: medir o efeito dos 140 mil contra a linha de base.
 
 ## Avaliado e descartado por ora
 

@@ -17,7 +17,7 @@ A S12 rodou os mesmos dois desafios em Opus, Sonnet e Gemini com nota cega (`doc
 - **Sonnet:** todo o resto.
 - **Gemini: desligado.** Lento e sem confiança para o harness, mesmo de graça. O código do `hx worker` e a skill `worker` ficam por ora (limpeza no backlog). Outros modelos do OmniRoute entram só depois de novo teste.
 
-**Reviewer:** Sonnet na rotina; Opus em área sensível (hooks, `pre-bash`, release, token), contrato do `hx`, `security-review` e revisão final da sprint.
+**Reviewer:** Sonnet na rotina; Opus em área sensível (hooks, `pre-bash`, release, token), contrato do `hx` e revisão final da sprint.
 
 ## Consequências
 

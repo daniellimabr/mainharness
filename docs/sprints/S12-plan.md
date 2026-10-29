@@ -118,3 +118,7 @@ Fator da S11: soma 0,80 e relógio 1,30.
 - **Data/hora:** 2026-10-28 19:37:12 (horário de Brasília) — UTC 2026-10-28T22:37:12Z
 - **Hash SHA-256 do plano** (conteúdo antes desta seção, finais de linha normalizados para LF): `57fbd930d29bdacd52ba0a4a32f054a84a9344ec5064b468efe1e3fcda511d91`
 - **Versão do harness:** 0.10.1
+
+## Nota pós-aprovação (2026-10-28)
+
+Daniel aprovou durante a sprint: aplicar a proposta do experimento (ADR 0014: Haiku no lugar do Gemini, Gemini desligado, Reviewer Sonnet na rotina e Opus em área sensível e na revisão final). Isso altera o fora de escopo e o critério 10 do plano.

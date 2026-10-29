@@ -1,6 +1,6 @@
 # ADR 0013 — Um modelo fixo por papel
 
-- **Status:** aceito
+- **Status:** aceito; revisado pelo ADR 0014
 - **Data:** 2026-10-27
 - **Harness:** 0.9.0 (entra na 0.10.0)
 

@@ -27,7 +27,7 @@ Código, nomes e mensagens de commit seguem o repo (padrão: inglês). Documenta
 2. Daniel aprova → `hx sprint approve SNN`. Plano mudou depois de aprovado → nova aprovação.
 3. Execução em **chat novo** (`/main-harness:sprint-run SNN`): `hx sprint open SNN`. Republique a lista de tarefas (saída do `hx`) sempre que uma tarefa começa ou termina, e mantenha a lista nativa de tarefas do Claude Code em sincronia, se a ferramenta existir nesta interface; senão a lista do `hx` basta.
 4. Para cada tarefa: `hx task start TNN` → TDD (skill `tdd-workflow`) → lint/tipos zerados → **um commit na `main` por tarefa** → `hx task done TNN`. **Tarefa que cria ou muda tela:** chame a skill `frontend-design` antes do código (e a `dataviz`, se existir, para gráficos); em clone, ponha isso no handoff, e a entrega traz o plano visual da skill.
-5. **Paralelismo:** tarefas cujos arquivos não se cruzam rodam em clones (subagente `main-harness:executor`), cada um com handoff (objetivo, arquivos que pode tocar, estado atual, critério de pronto), com o modelo da coluna Agente (regra em "Modelo por papel").  **Dois agentes nunca editam o mesmo arquivo ao mesmo tempo.** Clones não commitam; você commita por tarefa. Sem git worktrees.
+5. **Paralelismo:** tarefas cujos arquivos não se cruzam rodam em clones (subagente `main-harness:executor`), cada um com handoff (objetivo, arquivos que pode tocar, estado atual, critério de pronto), com o modelo da coluna Agente (regra em "Modelo por papel"). **Dois agentes nunca editam o mesmo arquivo ao mesmo tempo.** Clones não commitam; você commita por tarefa. Sem git worktrees.
 6. **Reviewer** (subagente `main-harness:reviewer`) revisa por onda, com `model: sonnet` nas tarefas de rotina e `model: opus` quando mexe em área sensível (hooks, `pre-bash`, release, token), muda contrato do `hx` ou é a revisão final da sprint: uma revisão cobre as tarefas entregues da onda, e ele registra `hx review pass|fail` por tarefa. Reprovação volta para o passo 4; a re-revisão continua o mesmo Reviewer (SendMessage), sem abrir outro. Máximo de 2 reprovações por tarefa: na 3ª ele para e escala a você, que decide (com Daniel, se preciso).
 7. Daniel testa e dá retorno; cada ajuste pedido: `hx sprint feedback 1` e volta ao passo 4.
 8. Sem ajustes pendentes e com a confirmação de Daniel: `hx sprint close SNN` e você escreve o Release Report (`/main-harness:release-report SNN`).
@@ -38,7 +38,7 @@ Código, nomes e mensagens de commit seguem o repo (padrão: inglês). Documenta
 | Planejar (sprint plan, ADR, PRD) | Opus (padrão do chat) |
 | Orquestrar o `sprint-run` | Sonnet (Daniel escolhe no seletor ao abrir o chat) |
 | Executar uma tarefa | pela regra abaixo (coluna Agente do plano) |
-| Revisar (Reviewer) | Sonnet na rotina; Opus em área sensível, contrato do `hx`, `security-review` e revisão final |
+| Revisar (Reviewer) | Sonnet na rotina; Opus em área sensível, contrato do `hx` e revisão final |
 
 Quem executa, decidido por você no plano e aprovado por Daniel:
 - **Opus** ("clone (opus)"), se vale ao menos uma: decisão de desenho que o plano não fechou; muda contrato usado por outros projetos (eventos, config, comandos do `hx`); código com caminho de erro ou que usa dado lido de arquivo ou do usuário (código de saída, lock, caminho montado a partir de JSON); lógica nova em área sensível (hooks, `pre-bash`, release, processo com senha); o Sonnet já falhou 2 vezes na tarefa.
