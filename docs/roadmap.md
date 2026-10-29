@@ -45,9 +45,9 @@ Se colisões em arquivos virarem rotina (os indicadores da sprint mostram), aval
 
 Quando o Dashboard for para a nuvem. O adaptador de consumo do ADR 0007 já prevê a troca: nova implementação de `UsageSource`, mesmo evento `usage`.
 
-## 8. Trabalhadores no Gemini (feito na S10, v0.9.0)
+## 8. Trabalhadores no Gemini (feito na S10, v0.9.0; removido na S13, v0.11.0)
 
-O Tech Lead passa tarefas simples a trabalhadores `claude -p` no Gemini, pelo OmniRoute local, quando a regra do plano manda (ADR 0012 e ADR 0013, guia em `docs/omniroute.md`). O chat nunca muda de modelo: as variáveis do OmniRoute ficam só no processo do trabalhador. Só o provedor Gemini fica ligado, numa conta dedicada, e o `hx usage` conta o trabalhador à parte. Próximos passos: medir quais tarefas o Gemini entrega bem, entender o atraso fixo de ~8 s por pedido no plano grátis e testar outros modelos (`worker.model`).
+O Tech Lead passou tarefas simples a trabalhadores `claude -p` no Gemini, pelo OmniRoute local (ADR 0012 e ADR 0013, guia em `docs/omniroute.md`). O experimento da S12 mostrou o Gemini lento e com falhas que lint e testes não pegam; o ADR 0014 o desligou e a S13 removeu `hx worker`, a skill e a config. Haiku assume o texto simples.
 
 ## 9. Um modelo fixo por papel (feito na S11, v0.10.0)
 
@@ -56,6 +56,10 @@ Opus planeja e revisa, Sonnet orquestra a execução, e quem executa cada tarefa
 ## 10. Experimento Opus × Sonnet × Gemini (feito na S12, v0.10.2)
 
 A mesma tarefa em 3 modelos, com nota cega de dois Reviewers. Opus venceu os dois desafios; o Gemini ficou lento e entregou falhas que lint e testes não pegam. Daniel aprovou a proposta de `docs/experiments/S12-resultado.md`: o ADR 0014 põe Haiku no lugar do Gemini (desligado) e o Reviewer em Sonnet na rotina e Opus em área sensível e na revisão final. A sprint também tirou duplicatas do `hx usage`/`hx metrics` e passou a compactar aos 140 mil em todos os projetos. Próximo passo: medir o efeito dos 140 mil contra a linha de base.
+
+## 11. Harness mais enxuto e mais observável (feito na S13, v0.11.0)
+
+Gemini e `hx worker` saíram (ADR 0014). `hx task drop|defer` tira ou adia tarefa e pede nova aprovação; `done`/`phase` em tarefa feita só avisa; `index.md` perde linhas de arquivos apagados. O `usage` não duplica e leva a tarefa, então `hx metrics` mostra custo por tarefa e por executor. Novos eventos para o Dashboard: TNN no `agent.start`, `agent_id` no `alert.context`, `context` a cada `Stop`, `attention` e `error`. Regra de ouro, perfil de decisão (`docs/decisoes-daniel.md`) e handoff melhor após compactar. Próximos passos: aviso no Windows (B109), medir Haiku como executor de texto (B116), `hx shot` (B123).
 
 ## Avaliado e descartado por ora
 
