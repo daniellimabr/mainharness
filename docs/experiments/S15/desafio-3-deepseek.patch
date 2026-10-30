@@ -1,0 +1,156 @@
+diff --git a/.claude/harness.json b/.claude/harness.json
+index 565db92..bb58428 100644
+--- a/.claude/harness.json
++++ b/.claude/harness.json
+@@ -1,7 +1,7 @@
+ {
+   "project": "main-harness",
+   "name": "Main Harness",
+-  "version": "0.11.0",
++  "version": "0.12.0",
+   "attachedAt": "2026-10-15T05:40:00Z",
+   "web": false,
+   "optionalSkills": [],
+diff --git a/cli/src/commands/worker.ts b/cli/src/commands/worker.ts
+index 6793c43..6b977b6 100644
+--- a/cli/src/commands/worker.ts
++++ b/cli/src/commands/worker.ts
+@@ -15,7 +15,7 @@ const RUN_TIMEOUT_MS = 60 * 60_000;
+ const TOOLS = "Read,Edit,Write,Glob,Grep,Bash,PowerShell"; // without PowerShell the S10 worker hung
+ const MODEL_RE = /^[A-Za-z0-9._:/@-]{1,128}$/; // goes on a shell command line
+ const USAGE =
+-  "uso: hx worker check <apelido> | hx worker run TNN <arquivo-handoff> --model <apelido>";
++  "uso: hx worker check <apelido> | hx worker run TNN <arquivo-handoff> --model <apelido> | hx worker list";
+ 
+ interface Deps {
+   timeoutMs?: number;
+@@ -197,6 +197,47 @@ export async function run(args: string[], deps: Deps = {}): Promise<number> {
+   const [sub, ...rest] = args;
+   if (sub === "check") return check(rest[0], deps);
+   if (sub === "run") return start(rest, deps);
++  if (sub === "list") return list();
+   console.error(USAGE);
+   return 1;
+ }
++
++/** Lists worker aliases sorted, without credentials or token (for people). */
++function list(): number {
++  const all = loadConfig().workers as unknown;
++  if (all === null || typeof all !== "object" || Array.isArray(all)) {
++    console.error("Configuração de workers inválida: espera um objeto de apelidos.");
++    return 1;
++  }
++  const aliases = Object.keys(all as Record<string, unknown>).sort();
++  if (aliases.length === 0) {
++    console.log("Nenhum trabalhador configurado.");
++    return 0;
++  }
++  let bad = false;
++  for (const alias of aliases) {
++    const w = (all as Record<string, unknown>)[alias];
++    if (w === null || typeof w !== "object") {
++      console.log(`${alias}  (mal configurado)`);
++      bad = true;
++      continue;
++    }
++    const rec = w as { url?: unknown; model?: unknown; price?: unknown };
++    if (typeof rec.url !== "string" || typeof rec.model !== "string") {
++      console.log(`${alias}  (mal configurado)`);
++      bad = true;
++      continue;
++    }
++    const url = rec.url.replace(/^([a-z][a-z0-9+.-]*:\/\/)[^/@]*@/i, "$1");
++    console.log(`${alias}  ${rec.model}  ${url}  ${priceLabel(rec.price)}`);
++  }
++  return bad ? 1 : 0;
++}
++
++/** "sem preço", "grátis" or "US$ <input>/<output> por milhão". */
++function priceLabel(price: unknown): string {
++  if (price === null || typeof price !== "object") return "sem preço";
++  const p = price as { input?: unknown; output?: unknown };
++  if (p.input === 0 && p.output === 0) return "grátis";
++  return `US$ ${p.input}/${p.output} por milhão`;
++}
+diff --git a/cli/test/worker.test.ts b/cli/test/worker.test.ts
+index e26cb92..db8c4f9 100644
+--- a/cli/test/worker.test.ts
++++ b/cli/test/worker.test.ts
+@@ -186,3 +186,77 @@ describe("hx worker run", () => {
+     expect(fs.existsSync(path.join(env.home, "out.json"))).toBe(false);
+   });
+ });
++
++describe("hx worker list", () => {
++  it("lists aliases sorted, without credentials or token", async () => {
++    fs.writeFileSync(
++      path.join(env.home, "config.json"),
++      JSON.stringify({
++        workers: {
++          zeta: {
++            url: "http://u:p@h:1/x",
++            model: "m/z",
++            token: "sk-zz",
++            price: { input: 0, output: 0 },
++          },
++          alfa: { url: "http://h:2", model: "m/a", token: "sk-aa" },
++        },
++      }),
++    );
++    const log = vi.spyOn(console, "log").mockImplementation(() => {});
++    expect(await run(["list"])).toBe(0);
++    const lines = log.mock.calls.map((c) => String(c[0]));
++    expect(lines[0]).toMatch(/^alfa {2}m\/a {2}http:\/\/h:2 {2}sem preço$/);
++    expect(lines[1]).toMatch(/^zeta {2}m\/z {2}http:\/\/h:1\/x {2}grátis$/);
++    expect(lines.join("\n")).not.toMatch(/sk-|u:p/);
++  });
++
++  it("no aliases: message, exit 0", async () => {
++    const log = vi.spyOn(console, "log").mockImplementation(() => {});
++    expect(await run(["list"])).toBe(0);
++    const lines = log.mock.calls.map((c) => String(c[0]));
++    expect(lines[0]).toBe("Nenhum trabalhador configurado.");
++  });
++
++  it("workers not an object: error on stderr, exit 1, nothing listed", async () => {
++    fs.writeFileSync(path.join(env.home, "config.json"), JSON.stringify({ workers: ["a"] }));
++    const log = vi.spyOn(console, "log").mockImplementation(() => {});
++    const err = vi.spyOn(console, "error").mockImplementation(() => {});
++    expect(await run(["list"])).toBe(1);
++    expect(log.mock.calls.length).toBe(0);
++    expect(err.mock.calls.join(" ")).toMatch(/workers/);
++  });
++
++  it("malformed entry: (mal configurado) line, others listed, exit 1", async () => {
++    fs.writeFileSync(
++      path.join(env.home, "config.json"),
++      JSON.stringify({
++        workers: {
++          bad: { url: 123, model: "m/b", token: "sk-b" },
++          ok: { url: "http://h:2", model: "m/a", token: "sk-a" },
++        },
++      }),
++    );
++    const log = vi.spyOn(console, "log").mockImplementation(() => {});
++    expect(await run(["list"])).toBe(1);
++    const lines = log.mock.calls.map((c) => String(c[0]));
++    expect(lines[0]).toMatch(/^bad {2}\(mal configurado\)$/);
++    expect(lines[1]).toMatch(/^ok {2}m\/a {2}http:\/\/h:2 {2}sem preço$/);
++    expect(lines.join("\n")).not.toMatch(/sk-/);
++  });
++
++  it("priced worker: US$ input/output por milhão", async () => {
++    fs.writeFileSync(
++      path.join(env.home, "config.json"),
++      JSON.stringify({
++        workers: {
++          a: { url: "http://h:1", model: "m/a", token: "sk-a", price: { input: 3, output: 15 } },
++        },
++      }),
++    );
++    const log = vi.spyOn(console, "log").mockImplementation(() => {});
++    expect(await run(["list"])).toBe(0);
++    const lines = log.mock.calls.map((c) => String(c[0]));
++    expect(lines[0]).toMatch(/US\$ 3\/15 por milhão$/);
++  });
++});

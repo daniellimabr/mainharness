@@ -1,0 +1,82 @@
+diff --git a/.claude/harness.json b/.claude/harness.json
+index 8b0eccc..bb58428 100644
+--- a/.claude/harness.json
++++ b/.claude/harness.json
+@@ -1,7 +1,7 @@
+ {
+   "project": "main-harness",
+   "name": "Main Harness",
+-  "version": "0.10.1",
++  "version": "0.12.0",
+   "attachedAt": "2026-10-15T05:40:00Z",
+   "web": false,
+   "optionalSkills": [],
+diff --git a/cli/src/commands/worker.ts b/cli/src/commands/worker.ts
+index 2a3f08a..bace4d5 100644
+--- a/cli/src/commands/worker.ts
++++ b/cli/src/commands/worker.ts
+@@ -72,6 +72,25 @@ function readLock(): { pid?: number; sprint?: string; task?: string } {
+   }
+ }
+ 
++/** A dead worker with no report newer than its lock: writes a failure report and warns (once). */
++function reportDeadWorker(): void {
++  const lock = readLock();
++  if (typeof lock.pid !== "number" || !lock.sprint || !lock.task || alive(lock.pid)) return;
++  let lockMtime: number;
++  try {
++    lockMtime = fs.statSync(lockFile()).mtimeMs;
++  } catch {
++    return;
++  }
++  const report = path.join(dir(), `${lock.sprint}-${lock.task}.md`);
++  if (fs.existsSync(report) && fs.statSync(report).mtimeMs >= lockMtime) return;
++  fs.writeFileSync(
++    report,
++    `# Trabalhador ${lock.sprint}/${lock.task}\n\nO trabalhador falhou sem gravar relatório.\n`,
++  );
++  console.error(`Trabalhador ${lock.sprint}/${lock.task} falhou sem relatório.`);
++}
++
+ /** Creates the lock atomically (flag wx), holding this PID until the child's; a stale lock is replaced once. */
+ function takeLock(sprint: string, task: string): boolean {
+   fs.mkdirSync(dir(), { recursive: true });
+@@ -96,6 +115,7 @@ function takeLock(sprint: string, task: string): boolean {
+ }
+ 
+ async function start(id: string | undefined, file: string | undefined, deps: Deps) {
++  reportDeadWorker();
+   if (!id || !/^T\d{2}$/i.test(id) || !file) {
+     console.error(USAGE);
+     return 1;
+@@ -235,6 +255,7 @@ export async function run(args: string[], deps: Deps = {}): Promise<number> {
+     console.error(USAGE);
+     return 1;
+   }
++  reportDeadWorker();
+   const w = await ready(deps);
+   if (!w) return 1;
+   console.log(`Trabalhador pronto: OmniRoute em ${w.url}, modelo ${w.model}.`);
+diff --git a/cli/test/worker-run.test.ts b/cli/test/worker-run.test.ts
+index f3e3047..3314762 100644
+--- a/cli/test/worker-run.test.ts
++++ b/cli/test/worker-run.test.ts
+@@ -241,3 +241,18 @@ describe("hx worker run: lock before spawn (B099)", () => {
+     expect(fakeSpawn).toHaveBeenCalledTimes(3);
+   });
+ });
++
++describe("hx worker status: worker that died without a report (B105)", () => {
++  it("writes a failure report and warns", async () => {
++    const wdir = path.join(env.home, "worker");
++    fs.mkdirSync(wdir, { recursive: true });
++    fs.writeFileSync(
++      path.join(wdir, "lock.json"),
++      JSON.stringify({ pid: 999999, sprint: "S01", task: "T01" }),
++    );
++    expect(await run(["status"], deps())).toBe(0);
++    expect(fs.readFileSync(path.join(wdir, "S01-T01.md"), "utf8")).toMatch(/falhou/i);
++    expect(out.join("\n")).toMatch(/S01\/T01/);
++    expect(out.join("\n")).toMatch(/falhou/i);
++  });
++});

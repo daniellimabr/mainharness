@@ -23,11 +23,12 @@ if (!challenge || !/^[\w-]+$/.test(challenge) || !model || !/^[\w-]+$/.test(mode
   console.error(USAGE);
   process.exit(1);
 }
-const outDir = path.join(root, "docs", "experiments", "S14");
-// S14 reuses the S12 challenges 1 and 2 (their handoff and hidden tests stay in the S12 folder).
-const chDir = fs.existsSync(path.join(outDir, `${challenge}.md`))
-  ? outDir
-  : path.join(root, "docs", "experiments", "S12");
+const outDir = path.join(root, "docs", "experiments", "S15");
+fs.mkdirSync(outDir, { recursive: true });
+// Challenges keep their handoff and hidden tests in the sprint folder that created them (S12: 1, 2; S14: 3).
+const chDir = ["S14", "S12"]
+  .map((s) => path.join(root, "docs", "experiments", s))
+  .find((d) => fs.existsSync(path.join(d, `${challenge}.md`)));
 const handoff = fs.readFileSync(path.join(chDir, `${challenge}.md`), "utf8");
 const hiddenDir = path.join(chDir, "hidden", challenge);
 const ACCEPTANCE =
