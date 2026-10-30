@@ -2,6 +2,33 @@
 
 Versões do Main Harness (versionamento semântico; `0.y.z` até a 1.0).
 
+## [0.12.0] - 2026-10-30
+
+### Novidades
+
+- feat(S14/T05): blind-test bench for worker aliases, challenge 3 and gptoss run
+- feat(S14/T03): cost and calls per task
+- feat(S14/T01): generic external worker (hx worker run/check)
+- feat(S14/T02): block BOM and mojibake in post-edit hook
+
+### Correções
+
+- fix: sprint-run model warning asks to switch in the same chat
+
+### Outros
+
+- docs(S14/T07): Argon test moved to backlog B133
+- chore(S14/T07): backlog, roadmap, omniroute warning, bench model validation
+- docs(S14/T06): blind-test result and ADR 0015
+- docs(S14): plan, decisions and index updates
+- docs(S14/T04): OmniRoute free-models guide
+- docs(S14): record plan approval
+- docs(S14): use only free OmniRoute models
+- docs(S14): sprint plan for external models via OmniRoute
+- chore(inbox): move 6 requests to backlog
+- docs(S13): release report, B126 and harness requests
+- chore(harness): migrate to v0.11.0
+
 ## [0.11.0] - 2026-10-29
 
 ### Novidades
