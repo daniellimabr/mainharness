@@ -38,6 +38,17 @@ export async function postEdit(input: HookInput): Promise<HookOutcome> {
   ensureIndexEntry(root, file);
   pruneIndex(root);
   const problems = await lintFile(root, file);
+  if (fs.readFileSync(file, "utf8").startsWith("﻿"))
+    problems.push(`${raw}: arquivo com BOM; salve em UTF-8 sem BOM.`);
+  // Mojibake is checked only in what this edit wrote, so files that merely mention it still pass.
+  const t = input.tool_input as Record<string, unknown>;
+  const edits = Array.isArray(t.edits) ? (t.edits as Record<string, unknown>[]) : [];
+  const written = [t.content, t.new_string, ...edits.map((e) => e.new_string)];
+  // UTF-8 read as Latin-1/CP1252: "Ã" + a Latin-1 symbol (e.g. "Ã§"), or "â€"
+  if (written.some((s) => typeof s === "string" && /Ã[\u0080-¿]|â€/.test(s)))
+    problems.push(
+      `${raw}: texto quebrado (mojibake, ex.: "Ã§" no lugar de "ç"); regrave em UTF-8.`,
+    );
   if (!problems.length) return {};
   return { exitCode: 2, stderr: `${problems.join("\n")}\nCorrija antes de seguir.\n` };
 }
