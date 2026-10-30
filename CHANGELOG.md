@@ -2,6 +2,31 @@
 
 Versões do Main Harness (versionamento semântico; `0.y.z` até a 1.0).
 
+## [0.13.0] - 2026-10-30
+
+### Novidades
+
+- feat(S15/T01): worker check with small and large probes, error by cause
+
+### Correções
+
+- fix(S15/T03): single handoff event per file on compaction
+
+### Outros
+
+- docs(S15): fecha a sprint, backlog B136 e B137
+- chore(S15/T07): regra do worker deepseek, backlog, roadmap e teste do bench
+- docs(S15/T06): resultado do teste direto, ADR 0016 aceito como opcao pontual
+- @ docs(S15/T05): blind test protocol, deepseek runs and judge notes
+- @ docs(S15/T04): direct-provider section, deepseek check passed
+- test(S15/T02): per-task cost by agent_id regression test
+- docs(S15): re-approve plan
+- docs(S15): approve plan, DeepSeek-only spend
+- docs(S15): sprint plan and decision record
+- chore(inbox): move 2 requests to backlog
+- chore(harness): migrate to v0.12.0
+- docs(S14): release report and harness requests
+
 ## [0.12.0] - 2026-10-30
 
 ### Novidades
