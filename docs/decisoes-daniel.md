@@ -81,3 +81,8 @@ Formato: **Decisão** · **Porquê** · **Descartado** · **Contraponto**.
 - **Porquê:** Daniel mandou trocar todos os agentes de Opus para Sonnet (custo e limite semanal).
 - **Descartado:** manter Opus em área sensível, contrato do `hx` e revisão final (ADR 0013/0014).
 - **Contraponto:** em tarefa sensível o Sonnet erra mais; compensar com handoff listando os casos de erro e Reviewer atento ao escopo.
+
+### Teste cego da S14 com os modelos que a NVIDIA NIM tem (2026-10-30)
+- **Porquê:** a rota grátis antiga (`cfp/`, Cloudflare Playground) corta pedido acima de 6.000 caracteres (502 em toda sessão real), e a NIM não tem DeepSeek V4 Pro, Kimi K2.7 Code nem GLM-5.2; Daniel preferiu medir o que existe a encerrar sem dado.
+- **Descartado:** encerrar o teste e registrar "nenhum externo executa"; conectar OpenRouter agora.
+- **Contraponto:** os modelos trocam (Kimi K2.6, DeepSeek V4.1 Flash, GLM-5.3 Flash, GPT-OSS 20B); a conclusão só vale para eles, e a NIM tem fila e castigo de 2 min por erro.

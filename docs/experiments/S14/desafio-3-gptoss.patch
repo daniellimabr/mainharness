@@ -1,0 +1,7 @@
+diff --git a/cli/src/commands/tmpfile.ts b/cli/src/commands/tmpfile.ts
+new file mode 100644
+index 0000000..8a64bf0
+--- /dev/null
++++ b/cli/src/commands/tmpfile.ts
+@@ -0,0 +1 @@
++export const foo = 1;

@@ -7,7 +7,8 @@ import { REPO_ROOT, rm, tempDir } from "./helpers";
 
 const BENCH = path.join(REPO_ROOT, "scripts", "bench.mjs");
 const TOKEN = "sk-omni-bench-secret";
-const OUT = path.join("docs", "experiments", "S12");
+const IN = path.join("docs", "experiments", "S12"); // challenges 1 and 2 keep their handoff here
+const OUT = path.join("docs", "experiments", "S14");
 
 // Fake claude: echoes the token everywhere it could leak, edits a file, prints the -p json result.
 const FAKE = `
@@ -62,12 +63,14 @@ beforeEach(() => {
   git("init", "-q");
   git("add", "-A");
   git("-c", "user.name=t", "-c", "user.email=t@t", "commit", "-qm", "base");
-  fs.mkdirSync(path.join(repo, OUT, "hidden", "desafio-1", "test"), { recursive: true });
-  fs.writeFileSync(path.join(repo, OUT, "desafio-1.md"), "Faça o desafio 1.\n");
-  fs.writeFileSync(path.join(repo, OUT, "hidden", "desafio-1", "test", "edge.test.js"), "//\n");
+  fs.mkdirSync(path.join(repo, IN, "hidden", "desafio-1", "test"), { recursive: true });
+  fs.writeFileSync(path.join(repo, IN, "desafio-1.md"), "Faça o desafio 1.\n");
+  fs.writeFileSync(path.join(repo, IN, "hidden", "desafio-1", "test", "edge.test.js"), "//\n");
   fs.writeFileSync(
     path.join(home, "config.json"),
-    JSON.stringify({ worker: { token: TOKEN, url: "http://localhost:1", model: "gemini/x" } }),
+    JSON.stringify({
+      workers: { gemini: { token: TOKEN, url: "http://localhost:1", model: "gemini/x" } },
+    }),
   );
 });
 afterEach(() => {
@@ -151,6 +154,6 @@ describe("bench.mjs", () => {
       encoding: "utf8",
     });
     expect(r.status).toBe(1);
-    expect(r.stderr).toContain("uso:");
+    expect(r.stderr).toContain("Apelido gpt");
   });
 });

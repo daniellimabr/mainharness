@@ -9,7 +9,7 @@ import * as path from "node:path";
 const TOOLS = "Read,Edit,Write,Glob,Grep,Bash,PowerShell"; // same as hx worker run
 const TIMEOUT_MS = Number(process.env.HX_BENCH_TIMEOUT_MS) || 60 * 60_000;
 const USAGE =
-  "uso: node scripts/bench.mjs <desafio> <opus|sonnet|gemini> [--base <commit>] [--repo <dir>]";
+  "uso: node scripts/bench.mjs <desafio> <opus|sonnet|apelido-de-workers> [--base <commit>] [--repo <dir>]";
 
 const args = process.argv.slice(2);
 const flag = (name) => {
@@ -19,13 +19,19 @@ const flag = (name) => {
 const root = path.resolve(flag("--repo") ?? path.join(import.meta.dirname, ".."));
 const baseArg = flag("--base") ?? "HEAD";
 const [challenge, model] = args;
-if (!challenge || !/^[\w-]+$/.test(challenge) || !["opus", "sonnet", "gemini"].includes(model)) {
+if (!challenge || !/^[\w-]+$/.test(challenge) || !model || !/^[\w-]+$/.test(model)) {
   console.error(USAGE);
   process.exit(1);
 }
-const outDir = path.join(root, "docs", "experiments", "S12");
-const handoff = fs.readFileSync(path.join(outDir, `${challenge}.md`), "utf8");
-const hiddenDir = path.join(outDir, "hidden", challenge);
+const outDir = path.join(root, "docs", "experiments", "S14");
+// S14 reuses the S12 challenges 1 and 2 (their handoff and hidden tests stay in the S12 folder).
+const chDir = fs.existsSync(path.join(outDir, `${challenge}.md`))
+  ? outDir
+  : path.join(root, "docs", "experiments", "S12");
+const handoff = fs.readFileSync(path.join(chDir, `${challenge}.md`), "utf8");
+const hiddenDir = path.join(chDir, "hidden", challenge);
+const ACCEPTANCE =
+  challenge === "desafio-3" ? "cli/test/worker.test.ts" : "cli/test/worker-run.test.ts";
 
 // Gemini: same env as hx worker run, token only from ~/.harness/config.json (read before HARNESS_HOME moves).
 const realHome = process.env.HARNESS_HOME || path.join(os.homedir(), ".harness");
@@ -33,21 +39,24 @@ let token = "";
 const env = { ...process.env };
 delete env.CLAUDECODE; // a nested session must not think it runs inside the parent chat
 let modelId = model;
-if (model === "gemini") {
-  let w = {};
+if (model !== "opus" && model !== "sonnet") {
+  let w;
   try {
-    w = JSON.parse(fs.readFileSync(path.join(realHome, "config.json"), "utf8")).worker ?? {};
+    const all = JSON.parse(fs.readFileSync(path.join(realHome, "config.json"), "utf8")).workers;
+    w = all && Object.hasOwn(all, model) ? all[model] : undefined;
   } catch {
     // no config: fails below
   }
-  if (!w.token) {
-    console.error("Gemini: falta worker.token em ~/.harness/config.json.");
+  if (!w?.token || !w.model || !w.url) {
+    console.error(
+      `Apelido ${model}: falta em workers de ~/.harness/config.json (url, model, token).`,
+    );
     process.exit(1);
   }
   token = w.token;
-  modelId = w.model || "gemini/gemini-3.5-flash-lite";
+  modelId = w.model;
   Object.assign(env, {
-    ANTHROPIC_BASE_URL: w.url || "http://localhost:20128",
+    ANTHROPIC_BASE_URL: w.url,
     ANTHROPIC_AUTH_TOKEN: token,
     ANTHROPIC_API_KEY: "",
     ANTHROPIC_MODEL: modelId,
@@ -120,7 +129,7 @@ try {
 
   const before = await limits();
   const bin = process.env.HX_CLAUDE_BIN || "claude";
-  const modelFlag = model === "gemini" ? modelId : model;
+  const modelFlag = modelId; // opus/sonnet keep their own name
   const t0 = Date.now();
   const run = await new Promise((resolve) => {
     const c = spawn(
@@ -174,7 +183,7 @@ try {
     format: sh("npm run format:check", clone).ok,
   };
   sh("npm run build", clone); // tests run the bundled hx.js
-  const acceptance = tests(clone, "cli/test/worker-run.test.ts"); // same command as the handoff
+  const acceptance = tests(clone, ACCEPTANCE); // same command as the handoff
   let hidden = null;
   if (fs.existsSync(hiddenDir)) {
     const files = fs
