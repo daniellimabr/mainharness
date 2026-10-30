@@ -55,3 +55,12 @@ Não confirmei os números oficiais de cada provedor (cota por minuto/dia e tama
 | `gemini/gemini-4-argon` | 429; a conta grátis não libera esse modelo |
 
 Reteste só se houver motivo (provedor avisou conserto); anote a data aqui.
+
+## Direto no provedor (S15)
+
+Sem o OmniRoute no meio: o apelido aponta para o endereço Anthropic do próprio provedor, com chave e franquia próprias (fora do limite do Claude). Não há o corte de 6.000 caracteres da rota grátis `cfp/`.
+
+- `deepseek`: `url` `https://api.deepseek.com/anthropic`, `model` `deepseek-v4-pro`, `token` a chave da DeepSeek (crédito pago, US$ 5). Passou no `hx worker check` em 2026-10-30.
+- `glm` (`https://api.z.ai/api/anthropic`) e `kimi`: só com camada grátis. Argon (Gemini) não fala o formato Anthropic e fica fora.
+- O `check` faz duas sondas: uma linha (cota) e ~100 KB (tamanho). 429 = cota, 413/502 = tamanho, 401/403 = chave, sem resposta = provedor fora do ar.
+- Preço por milhão de tokens no `price` do apelido, para o `hx usage` contar o gasto real.
