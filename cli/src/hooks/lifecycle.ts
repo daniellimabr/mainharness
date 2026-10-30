@@ -7,7 +7,7 @@ import { logError } from "../core/log";
 import { resolveProject, type ProjectContext } from "../core/projects";
 import { readJson } from "../core/fsx";
 import { type ProjectState, readState, updateState } from "../core/state";
-import { emit } from "../events/emit";
+import { emit, readEvents } from "../events/emit";
 import { ID_RE } from "../events/schema";
 import { currentContextTokens, ingestSession } from "../usage/index";
 import { refreshLimits } from "../usage/limits";
@@ -217,7 +217,13 @@ export function preCompact(input: HookInput): HookOutcome {
   const fresh = lh && !lh.consumed && (isNaN(alerted) || time(lh.at) >= alerted - 1000);
   const base = { project: c.p.id, session: c.session, sprint: c.st.activeSprint };
   if (fresh) {
-    emit({ ...base, type: "handoff", data: { mode: "compact", file: path.basename(lh.file) } });
+    // B132: one `handoff` event per file; `hx handoff` may have emitted it already.
+    const file = path.basename(lh.file);
+    if (
+      !readEvents((e) => e.type === "handoff" && e.project === c.p.id && e.data.file === file)
+        .length
+    )
+      emit({ ...base, type: "handoff", data: { mode: "compact", file } });
   } else {
     const data = {
       tokens: tokensOf(input) ?? 0,
