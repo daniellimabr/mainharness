@@ -4,6 +4,8 @@ Guia curto para usar, pelo `hx worker`, os modelos grátis que o OmniRoute já o
 
 ## Modelos que funcionam
 
+> **Aviso (S14):** o `hx worker check` passa nestes três, mas numa sessão real do Claude Code (~150 KB por pedido) a rota `cfp/` recusa com 502: ela limita o pedido a 6.000 caracteres. Serve só para chamadas curtas. Veja `docs/adr/0015-externos-gratis-nao-executam.md`.
+
 | Modelo | Uso |
 |---|---|
 | `cfp/deepseek-ai/deepseek-v4-pro-0813` | DeepSeek V4 Pro, uso geral e raciocínio |

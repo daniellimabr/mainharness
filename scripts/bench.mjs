@@ -53,6 +53,10 @@ if (model !== "opus" && model !== "sonnet") {
     );
     process.exit(1);
   }
+  if (!/^[A-Za-z0-9._:/@-]{1,128}$/.test(w.model)) {
+    console.error(`Apelido ${model}: modelo com caracteres inválidos.`);
+    process.exit(1);
+  }
   token = w.token;
   modelId = w.model;
   Object.assign(env, {

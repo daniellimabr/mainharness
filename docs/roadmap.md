@@ -61,6 +61,10 @@ A mesma tarefa em 3 modelos, com nota cega de dois Reviewers. Opus venceu os doi
 
 Gemini e `hx worker` saíram (ADR 0014). `hx task drop|defer` tira ou adia tarefa e pede nova aprovação; `done`/`phase` em tarefa feita só avisa; `index.md` perde linhas de arquivos apagados. O `usage` não duplica e leva a tarefa, então `hx metrics` mostra custo por tarefa e por executor. Novos eventos para o Dashboard: TNN no `agent.start`, `agent_id` no `alert.context`, `context` a cada `Stop`, `attention` e `error`. Regra de ouro, perfil de decisão (`docs/decisoes-daniel.md`) e handoff melhor após compactar. Próximos passos: aviso no Windows (B109), medir Haiku como executor de texto (B116), `hx shot` (B123).
 
+## 12. Externos grátis testados e custo por tarefa (feito na S14, v0.12.0)
+
+`hx worker` genérico (apelidos em `workers` na config), trava de codificação no `post-edit`, custo por tarefa com rateio do chat, guia `docs/omniroute.md`. O teste cego não mediu DeepSeek, Kimi e GLM: a rota `cfp/` limita o pedido a 6.000 caracteres e a NIM não tem os modelos. Só o gpt-oss-20b rodou e reprovou (ADR 0015: nenhum externo grátis executa tarefa). Próximo passo: Gemini 4 Argon, com sonda de ~100 KB antes.
+
 ## Avaliado e descartado por ora
 
 - **Troca de modelo pelo % de uso (gatilho de 90%, S10).** A escolha de modelo virou reação ao limite, não decisão do plano (ADR 0013).

@@ -107,7 +107,7 @@ Itens ainda não planejados. Pedidos dos projetos chegam pelo `inbox/` e `/inbox
 | B097 | `workerNudge` guarda lista de sessões para evitar que dois chats perto do limite alternem o aviso | roadmap | baixa | descartado (S11, ADR 0013) |
 | B098 | Aviso de limite considera `resets_at` para não avisar após a janela reiniciar com leitura velha | roadmap | baixa | descartado (S11, ADR 0013) |
 | B099 | Gravar o lock de `hx worker run` antes do spawn para impedir execução simultânea | roadmap | baixa | feito (S12) |
-| B100 | `hx worker status` diz "pronto" com o login do Gemini expirado no OmniRoute: testar uma chamada curta ao modelo | S10/T09 | média | novo |
+| B100 | `hx worker status` diz "pronto" com o login do Gemini expirado no OmniRoute: testar uma chamada curta ao modelo | S10/T09 | média | feito (S14) |
 | B101 | Handoff da sessão atualizado sozinho em `hx task done/phase` (estado das tarefas e arquivos não commitados) | inbox: 2026-10-27-main-harness-handoff-atualizado-a-cada-tarefa.md | média | feito (S11) |
 | B102 | `hx eval`: o `hx` da sandbox é o `cli/dist/hx.js` do repo, não o estável | inbox: 2026-10-27-main-harness-hx-eval-usa-o-hx-do-repo-nao-o-estavel.md | alta | feito (S11) |
 | B103 | Experimento: mesma tarefa-desafio no Opus, Sonnet e Gemini (qualidade, tempo, tokens/custo, chamadas, franquia) | S11-release | alta | feito (S12) |
@@ -123,7 +123,7 @@ Itens ainda não planejados. Pedidos dos projetos chegam pelo `inbox/` e `/inbox
 | B114 | Handoff melhor: seções fixas "decisões e porquês" e "pedidos de Daniel ainda não registrados"; `session-start` com `source=compact` devolve também a tarefa em andamento e o estado do `hx` (hoje só devolve o handoff) | conversa S12 | média | feito (S13) |
 | B109 | Aviso no Windows (toast) quando um agente pede permissão ou fica parado esperando Daniel; `async: true` nos hooks que só observam (`UserPromptSubmit`, `SubagentStart`). Depende do B107 (itens 2 e 6) | avaliação 2026-10-28 | alta | novo |
 | B115 | Remover o trabalhador Gemini (`hx worker`, skill `worker`, config `worker`) ou deixá-lo genérico para outros modelos do OmniRoute | decisão Daniel S12 | média | feito (S13) |
-| B116 | Medir Haiku como executor de texto (S13) e custo/"km" por tarefa no `sprint.metrics` | conversa S12 | média | novo |
+| B116 | Medir Haiku como executor de texto (S13) e custo/"km" por tarefa no `sprint.metrics` | conversa S12 | média | feito (S14) |
 | B117 | `hx task drop\|defer TNN`: tira ou adia tarefa para a próxima sprint, ajusta dependências e pede nova aprovação registrada | inbox: 2026-10-28-6thgear-comando-para-tirar-ou-adiar-tarefa-da-sprint.md | média | feito (S13) |
 | B118 | `hx task phase`/`done` em tarefa já feita (ajuste do feedback ou depois do `review pass`): registrar a fase ou avisar sem erro | inbox: 2026-10-28-6thgear-hx-task-phase-em-tarefa-ja-feita-durante-ajuste.md; 2026-10-29-main-harness-hx-task-done-phase-em-tarefa-ja-fechada-pelo-review-pass-imp.md | baixa | feito (S13) |
 | B119 | `index.md`: remover linhas de arquivos apagados, movidos ou renomeados | inbox: 2026-10-28-6thgear-index-md-remover-linhas-de-arquivos-apagados-ou-movidos.md | média | feito (S13) |
@@ -133,10 +133,10 @@ Itens ainda não planejados. Pedidos dos projetos chegam pelo `inbox/` e `/inbox
 | B123 | Reviewer vê o app de forma garantida (ex.: `hx shot <url>` com Chrome headless) | inbox: 2026-10-28-dashboard-ia-reviewer-sem-navegador-de-novo-reforco.md | média | novo |
 | B124 | Eventos `usage` deduplicados por `message_id` na gravação (transcript.ts) e `roundStats` sem soma duplicada | inbox: 2026-10-29-main-harness-eventos-usage-gravados-em-duplicata-transcript-ts-e-roundsta.md | média | feito (S13) |
 | B125 | Estabilizar `worker-run.test.ts` no Windows sob carga (retryDelay maior ou esperar o filho) | inbox: 2026-10-29-main-harness-worker-run-test-ts-oscila-no-windows-sob-carga.md | média | feito (S13) |
-| B126 | Critério na S14: `hx metrics` mostra custo por tarefa (S13 rodou nos ganchos 0.10.2, por isso ficou "sem-tarefa"; sem recalcular a S13) | Daniel, 2026-10-29 | alta | novo |
-| B127 | Atribuir custo e chamadas de clones e Reviewer à tarefa em andamento, inclusive em paralelo (6thgear S03: 1533 chamadas "sem-tarefa") | inbox: 2026-10-29-6thgear-atribuir-custo-e-chamadas-as-tarefas.md | alta | novo |
+| B126 | Critério na S14: `hx metrics` mostra custo por tarefa (S13 rodou nos ganchos 0.10.2, por isso ficou "sem-tarefa"; sem recalcular a S13) | Daniel, 2026-10-29 | alta | feito (S14) |
+| B127 | Atribuir custo e chamadas de clones e Reviewer à tarefa em andamento, inclusive em paralelo (6thgear S03: 1533 chamadas "sem-tarefa") | inbox: 2026-10-29-6thgear-atribuir-custo-e-chamadas-as-tarefas.md | alta | feito (S14) |
 | B128 | `hx sprint approve` barrado: dizer que Daniel precisa rodar o comando no terminal dele | inbox: 2026-10-29-6thgear-mensagem-do-sprint-approve-bloqueado.md | média | novo |
 | B129 | Revisão da tarefa final não conta o tempo em que outras tarefas ou ajustes correm | inbox: 2026-10-29-6thgear-tempo-de-revisao-da-tarefa-final-inflado.md | baixa | novo |
 | B130 | `sprint-plan` (template e validação) recusa `gemini` na coluna Agente (ADR 0014) | inbox: 2026-10-29-dashboard-ia-sprint-plan-recusar-o-agente-gemini.md | baixa | novo |
-| B131 | Custo do chat principal com várias tarefas em andamento: atribuir ou ratear, em vez de "sem-tarefa" | inbox: 2026-10-29-main-harness-custo-do-tech-lead-em-tarefas-paralelas-fica-sem-tarefa.md | média | novo |
+| B131 | Custo do chat principal com várias tarefas em andamento: atribuir ou ratear, em vez de "sem-tarefa" | inbox: 2026-10-29-main-harness-custo-do-tech-lead-em-tarefas-paralelas-fica-sem-tarefa.md | média | feito (S14) |
 | B132 | Evento `handoff` único por arquivo (dedupe), hoje duplica na compactação | inbox: 2026-10-29-main-harness-evento-handoff-gravado-em-duplicata-na-compactacao.md | média | novo |

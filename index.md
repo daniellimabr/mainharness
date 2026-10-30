@@ -158,6 +158,9 @@ Uma linha por arquivo: caminho e propósito. Mantido pelo hook `post-edit`.
 - `docs/experiments/S12-resultado.md` — S12 — Resultado do experimento: Opus × Sonnet × Gemini
 - `docs/experiments/S12/desafio-1.md` — Handoff — S12 / Desafio 1 (B099): lock do `hx worker run` antes do spawn
 - `docs/experiments/S12/desafio-2.md` — Handoff — S12 / Desafio 2 (B105): trabalhador que morre sem relatório
+- `docs/experiments/S14-protocolo.md` — S14 — Protocolo do teste cego
+- `docs/experiments/S14/desafio-3.md` — Handoff — S14 / Desafio 3: `hx worker list`
+- `docs/experiments/S14/hidden/desafio-3/cli/test/d3-hidden.test.ts` — S14 / desafio 3 hidden cases: `hx worker list` edge cases the model never sees.
 - `docs/omniroute.md` — OmniRoute: modelos grátis
 - `docs/roadmap.md` — Roadmap do Main Harness
 - `docs/sprints/S00-plan.md` — sprint plan S00 (criação do harness)
