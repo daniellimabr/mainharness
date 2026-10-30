@@ -76,3 +76,8 @@ Formato: **Decisão** · **Porquê** · **Descartado** · **Contraponto**.
 - **Porquê:** compactação e chat novo perdem o que só estava na conversa (decisões, pedidos de Daniel).
 - **Descartado:** confiar na memória do chat e no resumo da compactação.
 - **Contraponto:** mais arquivos para manter; o handoff e este arquivo existem para isso ser barato.
+
+### Tudo em Sonnet, Opus desligado (2026-10-30)
+- **Porquê:** Daniel mandou trocar todos os agentes de Opus para Sonnet (custo e limite semanal).
+- **Descartado:** manter Opus em área sensível, contrato do `hx` e revisão final (ADR 0013/0014).
+- **Contraponto:** em tarefa sensível o Sonnet erra mais; compensar com handoff listando os casos de erro e Reviewer atento ao escopo.

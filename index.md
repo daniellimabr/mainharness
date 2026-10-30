@@ -45,6 +45,7 @@ Uma linha por arquivo: caminho e propósito. Mantido pelo hook `post-edit`.
 - `cli/src/commands/status.ts` — hx status --where <texto> --next <texto>: records where the project is and what comes next (project.status).
 - `cli/src/commands/task.ts` — hx task start|done <id>: task times in state and in the "## Execução" table of SNN-release.md, plus events.
 - `cli/src/commands/usage.ts` — hx usage: ingests the project's Claude Code transcripts and prints tokens and US$ per agent/model.
+- `cli/src/commands/worker.ts` — hx worker check|run: external models that speak the Anthropic format (OmniRoute or direct), by alias
 - `cli/src/core/args.ts` — Tiny argument parser: positionals + --flag value / --flag=value / --bool.
 - `cli/src/core/config.ts` — ~/.harness/config.json: prices, context limits and harness locations.
 - `cli/src/core/context.ts` — Resolves "who/where" for CLI commands run by agents: project, session, sprint, agent.
@@ -100,16 +101,17 @@ Uma linha por arquivo: caminho e propósito. Mantido pelo hook `post-edit`.
 - `cli/test/lifecycle.test.ts` — S13/T06: TNN on agent.start, agent_id + task on alert.context, `context` on every Stop, task on usage.
 - `cli/test/limits.test.ts` — B064: plan usage % (5 h and weekly) from the OAuth usage endpoint, throttled in the Stop.
 - `cli/test/lint.test.ts` — testes de lint
+- `cli/test/metrics-task.test.ts` — (sem descrição)
 - `cli/test/metrics.test.ts` — (sem descrição)
 - `cli/test/migrate.test.ts` — testes de migrate
 - `cli/test/no-worker.test.ts` — S13/T01 (ADR 0014): the Gemini worker is gone; its old events and config stay readable.
 - `cli/test/paths.test.ts` — testes de paths (HARNESS_HOME)
+- `cli/test/post-edit-encoding.test.ts` — post-edit hook: flags BOM and mojibake that lint and prettier miss.
 - `cli/test/post-edit.test.ts` — post-edit hook: drops index.md entries whose files no longer exist.
 - `cli/test/pre-bash-s04.test.ts` — pre-bash S04: cd to /c/... denied, stale bundle on commit asks, Remove-Item with spaces inside the repo allowed.
 - `cli/test/pre-bash-s05.test.ts` — pre-bash S05 (B046, B047): git --output, redirects and PowerShell writers follow the pre-edit rule.
 - `cli/test/pre-bash-s06.test.ts` — pre-bash S06 (B054): Tee-Object and git format-patch -o follow the pre-edit rule.
 - `cli/test/pre-edit.test.ts` — pre-edit hook: denies edits to cli/dist/hx.js and the stable dir.
-- `cli/test/probe-s05.test.ts` — (sem descrição)
 - `cli/test/release.test.ts` — testes de release
 - `cli/test/repomap.test.ts` — testes de repomap
 - `cli/test/request.test.ts` — hx request --to <id>: writes into a registered project's inbox/; session-start there warns about it.
@@ -127,6 +129,7 @@ Uma linha por arquivo: caminho e propósito. Mantido pelo hook `post-edit`.
 - `cli/test/transcript.test.ts` — (sem descrição)
 - `cli/test/turn-end.test.ts` — B045: the Stop hook emits turn.end only when it lets the agent stop.
 - `cli/test/usage.test.ts` — testes de usage
+- `cli/test/worker.test.ts` — hx worker check|run (S14/T01, B100): external Anthropic-format models by alias from config.json.
 - `cli/tsconfig.json` — TypeScript estrito do CLI
 - `commands/continue.md` — Retoma a sprint a partir do último handoff (num chat novo)
 - `commands/inbox.md` — Leva os pedidos do inbox do Main Harness para o backlog (só no repo do harness)
@@ -155,9 +158,7 @@ Uma linha por arquivo: caminho e propósito. Mantido pelo hook `post-edit`.
 - `docs/experiments/S12-resultado.md` — S12 — Resultado do experimento: Opus × Sonnet × Gemini
 - `docs/experiments/S12/desafio-1.md` — Handoff — S12 / Desafio 1 (B099): lock do `hx worker run` antes do spawn
 - `docs/experiments/S12/desafio-2.md` — Handoff — S12 / Desafio 2 (B105): trabalhador que morre sem relatório
-- `docs/experiments/S12/hidden/d1-hidden.test.ts` — S12 hidden tests, challenge 1 (B099): the lock of `hx worker run` is taken before the spawn.
-- `docs/experiments/S12/hidden/d2-hidden.test.ts` — S12 hidden tests, challenge 2 (B105): a worker that dies without a report gets a failure report.
-- `docs/omniroute.md` — Trabalhadores no Gemini (OmniRoute)
+- `docs/omniroute.md` — OmniRoute: modelos grátis
 - `docs/roadmap.md` — Roadmap do Main Harness
 - `docs/sprints/S00-plan.md` — sprint plan S00 (criação do harness)
 - `docs/sprints/S00-release.md` — Release Report da S00 (tabela de execução gerada pelo hx)
@@ -184,6 +185,8 @@ Uma linha por arquivo: caminho e propósito. Mantido pelo hook `post-edit`.
 - `docs/sprints/S11-release.md` — S11 — Release Report
 - `docs/sprints/S12-plan.md` — S12 — Experimento: Opus × Sonnet × Gemini na mesma tarefa
 - `docs/sprints/S13-plan.md` — S13 — Harness mais limpo e eventos para o Dashboard
+- `docs/sprints/S13-release.md` — S13 — Release Report
+- `docs/sprints/S14-plan.md` — S14 — Modelos externos pelo OmniRoute, com o Claude como juiz
 - `eslint.config.js` — ESLint flat config
 - `hooks/hooks.json` — hooks do plugin (forma exec chamando o hx)
 - `package-lock.json` — versões travadas das dependências de desenvolvimento

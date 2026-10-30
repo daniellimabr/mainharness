@@ -73,30 +73,30 @@ Daniel descobre, com números e **sem gastar nada**, se algum modelo de fora ace
 
 | Id | Tarefa | Agente | Arquivos | Depende de | Bruta | Planejado |
 |---|---|---|---|---|---|---|
-| T01 | Trabalhador externo genérico: `hx worker run\|check`, apelidos na config, consumo em `usage` (B100) | clone (opus) | `cli/src/commands/worker.ts`, `cli/src/core/config.ts`, `cli/src/events/schema.ts`, `cli/test/worker.test.ts` | — | 45 min | 42 min |
-| T02 | Trava de codificação no `post-edit` (BOM e texto quebrado) | clone (opus) | `cli/src/hooks/post-edit.ts`, `cli/test/post-edit-encoding.test.ts` | — | 20 min | 19 min |
-| T03 | Custo e chamadas por tarefa: clones, Reviewer, trabalhador e rateio do chat (B126, B127, B131, B116) | clone (opus) | `cli/src/sprint/index.ts`, `cli/test/metrics-task.test.ts` | — | 40 min | 38 min |
+| T01 | Trabalhador externo genérico: `hx worker run\|check`, apelidos na config, consumo em `usage` (B100) | clone (sonnet) | `cli/src/commands/worker.ts`, `cli/src/core/config.ts`, `cli/src/events/schema.ts`, `cli/test/worker.test.ts` | — | 45 min | 42 min |
+| T02 | Trava de codificação no `post-edit` (BOM e texto quebrado) | clone (sonnet) | `cli/src/hooks/post-edit.ts`, `cli/test/post-edit-encoding.test.ts` | — | 20 min | 19 min |
+| T03 | Custo e chamadas por tarefa: clones, Reviewer, trabalhador e rateio do chat (B126, B127, B131, B116) | clone (sonnet) | `cli/src/sprint/index.ts`, `cli/test/metrics-task.test.ts` | — | 40 min | 38 min |
 | T04 | Guia `docs/omniroute.md`: modelos grátis (DeepSeek V4 Pro, Kimi K2.7, GLM-5.2), limites e conferência | clone (sonnet) | `docs/omniroute.md` | — | 20 min | 19 min |
 | T05 | Teste cego: protocolo, desafio 3, corridas dos 3 externos + linha de base, nota do juiz | tech-lead (sonnet) + trabalhadores + reviewer (sonnet) | `docs/experiments/S14-protocolo.md`, `docs/experiments/S14/` | T01, T02, T03, T04 | 60 min | 56 min |
-| T06 | Resultado, ADR 0015 e decisão de Daniel | tech-lead (opus) | `docs/experiments/S14-resultado.md`, `docs/adr/0015-*.md`, `docs/decisoes-daniel.md` | T05 | 25 min | 24 min |
-| T07 | Revisão final, regra do Agente (se o ADR 0015 for aceito), backlog, CHANGELOG, roadmap e release v0.12.0 | tech-lead (sonnet) + reviewer (opus) | `agents/tech-lead.md`, `skills/sprint-plan/`, `docs/backlog.md`, `CHANGELOG.md`, `docs/roadmap.md` | T06 | 20 min | 19 min |
+| T06 | Resultado, ADR 0015 e decisão de Daniel | tech-lead (sonnet) | `docs/experiments/S14-resultado.md`, `docs/adr/0015-*.md`, `docs/decisoes-daniel.md` | T05 | 25 min | 24 min |
+| T07 | Revisão final, regra do Agente (se o ADR 0015 for aceito), backlog, CHANGELOG, roadmap e release v0.12.0 | tech-lead (sonnet) + reviewer (sonnet) | `agents/tech-lead.md`, `skills/sprint-plan/`, `docs/backlog.md`, `CHANGELOG.md`, `docs/roadmap.md` | T06 | 20 min | 19 min |
 
 **Por que esses agentes:**
 
-- T01 é Opus: muda um contrato do `hx` (comando, config, eventos), lida com chave e processo filho e tem caminho de erro.
-- T02 é Opus: lógica nova em hook.
-- T03 é Opus: muda o contrato do `sprint.metrics`, e a atribuição usa dado lido do log de eventos.
+- T01 é Sonnet: muda um contrato do `hx` (comando, config, eventos), lida com chave e processo filho e tem caminho de erro.
+- T02 é Sonnet: lógica nova em hook.
+- T03 é Sonnet: muda o contrato do `sprint.metrics`, e a atribuição usa dado lido do log de eventos.
 - T04 é Sonnet, não Haiku: o texto do guia ainda não está decidido, porque depende dos limites atuais dos provedores grátis.
 - T05: o Tech Lead orquestra. Os concorrentes rodam como trabalhadores e o juiz é o Reviewer Sonnet às cegas, como na S12.
-- T06 é Opus: é uma decisão de desenho (ADR).
+- T06 é Sonnet: é uma decisão de desenho (ADR).
 
 **Ondas:** onda 1 = T01, T02, T03, T04; onda 2 = T05; onda 3 = T06; onda 4 = T07.
 
 **Revisão:**
 
-- Onda 1: Reviewer **Opus** (T01 tem chave e contrato do `hx`, T02 é hook).
+- Onda 1: Reviewer **Sonnet** (T01 tem chave e contrato do `hx`, T02 é hook).
 - T05: o juiz do teste é o próprio Reviewer Sonnet.
-- T06 e T07: Reviewer **Opus** (decisão e revisão final).
+- T06 e T07: Reviewer **Sonnet** (decisão e revisão final).
 - O resultado vai para o `hx review pass|fail` de cada tarefa.
 
 **Paralelismo:**
@@ -145,6 +145,6 @@ Tarefas da S13 que servem de referência:
 ## Aprovação
 
 - **Aprovado por:** Daniel
-- **Data/hora:** 2026-10-29 16:46:33 (horário de Brasília) — UTC 2026-10-29T19:46:33Z
-- **Hash SHA-256 do plano** (conteúdo antes desta seção, finais de linha normalizados para LF): `9f548f335d1d361e4733735fd5e782e37ae69d9b6eb3b1490692223a1727be05`
+- **Data/hora:** 2026-10-30 08:10:04 (horário de Brasília) — UTC 2026-10-30T11:10:04Z
+- **Hash SHA-256 do plano** (conteúdo antes desta seção, finais de linha normalizados para LF): `08f0b0cd208e0a2d527b64f475e933c047a2ac4e8631336fcdfb1ae98ed748b4`
 - **Versão do harness:** 0.11.0

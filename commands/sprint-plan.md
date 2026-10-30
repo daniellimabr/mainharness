@@ -5,7 +5,7 @@ argument-hint: "[SNN]"
 
 Monte o sprint plan $ARGUMENTS com a skill `sprint-plan`:
 
-0. Modelo (ADR 0013): planejar é em Opus. Se você não está em Opus, avise Daniel em uma linha para abrir um chat novo com Opus no seletor e siga. Na coluna Agente, use a regra "Modelo por papel" do `tech-lead.md`.
+0. Modelo (ADR 0013): tudo roda em Sonnet (Opus desligado). Na coluna Agente, use a regra "Modelo por papel" do `tech-lead.md`.
 
 1. Se houver arquivos em `inbox/` do harness ou pedidos pendentes, rode antes `/main-harness:inbox` (só no repo do Main Harness).
 2. Leia `docs/backlog.md`, `docs/roadmap.md` e o último Release Report em `docs/sprints/`.
