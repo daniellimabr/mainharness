@@ -569,6 +569,8 @@ export interface SprintMetrics {
   /** T08: usage responses per task, and cost per executor (Haiku, Sonnet, Opus by model name). */
   calls_by_task: Record<string, number>;
   usd_by_executor: Record<string, number>;
+  /** B131: part of usd_by_task split equally among tasks in progress at the same time. */
+  usd_split_by_task?: Record<string, number>;
 }
 
 /** B045: wait intervals [turn end, next prompt] per session, overlaps merged, sorted. */
@@ -654,9 +656,17 @@ export function computeMetrics(project: string, sprintId: string, plan: Plan): S
   const waits = waitIntervals(evs);
   m.wait_min = r1(waits.reduce((acc, [s = 0, e = 0]) => acc + e - s, 0) / 60000);
   const seenMsg = new Set<unknown>(); // a deleted usage-cache re-emits old responses
+  // B127: agent_id → TNN of its agent.start (clones, Reviewer, external workers)
+  const agentTask = new Map<unknown, string>();
+  for (const e of evs)
+    if (e.type === "agent.start" && e.task) agentTask.set(e.data.agent_id, e.task);
+  const open = new Set<string>(); // tasks in progress; evs is sorted by ts
+  const split: Record<string, number> = {};
   for (const e of evs) {
     const d = e.data;
-    if (e.type === "usage") {
+    if (e.type === "task.start" && e.task) open.add(e.task);
+    else if (e.type === "task.done" && e.task) open.delete(e.task);
+    else if (e.type === "usage") {
       if (d.message_id !== undefined && seenMsg.has(d.message_id)) continue;
       seenMsg.add(d.message_id);
       m.tokens_input += num(d.input);
@@ -666,9 +676,16 @@ export function computeMetrics(project: string, sprintId: string, plan: Plan): S
       const usd = num(d.usd);
       m.usd += usd;
       const agent = e.agent ?? "desconhecido";
-      const task = e.task ?? "sem-tarefa";
+      const own = e.task ?? agentTask.get(d.agent_id);
+      // B131: with no task of its own, the call belongs to the tasks in progress, split equally
+      const tasks = own ? [own] : open.size ? [...open] : ["sem-tarefa"];
+      const share = 1 / tasks.length;
       m.usd_by_agent[agent] = (m.usd_by_agent[agent] ?? 0) + usd;
-      m.usd_by_task[task] = (m.usd_by_task[task] ?? 0) + usd;
+      for (const t of tasks) {
+        m.usd_by_task[t] = (m.usd_by_task[t] ?? 0) + usd * share;
+        m.calls_by_task[t] = (m.calls_by_task[t] ?? 0) + share;
+        if (tasks.length > 1) split[t] = (split[t] ?? 0) + usd * share;
+      }
       const model =
         String(d.model ?? "desconhecido")
           .replace(/[^A-Za-z0-9._:@-]/g, "_")
@@ -682,20 +699,23 @@ export function computeMetrics(project: string, sprintId: string, plan: Plan): S
       });
       for (const k of ["input", "output", "cache_write", "cache_read"])
         tk[k] = (tk[k] ?? 0) + num(d[k]);
-      m.calls_by_task[task] = (m.calls_by_task[task] ?? 0) + 1;
       const fam = /haiku|sonnet|opus/i.exec(model)?.[0].toLowerCase();
       const exec = fam ? fam[0]?.toUpperCase() + fam.slice(1) : "Outro";
       m.usd_by_executor[exec] = (m.usd_by_executor[exec] ?? 0) + usd;
-      const ms = (m.models_by_task[task] ??= []);
-      if (!ms.includes(model)) ms.push(model);
+      for (const t of tasks) {
+        const ms = (m.models_by_task[t] ??= []);
+        if (!ms.includes(model)) ms.push(model);
+      }
     } else if (e.type === "sprint.feedback") m.rework += num(d.adjustments);
     else if (e.type === "review.result" && d.result === "fail") m.review_rejections++;
     else if (e.type === "alert.context") m.context_alerts++;
     else if (e.type === "handoff") m.handoffs++;
   }
   m.usd = r4(m.usd);
-  for (const rec of [m.usd_by_agent, m.usd_by_task, m.usd_by_model, m.usd_by_executor])
+  if (Object.keys(split).length) m.usd_split_by_task = split;
+  for (const rec of [m.usd_by_agent, m.usd_by_task, m.usd_by_model, m.usd_by_executor, split])
     for (const [k, v] of Object.entries(rec)) rec[k] = r4(v);
+  for (const [k, v] of Object.entries(m.calls_by_task)) m.calls_by_task[k] = r1(v);
   for (const ms of Object.values(m.models_by_task)) ms.sort();
   const ts = (type: string) =>
     evs
@@ -740,7 +760,10 @@ export function renderMetrics(sprintId: string, plan: Plan, m: SprintMetrics): s
     const cost = m.usd_by_task[t.id];
     const parts = partsSuffix(m.queue_min_by_task?.[t.id], m.review_min_by_task[t.id]);
     const real = a === undefined ? "—" : fmtMin(a) + parts;
-    return `| ${t.id} | ${fmtMin(t.planned_min)} | ${real} | ${diff} | ${cost === undefined ? "—" : usd(cost)} |`;
+    const shared = m.usd_split_by_task?.[t.id];
+    const costCell =
+      cost === undefined ? "—" : usd(cost) + (shared ? ` (${usd(shared)} rateado)` : "");
+    return `| ${t.id} | ${fmtMin(t.planned_min)} | ${real} | ${diff} | ${costCell} |`;
   });
   const byAgent =
     Object.entries(m.usd_by_agent)
