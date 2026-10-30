@@ -140,3 +140,4 @@ Itens ainda não planejados. Pedidos dos projetos chegam pelo `inbox/` e `/inbox
 | B130 | `sprint-plan` (template e validação) recusa `gemini` na coluna Agente (ADR 0014) | inbox: 2026-10-29-dashboard-ia-sprint-plan-recusar-o-agente-gemini.md | baixa | novo |
 | B131 | Custo do chat principal com várias tarefas em andamento: atribuir ou ratear, em vez de "sem-tarefa" | inbox: 2026-10-29-main-harness-custo-do-tech-lead-em-tarefas-paralelas-fica-sem-tarefa.md | média | feito (S14) |
 | B132 | Evento `handoff` único por arquivo (dedupe), hoje duplica na compactação | inbox: 2026-10-29-main-harness-evento-handoff-gravado-em-duplicata-na-compactacao.md | média | novo |
+| B133 | Testar `gemini/gemini-4-argon` como executor (desafio 3, sonda de ~100 KB antes); na S14 deu 429 até em pedido de uma linha (cota) | S14, decisão de Daniel | média | novo |

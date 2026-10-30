@@ -87,3 +87,4 @@ Formato: **Decisão** · **Porquê** · **Descartado** · **Contraponto**.
 - **Descartado:** encerrar o teste e registrar "nenhum externo executa"; conectar OpenRouter agora.
 - **Contraponto:** os modelos trocam (Kimi K2.6, DeepSeek V4.1 Flash, GLM-5.3 Flash, GPT-OSS 20B); a conclusão só vale para eles, e a NIM tem fila e castigo de 2 min por erro.
 - **Resultado:** só o `gpt-oss-20b` rodou e reprovou; nenhum externo grátis executa (ADR 0015). Gemini 4 Argon segue como próximo teste.
+- **Argon fora da S14 (2026-10-30):** a cota do `gemini-4-argon` deu 429; Daniel fechou a S14 sem o teste e o Argon virou B133 para a S15.
