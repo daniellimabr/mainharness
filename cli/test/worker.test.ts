@@ -12,6 +12,7 @@ let env: ReturnType<typeof isolateHome>;
 let server: http.Server | undefined;
 let url = "";
 let seen: { path?: string; key?: string; body?: string } = {};
+const posts: number[] = []; // body size of each request received
 
 function writeConfig(workerUrl: string): void {
   fs.writeFileSync(
@@ -30,18 +31,23 @@ function writeConfig(workerUrl: string): void {
 }
 
 /** Local fake: "ok" answers like /v1/messages, "401" rejects the key, "hang" never answers. */
-async function serve(mode: "ok" | "401" | "hang"): Promise<void> {
+async function serve(
+  mode: "ok" | "401" | "429" | "hang",
+  bigStatus = 200, // status for the ~100 KB probe
+): Promise<void> {
   server = http.createServer((req, res) => {
     let body = "";
     req.on("data", (d: Buffer) => (body += String(d)));
     req.on("end", () => {
       seen = { path: req.url, key: String(req.headers["x-api-key"]), body };
+      posts.push(body.length);
       if (mode === "hang") return;
-      res.writeHead(mode === "ok" ? 200 : 401, { "content-type": "application/json" });
+      const status = mode === "ok" ? (body.length > 50_000 ? bigStatus : 200) : Number(mode);
+      res.writeHead(status, { "content-type": "application/json" });
       res.end(
-        mode === "ok"
+        status === 200
           ? JSON.stringify({ type: "message", content: [{ type: "text", text: "ok" }] })
-          : JSON.stringify({ type: "error", error: { message: "invalid x-api-key" } }),
+          : JSON.stringify({ type: "error", error: { message: "nope" } }),
       );
     });
   });
@@ -53,6 +59,7 @@ async function serve(mode: "ok" | "401" | "hang"): Promise<void> {
 beforeEach(() => {
   env = isolateHome();
   seen = {};
+  posts.length = 0;
 });
 afterEach(async () => {
   vi.restoreAllMocks();
@@ -86,6 +93,40 @@ describe("hx worker check", () => {
     const err = vi.spyOn(console, "error").mockImplementation(() => {});
     expect(await run(["check", "ds"], { timeoutMs: 300 })).toBe(1);
     expect(err.mock.calls.join(" ")).toContain("não respondeu");
+  });
+
+  it("runs a small and a ~100 KB probe, both must pass", async () => {
+    await serve("ok");
+    vi.spyOn(console, "log").mockImplementation(() => {});
+    expect(await run(["check", "ds"])).toBe(0);
+    expect(posts).toHaveLength(2);
+    expect(posts[0]).toBeLessThan(1000);
+    expect(posts[1]).toBeGreaterThan(90_000);
+  });
+
+  it.each([413, 502])("big probe HTTP %i: size error, exit 1", async (code) => {
+    await serve("ok", code);
+    const log = vi.spyOn(console, "log").mockImplementation(() => {});
+    const err = vi.spyOn(console, "error").mockImplementation(() => {});
+    expect(await run(["check", "ds"])).toBe(1);
+    expect(err.mock.calls.join(" ")).toContain("tamanho");
+    expect(err.mock.calls.join(" ")).not.toContain("sk-secret");
+    expect(log.mock.calls.join(" ")).not.toContain("pronto");
+  });
+
+  it("429: quota error, big probe skipped", async () => {
+    await serve("429");
+    const err = vi.spyOn(console, "error").mockImplementation(() => {});
+    expect(await run(["check", "ds"])).toBe(1);
+    expect(err.mock.calls.join(" ")).toContain("cota");
+    expect(posts).toHaveLength(1);
+  });
+
+  it("wrong key: big probe skipped", async () => {
+    await serve("401");
+    vi.spyOn(console, "error").mockImplementation(() => {});
+    expect(await run(["check", "ds"])).toBe(1);
+    expect(posts).toHaveLength(1);
   });
 
   it("unknown alias: error, exit 1", async () => {

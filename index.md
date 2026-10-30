@@ -98,6 +98,7 @@ Uma linha por arquivo: caminho e propósito. Mantido pelo hook `post-edit`.
 - `cli/test/global-setup.ts` — Builds cli/dist/hx.js once before the suite, so integration tests run the real bundle.
 - `cli/test/helpers.ts` — Test helpers: temp folders WITH SPACES, isolated HARNESS_HOME, running the built hx.js.
 - `cli/test/hooks.test.ts` — testes de hooks
+- `cli/test/lifecycle-handoff.test.ts` — S15/T03 (B132): one `handoff` event per handoff file, also on compaction.
 - `cli/test/lifecycle.test.ts` — S13/T06: TNN on agent.start, agent_id + task on alert.context, `context` on every Stop, task on usage.
 - `cli/test/limits.test.ts` — B064: plan usage % (5 h and weekly) from the OAuth usage endpoint, throttled in the Stop.
 - `cli/test/lint.test.ts` — testes de lint
@@ -190,6 +191,7 @@ Uma linha por arquivo: caminho e propósito. Mantido pelo hook `post-edit`.
 - `docs/sprints/S13-plan.md` — S13 — Harness mais limpo e eventos para o Dashboard
 - `docs/sprints/S13-release.md` — S13 — Release Report
 - `docs/sprints/S14-plan.md` — S14 — Modelos externos pelo OmniRoute, com o Claude como juiz
+- `docs/sprints/S15-plan.md` — S15 — Modelos de fora direto no provedor, sem o OmniRoute no meio
 - `eslint.config.js` — ESLint flat config
 - `hooks/hooks.json` — hooks do plugin (forma exec chamando o hx)
 - `package-lock.json` — versões travadas das dependências de desenvolvimento

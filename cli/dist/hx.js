@@ -1131,7 +1131,9 @@ function preCompact(input) {
   const fresh = lh && !lh.consumed && (isNaN(alerted) || time(lh.at) >= alerted - 1e3);
   const base2 = { project: c.p.id, session: c.session, sprint: c.st.activeSprint };
   if (fresh) {
-    emit({ ...base2, type: "handoff", data: { mode: "compact", file: path11.basename(lh.file) } });
+    const file2 = path11.basename(lh.file);
+    if (!readEvents((e) => e.type === "handoff" && e.project === c.p.id && e.data.file === file2).length)
+      emit({ ...base2, type: "handoff", data: { mode: "compact", file: file2 } });
   } else {
     const data = {
       tokens: tokensOf(input) ?? 0,
@@ -4266,6 +4268,24 @@ async function check(alias, deps) {
   const w = worker(alias);
   if (!w) return 1;
   const where = `${w.url.replace(/\/+$/, "")}/v1/messages`;
+  for (const [label, text] of [
+    ["pequena", "Responda s\xF3: ok"],
+    [
+      "grande",
+      `Ignore este texto e responda s\xF3: ok
+${"lorem ipsum dolor sit amet ".repeat(3800)}`
+    ]
+  ]) {
+    const fail = await probe(w, where, text, deps.timeoutMs ?? CHECK_TIMEOUT_MS);
+    if (fail) {
+      console.error(`Trabalhador ${alias}: sonda ${label} falhou: ${fail} (${where}).`);
+      return 1;
+    }
+  }
+  console.log(`Trabalhador ${alias} pronto: ${w.model} respondeu \xE0s duas sondas em ${where}.`);
+  return 0;
+}
+async function probe(w, where, text, timeout) {
   try {
     const res = await fetch(where, {
       method: "POST",
@@ -4278,30 +4298,21 @@ async function check(alias, deps) {
       body: JSON.stringify({
         model: w.model,
         max_tokens: 16,
-        messages: [{ role: "user", content: "Responda s\xF3: ok" }]
+        messages: [{ role: "user", content: text }]
       }),
-      signal: AbortSignal.timeout(deps.timeoutMs ?? CHECK_TIMEOUT_MS),
+      signal: AbortSignal.timeout(timeout),
       redirect: "error"
     });
-    if (res.status === 401 || res.status === 403) {
-      console.error(`Trabalhador ${alias}: chave recusada (HTTP ${res.status}) em ${where}.`);
-      return 1;
-    }
-    if (!res.ok) {
-      console.error(`Trabalhador ${alias}: erro HTTP ${res.status} em ${where}.`);
-      return 1;
-    }
+    if (res.status === 401 || res.status === 403) return `chave recusada (HTTP ${res.status})`;
+    if (res.status === 429) return "cota esgotada (HTTP 429)";
+    if (text.length > 1e3 && (res.status === 413 || res.status === 502))
+      return `pedido grande recusado, limite de tamanho (HTTP ${res.status})`;
+    if (!res.ok) return `erro HTTP ${res.status}`;
     const body = await res.json();
-    if (!Array.isArray(body.content)) {
-      console.error(`Trabalhador ${alias}: resposta sem conte\xFAdo em ${where}.`);
-      return 1;
-    }
+    return Array.isArray(body.content) ? null : "resposta sem conte\xFAdo";
   } catch (e) {
-    console.error(`Trabalhador ${alias}: ${where} n\xE3o respondeu (${e.message}).`);
-    return 1;
+    return `provedor n\xE3o respondeu (${e.message})`;
   }
-  console.log(`Trabalhador ${alias} pronto: ${w.model} respondeu em ${where}.`);
-  return 0;
 }
 async function start(args, deps) {
   const p = parseArgs(args);

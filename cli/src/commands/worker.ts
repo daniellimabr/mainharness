@@ -47,11 +47,30 @@ function worker(alias: string | undefined): Worker | null {
   return w;
 }
 
-/** One tiny real /v1/messages call; "pronto" only when the model answers. */
+/** Two real /v1/messages calls (one line = quota, ~100 KB = size); "pronto" only when both answer. */
 async function check(alias: string | undefined, deps: Deps): Promise<number> {
   const w = worker(alias);
   if (!w) return 1;
   const where = `${w.url.replace(/\/+$/, "")}/v1/messages`;
+  for (const [label, text] of [
+    ["pequena", "Responda só: ok"],
+    [
+      "grande",
+      `Ignore este texto e responda só: ok\n${"lorem ipsum dolor sit amet ".repeat(3800)}`,
+    ],
+  ] as const) {
+    const fail = await probe(w, where, text, deps.timeoutMs ?? CHECK_TIMEOUT_MS);
+    if (fail) {
+      console.error(`Trabalhador ${alias}: sonda ${label} falhou: ${fail} (${where}).`);
+      return 1;
+    }
+  }
+  console.log(`Trabalhador ${alias} pronto: ${w.model} respondeu às duas sondas em ${where}.`);
+  return 0;
+}
+
+/** One call; returns the failure cause in words, or null when the model answered. */
+async function probe(w: Worker, where: string, text: string, timeout: number) {
   try {
     const res = await fetch(where, {
       method: "POST",
@@ -64,30 +83,21 @@ async function check(alias: string | undefined, deps: Deps): Promise<number> {
       body: JSON.stringify({
         model: w.model,
         max_tokens: 16,
-        messages: [{ role: "user", content: "Responda só: ok" }],
+        messages: [{ role: "user", content: text }],
       }),
-      signal: AbortSignal.timeout(deps.timeoutMs ?? CHECK_TIMEOUT_MS),
+      signal: AbortSignal.timeout(timeout),
       redirect: "error",
     });
-    if (res.status === 401 || res.status === 403) {
-      console.error(`Trabalhador ${alias}: chave recusada (HTTP ${res.status}) em ${where}.`);
-      return 1;
-    }
-    if (!res.ok) {
-      console.error(`Trabalhador ${alias}: erro HTTP ${res.status} em ${where}.`);
-      return 1;
-    }
+    if (res.status === 401 || res.status === 403) return `chave recusada (HTTP ${res.status})`;
+    if (res.status === 429) return "cota esgotada (HTTP 429)";
+    if (text.length > 1000 && (res.status === 413 || res.status === 502))
+      return `pedido grande recusado, limite de tamanho (HTTP ${res.status})`;
+    if (!res.ok) return `erro HTTP ${res.status}`;
     const body = (await res.json()) as { content?: unknown };
-    if (!Array.isArray(body.content)) {
-      console.error(`Trabalhador ${alias}: resposta sem conteúdo em ${where}.`);
-      return 1;
-    }
+    return Array.isArray(body.content) ? null : "resposta sem conteúdo";
   } catch (e) {
-    console.error(`Trabalhador ${alias}: ${where} não respondeu (${(e as Error).message}).`);
-    return 1;
+    return `provedor não respondeu (${(e as Error).message})`;
   }
-  console.log(`Trabalhador ${alias} pronto: ${w.model} respondeu em ${where}.`);
-  return 0;
 }
 
 /** Runs the handoff in `claude -p` (executor agent) on the alias model; logs agent.start, usage, agent.end. */
