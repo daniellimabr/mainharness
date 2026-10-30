@@ -101,6 +101,6 @@ Daniel muda a decisão da S14 "nenhum gasto" em um ponto só: **US$ 5 de crédit
 ## Aprovação
 
 - **Aprovado por:** Daniel
-- **Data/hora:** 2026-10-30 14:16:07 (horário de Brasília) — UTC 2026-10-30T17:16:07Z
-- **Hash SHA-256 do plano** (conteúdo antes desta seção, finais de linha normalizados para LF): `b72be48be3cc92898b8107aa3e51f2bcd2d6ee8222e01a55e0b613be85fbf905`
+- **Data/hora:** 2026-10-30 14:16:23 (horário de Brasília) — UTC 2026-10-30T17:16:23Z
+- **Hash SHA-256 do plano** (conteúdo antes desta seção, finais de linha normalizados para LF): `1f8438870c927030f02ff075b08e740a2aac3256d3aedbd4db4281b889f04d64`
 - **Versão do harness:** 0.12.0
