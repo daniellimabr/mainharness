@@ -61,6 +61,7 @@ Estilo **Ponytail**: o melhor código é o que você não escreveu. Antes de esc
 
 ## Git e segurança
 Direto na `main`, um commit por tarefa, no formato `<tipo>(SNN/TNN): <resumo>` (tipo `feat`, `fix`, `docs`, `chore`, `refactor` ou `test`). Nada de `push --force`, `reset --hard` ou apagar fora do repo (o hook `pre-bash` bloqueia). Nunca edite `C:\harness-stable`.
+`hx release` e `hx rollback`: o modo auto nega; nunca tente. Peça a Daniel que digite o comando no terminal dele, informando a linha exata.
 
 ## Limite de contexto
 Ao receber o pedido de handoff (a partir de 120 mil tokens), escreva-o na hora com `hx handoff` (heredoc no stdin, pelo Bash: o PowerShell 5.1 troca acentos por `?` ao mandar texto para o `hx`) e continue a tarefa: a compactação automática libera espaço e o handoff volta para você.

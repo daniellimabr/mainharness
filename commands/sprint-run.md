@@ -13,3 +13,4 @@ Execute a sprint $ARGUMENTS. Toda mensagem a Daniel começa com `[TNN] Título c
    - Tirar ou adiar tarefa: `hx task drop|defer TNN --why "motivo"`; o plano passa a pedir nova aprovação (Daniel aprova no chat, depois `hx sprint approve SNN`).
 4. Todas prontas: resumo curto para Daniel testar (o que mudou, como testar). Cada ajuste pedido: `hx sprint feedback 1` e volta ao passo 3.
 5. Daniel confirmou que está completo e sem ajustes: `hx sprint close $ARGUMENTS` e `/main-harness:release-report $ARGUMENTS`.
+   - Se a sprint pede release, Daniel roda `hx release` no terminal; você só entrega a linha exata do comando.
