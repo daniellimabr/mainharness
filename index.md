@@ -151,6 +151,7 @@ Uma linha por arquivo: caminho e propósito. Mantido pelo hook `post-edit`.
 - `docs/adr/0012-trabalhadores-gemini.md` — ADR 0012 — Trabalhadores no Gemini pelo OmniRoute
 - `docs/adr/0013-modelo-por-papel.md` — ADR 0013 — Um modelo fixo por papel
 - `docs/adr/0014-regra-quem-executa-revisada.md` — ADR 0014 — Regra "quem executa" revisada (Haiku, Gemini desligado, Reviewer Sonnet/Opus)
+- `docs/adr/0016-deepseek-direto-pode-executar.md` — ADR 0016 — DeepSeek direto pode executar tarefa de clone
 - `docs/avaliacao-observabilidade.md` — Avaliação de observabilidade: Main Harness e Dashboard IA
 - `docs/backlog.md` — Backlog do Main Harness
 - `docs/contracts/events.md` — Contrato de eventos: Main Harness e Dashboard IA
@@ -162,6 +163,7 @@ Uma linha por arquivo: caminho e propósito. Mantido pelo hook `post-edit`.
 - `docs/experiments/S14-protocolo.md` — S14 — Protocolo do teste cego
 - `docs/experiments/S14/desafio-3.md` — Handoff — S14 / Desafio 3: `hx worker list`
 - `docs/experiments/S14/hidden/desafio-3/cli/test/d3-hidden.test.ts` — S14 / desafio 3 hidden cases: `hx worker list` edge cases the model never sees.
+- `docs/experiments/S15/notas-juiz.md` — S15 — Notas do juiz cego
 - `docs/omniroute.md` — OmniRoute: modelos grátis
 - `docs/roadmap.md` — Roadmap do Main Harness
 - `docs/sprints/S00-plan.md` — sprint plan S00 (criação do harness)
