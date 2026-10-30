@@ -8,7 +8,7 @@
 
 Daniel descobre, com números, se algum modelo de fora (DeepSeek V4 Pro, Kimi, GLM, Gemini 4 Argon) faz o trabalho de um clone com qualidade de Sonnet, **chamando o provedor direto**, com chave e franquia próprias, fora do limite de 5 h e do semanal do Claude. A S14 provou que o gargalo era a rota grátis do OmniRoute (`cfp/` corta o pedido em 6.000 caracteres), não os modelos. Os provedores abaixo falam o formato Anthropic por endereço próprio e não têm esse corte; o `hx worker` (S14) já aceita endereço e chave por apelido.
 
-Daniel muda a decisão da S14 "nenhum gasto": agora aceita um **crédito pequeno por provedor** (pago por uso) para testar. A sprint também limpa o backlog de ajustes do `hx` (B132, B134, B135).
+Daniel muda a decisão da S14 "nenhum gasto" em um ponto só: **US$ 5 de crédito na DeepSeek** (já comprados, chave gerada). Nenhum outro gasto: GLM, Kimi, Argon e Sonnet pela API só entram se existir camada grátis, sem cartão nem crédito. A sprint também limpa o backlog de ajustes do `hx` (B132, B134, B135).
 
 ## Escopo
 
@@ -17,10 +17,9 @@ Daniel muda a decisão da S14 "nenhum gasto": agora aceita um **crédito pequeno
 3. **Evento `handoff` sem duplicata (B132).** Um por arquivo, também na compactação.
 4. **Contas e apelidos diretos (Tech Lead + Daniel).** Apelidos em `~/.harness/config.json` (chave fora do repo, nunca em chat ou commit):
    - `deepseek`: `https://api.deepseek.com/anthropic`, `deepseek-v4-pro`. Recomendado como primeiro: endpoint Anthropic oficial e o mais barato.
-   - `glm`: `https://api.z.ai/api/anthropic`. Opcional.
-   - `kimi`: endpoint Anthropic da Moonshot (confirmar a URL no painel deles). Opcional.
-   - `argon`: o Gemini não fala o formato Anthropic; entra pelo OmniRoute **com a chave paga da Google no lugar da grátis** (a grátis dá 429 com limite 0). Opcional.
-   - `sonnet-api` (opcional, de controle): Sonnet pela API da Anthropic com chave de Console. É uma franquia à parte da assinatura: cobra por token, sem o limite de 5 h.
+   - `glm`: `https://api.z.ai/api/anthropic`. Só se houver camada grátis.
+   - `kimi`: endpoint Anthropic da Moonshot (confirmar a URL no painel deles). Só se houver camada grátis.
+   - `argon`: o Gemini não fala o formato Anthropic; entra pelo OmniRoute e a API da Google não tem camada grátis para ele (limite 0). **Fica fora**, sem gasto novo; B133 segue aberto.
    - Passam no `check` novo antes de qualquer corrida.
 5. **Teste cego** (mesmo método da S12 e S14: testes escondidos, nota 0–25, juiz cego). Desafios 1, 2 e 3, nos apelidos que passarem na sonda. Linha de base já medida: Sonnet e Opus nos 3 desafios (S12 e S14), sem rodar de novo. Medidas: nota, tempo, US$ pagos, falhas do provedor.
 6. **Resultado, ADR 0016 e decisão de Daniel.** Onde cada externo pode executar (ou "nenhum"), com custo real por tarefa contra o Sonnet. Se algum passar, `worker (<apelido>)` entra na coluna Agente (resolve B130) e `agents/tech-lead.md` e a `sprint-plan` ganham a regra.
@@ -30,7 +29,7 @@ Daniel muda a decisão da S14 "nenhum gasto": agora aceita um **crédito pequeno
 
 - B109, B123, B128, B129, B077, B078: ficam para a próxima.
 - GPT-6 Astra (pede ChatGPT Plus), Gemini 4 Carbon (fechado).
-- Assinar Google AI Pro: o Argon é testado pela API paga, e Daniel decide com números.
+- Argon (API paga) e qualquer gasto além dos US$ 5 da DeepSeek.
 - Mudar quem executa nos outros projetos antes do ADR 0016.
 
 ## Critérios de aceite
@@ -80,10 +79,10 @@ Daniel muda a decisão da S14 "nenhum gasto": agora aceita um **crédito pequeno
 
 **Espera por Daniel (T04):**
 
-- (a) Criar a conta e a chave da DeepSeek (crédito de US$ 5 basta) e colar no `~/.harness/config.json` (nunca no chat). GLM, Kimi, Argon e `sonnet-api` são opcionais.
+- (a) Criar a conta e a chave da DeepSeek (US$ 5, já pago) e colar no `~/.harness/config.json` (nunca no chat). GLM e Kimi só se a conta grátis liberar o modelo; Argon fica fora.
 - (b) Decidir o ADR 0016 na T06.
 - (c) O teste final.
-- **Custo extra fora do Claude:** estimado em poucos dólares (a S14 gastou US$ 0,38 por corrida de Sonnet; o DeepSeek custa uma fração disso). O preço do Argon (US$ 2 / US$ 10 por milhão até 30/11, sujeito a confirmar) e o piso de crédito da Google ficam a confirmar na T04.
+- **Custo extra fora do Claude:** no máximo os US$ 5 da DeepSeek (a corrida de Sonnet da S14 custou US$ 0,38; a do DeepSeek é uma fração). Se o crédito acabar, a corrida para; nada é recarregado sem Daniel.
 
 **Git:** um commit por tarefa na `main`, `<tipo>(S15/TNN): <resumo>`.
 
@@ -98,3 +97,10 @@ Daniel muda a decisão da S14 "nenhum gasto": agora aceita um **crédito pequeno
 **Fatores de calibração:** relógio S12 0,96, S13 0,86 e S14 1,31, média **1,04**; soma S12 0,81, S13 1,22 e S14 0,84, média **0,96**. Referência: T01 parece com a S14/T01 (12 min de trabalho, 14 de fila); T05 com a S14/T05 (2 h 23 min, estourou por trocar de rota três vezes).
 
 **Total estimado:** soma 4 h 35 min brutas, **4 h 23 min** calibradas (× 0,96). Relógio do agente: caminho T01 → T04 → T05 → T06 → T07 = 220 min brutos, cerca de **3 h 49 min** (× 1,04), sem contar a espera por Daniel nas chaves.
+
+## Aprovação
+
+- **Aprovado por:** Daniel
+- **Data/hora:** 2026-10-30 14:16:07 (horário de Brasília) — UTC 2026-10-30T17:16:07Z
+- **Hash SHA-256 do plano** (conteúdo antes desta seção, finais de linha normalizados para LF): `b72be48be3cc92898b8107aa3e51f2bcd2d6ee8222e01a55e0b613be85fbf905`
+- **Versão do harness:** 0.12.0
