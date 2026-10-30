@@ -34,7 +34,7 @@ export function run(args: string[]): number {
     return 1;
   }
   if (!id) throw new Error(`informe a sprint: hx sprint ${sub} S01`);
-  if (sub === "approve") return approve(ctx, p, id, force);
+  if (sub === "approve") return approve(ctx, p, id);
   if (sub === "open") return open(ctx, p, id);
   if (sub === "close") return close(ctx, p, id, force);
   const list = renderTaskList(ctx.root, id);
@@ -50,12 +50,12 @@ const base = (ctx: CommandContext, sprint: string) => ({
   agent: ctx.agent,
 });
 
-function approve(ctx: CommandContext, p: Parsed, id: string, force: boolean): number {
+function approve(ctx: CommandContext, p: Parsed, id: string): number {
   const { file, text, plan } = loadPlan(ctx.root, id);
   // fillApproval separates a new section with a blank line; hash the text as it will be written.
   const sha = planHash(text.replace(/\n*$/, "\n\n"));
   let a = plan.approval;
-  if (a && a.sha256 !== sha && !force) throw new Error(CHANGED);
+  // B095: a changed plan is re-approved here, replacing the old Aprovação section
   if (!a || a.sha256 !== sha) {
     a = { approver: flagStr(p, "by") ?? "Daniel", at: atFlag(p), sha256: sha };
     writePlan(file, text, fillApproval(text, a, harnessVersion()));
@@ -83,7 +83,7 @@ function open(ctx: CommandContext, p: Parsed, id: string): number {
   const { text, plan } = loadPlan(ctx.root, id);
   if (!plan.approval)
     throw new Error(
-      `plano ${id} ainda não aprovado (rode hx sprint approve ${id} após o ok de Daniel)`,
+      `plano ${id} ainda não aprovado: Daniel precisa rodar hx sprint approve ${id} no terminal dele`,
     );
   if (plan.approval.sha256 !== planHash(text)) throw new Error(CHANGED);
   if (!plan.tasks.length) throw new Error("o plano não tem tarefas na seção Tarefas");

@@ -34,6 +34,7 @@ export interface Plan {
 }
 
 const APPROVAL_RE = /^## Aprovação/m;
+const APPROVAL_LINE = /^## Aprovação[^\n]*$/m;
 const EXEC_HEADING = "## Execução";
 
 export function planPath(projectRoot: string, sprintId: string): string {
@@ -370,9 +371,11 @@ export function fillApproval(text: string, a: Approval, harness: string): string
     `- **Hash SHA-256 do plano** (conteúdo antes desta seção, finais de linha normalizados para LF): \`${a.sha256}\`\n` +
     `- **Versão do harness:** ${harness}\n\n`;
   const sec = section(t, /^## Aprovação[^\n]*$/m);
-  const out = sec
-    ? t.slice(0, sec.start) + block + t.slice(sec.end)
-    : t.replace(/\n*$/, "\n\n") + block;
+  let tail = sec ? t.slice(sec.end) : "";
+  // B095: any later Aprovação section is stale; leave only the new one
+  for (let dup = section(tail, APPROVAL_LINE); dup; dup = section(tail, APPROVAL_LINE))
+    tail = tail.slice(0, dup.start) + tail.slice(dup.end);
+  const out = sec ? t.slice(0, sec.start) + block + tail : t.replace(/\n*$/, "\n\n") + block;
   return out.replace(/\n+$/, "\n");
 }
 

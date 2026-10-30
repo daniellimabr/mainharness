@@ -5,7 +5,7 @@ import { flagStr, parseArgs } from "../core/args";
 import { commandContext } from "../core/context";
 import { logError } from "../core/log";
 import { readState, updateState, type TaskTimes } from "../core/state";
-import { emit } from "../events/emit";
+import { emit, readEvents } from "../events/emit";
 import { atFlag, loadPlan } from "../sprint/cmd";
 import { dropTask, renderTaskList, taskLine, updateExecution, writePlan } from "../sprint/index";
 import { refreshAuto } from "./handoff";
@@ -82,8 +82,14 @@ export function run(args: string[]): number {
     if (!PHASES.includes(phase))
       throw new Error(`fase inválida '${phase}' (use: ${PHASES.join(", ")})`);
     if (!prev?.start) throw new Error(`tarefa ${id} não está em andamento`);
-    if (prev.end) return alreadyDone(id);
-    times = { ...prev, phase };
+    if (prev.end) {
+      // B083: feedback after the task ended reopens it; the next done sums this pass (B053).
+      const reopened = readEvents(
+        (e) => e.project === ctx.id && e.sprint === sprint && e.type === "sprint.feedback",
+      ).some((e) => Date.parse(e.ts) > Date.parse(prev.end ?? ""));
+      if (!reopened) return alreadyDone(id);
+      times = { start: at, phase };
+    } else times = { ...prev, phase };
   } else if (sub === "done") {
     if (prev?.end) return alreadyDone(id);
     const start = prev?.start ?? at;
@@ -124,6 +130,7 @@ export function run(args: string[]): number {
         const out = execFileSync("git", ["status", "--porcelain"], {
           cwd: ctx.root,
           encoding: "utf8",
+          stdio: ["ignore", "pipe", "ignore"],
         }).trim();
         uncommitted = `\n\nArquivos não commitados:\n${out || "nenhum"}`;
       } catch {

@@ -174,7 +174,8 @@ describe("sprint commands (real bundle, project with spaces)", () => {
     const r = hx("sprint", "open", "S01");
     expect(r.code).toBe(1);
     expect(r.stderr).toContain("plano mudou depois da aprovação: precisa de nova aprovação");
-    expect(hx("sprint", "approve", "S01").code).toBe(1);
+    expect(hx("sprint", "approve", "S01").code).toBe(0); // B095: re-approval replaces the section
+    expect(hx("sprint", "open", "S01").code).toBe(0);
   });
 
   it("task phase shows on the 🔄 row only, rejects bad input and is cleared by done", () => {
