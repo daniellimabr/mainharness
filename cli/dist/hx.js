@@ -528,6 +528,7 @@ function buildEvent(input) {
 }
 function emit(input) {
   const ev = buildEvent(input);
+  if (process.env.HARNESS_DASHBOARD === "off") return ev;
   const errs = validateEvent(ev);
   if (errs.length) throw new Error(`invalid event ${ev.type}: ${errs.join("; ")}`);
   const dir = home.events();
@@ -950,8 +951,10 @@ function parseInput(raw) {
   if (!raw.trim()) return {};
   return JSON.parse(raw);
 }
-async function runHook(name, handler, raw = readStdin()) {
+async function runHook(name, handler, raw) {
+  if (process.env.HARNESS_DASHBOARD === "off" && OBSERVATION.has(name)) return 0;
   try {
+    raw ??= readStdin();
     const out = await handler(parseInput(raw));
     if (out.stdout) process.stdout.write(out.stdout);
     if (out.stderr) process.stderr.write(out.stderr);
@@ -964,12 +967,24 @@ async function runHook(name, handler, raw = readStdin()) {
 function jsonOut(obj) {
   return { stdout: JSON.stringify(obj) };
 }
-var fs10;
+var fs10, OBSERVATION;
 var init_runner = __esm({
   "cli/src/hooks/runner.ts"() {
     "use strict";
     fs10 = __toESM(require("node:fs"));
     init_log();
+    OBSERVATION = /* @__PURE__ */ new Set([
+      "prompt",
+      "subagent-start",
+      "subagent-stop",
+      "stop",
+      "pre-compact",
+      "session-end",
+      "notification",
+      "permission-request",
+      "stop-failure",
+      "post-tool-failure"
+    ]);
   }
 });
 
@@ -1834,9 +1849,14 @@ function classifyCommand(command, cwd, root, stable, vars = /* @__PURE__ */ new 
   }
   return ask;
 }
+function commandWarnings(command) {
+  if (typeof command !== "string") return [];
+  return TRAPS.filter(([re]) => re.test(command)).map(([, msg]) => msg);
+}
 function preBash(input) {
   const command = input.tool_input?.command;
   if (typeof command !== "string" || !command.trim()) return {};
+  const warnings = commandWarnings(command);
   const cwd = input.cwd || process.cwd();
   let root = cwd;
   let stable = DEFAULT_CONFIG.stableDir;
@@ -1846,7 +1866,13 @@ function preBash(input) {
   } catch {
   }
   const v = classifyCommand(command, cwd, root, stable);
-  if (!v) return {};
+  if (!v)
+    return warnings.length ? jsonOut({
+      hookSpecificOutput: {
+        hookEventName: "PreToolUse",
+        additionalContext: warnings.join("\n")
+      }
+    }) : {};
   return jsonOut({
     hookSpecificOutput: {
       hookEventName: "PreToolUse",
@@ -1855,7 +1881,7 @@ function preBash(input) {
     }
   });
 }
-var import_node_child_process3, fs15, os2, path16, shellVars, RECURSIVE_DELETE, GIT_WRITES, FILE_WRITERS, COPIERS, WRAPPERS, UNCHECKABLE, PS_VALUE_OPTS, PS_COMMAND;
+var import_node_child_process3, fs15, os2, path16, shellVars, RECURSIVE_DELETE, GIT_WRITES, FILE_WRITERS, COPIERS, WRAPPERS, UNCHECKABLE, PS_VALUE_OPTS, PS_COMMAND, TRAPS;
 var init_pre_bash = __esm({
   "cli/src/hooks/pre-bash.ts"() {
     "use strict";
@@ -1932,6 +1958,28 @@ var init_pre_bash = __esm({
     UNCHECKABLE = { decision: "ask", reason: "Comando n\xE3o verific\xE1vel: confirme." };
     PS_VALUE_OPTS = /^-(ex[a-z]*|ep|w[a-z]*|v[a-z]*|in[a-z]*|o[a-z]*|conf[a-z]*|wd)$/i;
     PS_COMMAND = /^-c(o(m(m(a(n(d)?)?)?)?)?)?$/i;
+    TRAPS = [
+      [
+        /\b(set-content|out-file)\b[^|;\n]*-enc\w*[ :]+utf-?8\b/i,
+        "Set-Content/Out-File -Encoding utf8 grava BOM e quebra acentos: use a ferramenta Write/Edit."
+      ],
+      [
+        /\[(system\.)?io\.(file|path)\]::/i,
+        "M\xE9todos .NET ([IO.File]::) no PowerShell d\xE3o erro: use Read/Write/Edit ou cmdlets."
+      ],
+      [
+        /(?:^|[\s;|&(])hx\b[^;|&\n]*\s--help\b/,
+        "hx --help n\xE3o existe: leia o index.md ou rode `hx` sem argumentos."
+      ],
+      [
+        /\b(?:hx|git|npm|npx|node)\b[^;|&\n]*2>&1/,
+        "2>&1 em execut\xE1vel nativo no PowerShell gera NativeCommandError: tire o 2>&1 (o stderr j\xE1 vem junto)."
+      ],
+      [
+        /\bhx\b[^;\n|]*\|\s*select(?:-object)?\s+-first/i,
+        "Select-Object -First corta a sa\xEDda do hx: rode sem o pipe."
+      ]
+    ];
   }
 });
 
@@ -2690,7 +2738,10 @@ function fillApproval(text, a, harness) {
 
 `;
   const sec = section(t, /^## Aprovação[^\n]*$/m);
-  const out = sec ? t.slice(0, sec.start) + block + t.slice(sec.end) : t.replace(/\n*$/, "\n\n") + block;
+  let tail = sec ? t.slice(sec.end) : "";
+  for (let dup = section(tail, APPROVAL_LINE); dup; dup = section(tail, APPROVAL_LINE))
+    tail = tail.slice(0, dup.start) + tail.slice(dup.end);
+  const out = sec ? t.slice(0, sec.start) + block + tail : t.replace(/\n*$/, "\n\n") + block;
   return out.replace(/\n+$/, "\n");
 }
 function dropTask(text, id2, label, why) {
@@ -2995,7 +3046,7 @@ function renderMetrics(sprintId2, plan, m) {
     `| Handoffs | ${m.handoffs} |`
   ].join("\n");
 }
-var import_node_crypto2, fs21, path22, APPROVAL_RE, EXEC_HEADING, PAUSE_MS, lf, cells, DONE, DOING, TODO, EXEC_HEADER, EXEC_NOTE, TOTAL, dateHM, r1, r4, num, usd2, tok, joinUsd;
+var import_node_crypto2, fs21, path22, APPROVAL_RE, APPROVAL_LINE, EXEC_HEADING, PAUSE_MS, lf, cells, DONE, DOING, TODO, EXEC_HEADER, EXEC_NOTE, TOTAL, dateHM, r1, r4, num, usd2, tok, joinUsd;
 var init_sprint = __esm({
   "cli/src/sprint/index.ts"() {
     "use strict";
@@ -3006,6 +3057,7 @@ var init_sprint = __esm({
     init_time();
     init_emit();
     APPROVAL_RE = /^## Aprovação/m;
+    APPROVAL_LINE = /^## Aprovação[^\n]*$/m;
     EXEC_HEADING = "## Execu\xE7\xE3o";
     PAUSE_MS = 30 * 6e4;
     lf = (text) => text.replace(/\r\n/g, "\n");
@@ -3441,8 +3493,13 @@ function run4(args) {
     if (!PHASES.includes(phase))
       throw new Error(`fase inv\xE1lida '${phase}' (use: ${PHASES.join(", ")})`);
     if (!prev?.start) throw new Error(`tarefa ${id2} n\xE3o est\xE1 em andamento`);
-    if (prev.end) return alreadyDone(id2);
-    times = { ...prev, phase };
+    if (prev.end) {
+      const reopened = readEvents(
+        (e) => e.project === ctx.id && e.sprint === sprint && e.type === "sprint.feedback"
+      ).some((e) => Date.parse(e.ts) > Date.parse(prev.end ?? ""));
+      if (!reopened) return alreadyDone(id2);
+      times = { start: at, phase };
+    } else times = { ...prev, phase };
   } else if (sub === "done") {
     if (prev?.end) return alreadyDone(id2);
     const start2 = prev?.start ?? at;
@@ -3478,7 +3535,8 @@ function run4(args) {
       try {
         const out = (0, import_node_child_process6.execFileSync)("git", ["status", "--porcelain"], {
           cwd: ctx.root,
-          encoding: "utf8"
+          encoding: "utf8",
+          stdio: ["ignore", "pipe", "ignore"]
         }).trim();
         uncommitted = `
 
@@ -3530,7 +3588,7 @@ function run5(args) {
     return 1;
   }
   if (!id2) throw new Error(`informe a sprint: hx sprint ${sub} S01`);
-  if (sub === "approve") return approve(ctx, p, id2, force);
+  if (sub === "approve") return approve(ctx, p, id2);
   if (sub === "open") return open(ctx, p, id2);
   if (sub === "close") return close(ctx, p, id2, force);
   const list = renderTaskList(ctx.root, id2);
@@ -3538,11 +3596,10 @@ function run5(args) {
   console.log(list);
   return 0;
 }
-function approve(ctx, p, id2, force) {
+function approve(ctx, p, id2) {
   const { file: file2, text, plan } = loadPlan(ctx.root, id2);
   const sha = planHash(text.replace(/\n*$/, "\n\n"));
   let a = plan.approval;
-  if (a && a.sha256 !== sha && !force) throw new Error(CHANGED);
   if (!a || a.sha256 !== sha) {
     a = { approver: flagStr(p, "by") ?? "Daniel", at: atFlag(p), sha256: sha };
     writePlan2(file2, text, fillApproval(text, a, harnessVersion()));
@@ -3569,7 +3626,7 @@ function open(ctx, p, id2) {
   const { text, plan } = loadPlan(ctx.root, id2);
   if (!plan.approval)
     throw new Error(
-      `plano ${id2} ainda n\xE3o aprovado (rode hx sprint approve ${id2} ap\xF3s o ok de Daniel)`
+      `plano ${id2} ainda n\xE3o aprovado: Daniel precisa rodar hx sprint approve ${id2} no terminal dele`
     );
   if (plan.approval.sha256 !== planHash(text)) throw new Error(CHANGED);
   if (!plan.tasks.length) throw new Error("o plano n\xE3o tem tarefas na se\xE7\xE3o Tarefas");

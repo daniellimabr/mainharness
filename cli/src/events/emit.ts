@@ -40,6 +40,7 @@ export function buildEvent(input: EmitInput): HarnessEvent {
 /** Validates and appends one event. Throws on schema violation (never writes a bad line). */
 export function emit(input: EmitInput): HarnessEvent {
   const ev = buildEvent(input);
+  if (process.env.HARNESS_DASHBOARD === "off") return ev; // experiment switch: no I/O
   const errs = validateEvent(ev);
   if (errs.length) throw new Error(`invalid event ${ev.type}: ${errs.join("; ")}`);
   const dir = home.events();

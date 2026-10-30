@@ -42,16 +42,29 @@ export function parseInput(raw: string): HookInput {
   return JSON.parse(raw) as HookInput;
 }
 
+/** Hooks that only record or measure. Protection hooks (pre-bash, pre-edit, post-edit) and session-start are not here. */
+const OBSERVATION = new Set([
+  "prompt",
+  "subagent-start",
+  "subagent-stop",
+  "stop",
+  "pre-compact",
+  "session-end",
+  "notification",
+  "permission-request",
+  "stop-failure",
+  "post-tool-failure",
+]);
+
 /**
  * Runs a handler with the rule "hooks never break the session": any thrown error is logged
  * and turned into exit 0. Only an explicit exitCode (2 = block / feedback) is honored.
  */
-export async function runHook(
-  name: string,
-  handler: HookHandler,
-  raw = readStdin(),
-): Promise<number> {
+export async function runHook(name: string, handler: HookHandler, raw?: string): Promise<number> {
+  // HARNESS_DASHBOARD=off: observation-only hooks do nothing (not even read stdin).
+  if (process.env.HARNESS_DASHBOARD === "off" && OBSERVATION.has(name)) return 0;
   try {
+    raw ??= readStdin();
     const out = await handler(parseInput(raw));
     if (out.stdout) process.stdout.write(out.stdout);
     if (out.stderr) process.stderr.write(out.stderr);
