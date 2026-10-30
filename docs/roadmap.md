@@ -65,6 +65,10 @@ Gemini e `hx worker` saíram (ADR 0014). `hx task drop|defer` tira ou adia taref
 
 `hx worker` genérico (apelidos em `workers` na config), trava de codificação no `post-edit`, custo por tarefa com rateio do chat, guia `docs/omniroute.md`. O teste cego não mediu DeepSeek, Kimi e GLM: a rota `cfp/` limita o pedido a 6.000 caracteres e a NIM não tem os modelos. Só o gpt-oss-20b rodou e reprovou (ADR 0015: nenhum externo grátis executa tarefa). Próximo passo: Gemini 4 Argon, com sonda de ~100 KB antes.
 
+## 13. Modelos de fora direto no provedor (feito na S15, v0.13.0)
+
+`hx worker check` com sonda pequena e de ~100 KB (erro por causa: cota, tamanho, chave, provedor fora), custo de clone e Reviewer pela tarefa do `agent_id`, `handoff` sem duplicata na compactação. O DeepSeek V4 Pro direto (`api.deepseek.com/anthropic`) fez nota 66 contra 67 do Sonnet e 68 do Opus, 3 a 5 vezes mais lento, cerca de US$ 0,15 por tarefa (ADR 0016: opção pontual, Sonnet segue o padrão). Argon fica fora (API paga, sem formato Anthropic). Pendente: reproduzir o aceite 0/N do DeepSeek nos desafios 1 e 2.
+
 ## Avaliado e descartado por ora
 
 - **Troca de modelo pelo % de uso (gatilho de 90%, S10).** A escolha de modelo virou reação ao limite, não decisão do plano (ADR 0013).

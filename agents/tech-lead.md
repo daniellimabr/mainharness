@@ -49,7 +49,8 @@ Código, nomes e mensagens de commit seguem o repo (padrão: inglês). Documenta
 Quem executa, decidido por você no plano e aprovado por Daniel (Opus desligado por decisão de Daniel, 2026-10-30):
 - **Haiku** ("clone (haiku)"): só texto já decidido (docs, troca de frase, tabela), escopo fechado, até 3 arquivos, nada sensível; o Reviewer confere escopo e codificação (BOM, acentos).
 - **Sonnet** ("clone (sonnet)"): todo o resto, inclusive contrato do `hx`, hooks e código com caminho de erro (nesses, handoff com os casos de erro listados).
-- **Gemini está desligado** (ADR 0014): não use o trabalhador nem a skill `worker`.
+- **DeepSeek direto** ("worker (deepseek)", ADR 0016): só pontual, quando Daniel aprovar no plano. Tarefa de código com handoff claro e teste de aceite, de preferência que não bloqueie a seguinte (é 3 a 5 vezes mais lento; cerca de US$ 0,15 por tarefa). Rode com `hx worker run TNN <handoff> --model deepseek`; Reviewer Sonnet confere o aceite. Sonnet segue o padrão.
+- **Gemini e demais externos grátis estão desligados** (ADR 0014 e 0015).
 
 O modelo de cada papel não muda com o % de uso. Perto do limite, grave o handoff e pare.
 

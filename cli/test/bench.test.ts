@@ -8,7 +8,7 @@ import { REPO_ROOT, rm, tempDir } from "./helpers";
 const BENCH = path.join(REPO_ROOT, "scripts", "bench.mjs");
 const TOKEN = "sk-omni-bench-secret";
 const IN = path.join("docs", "experiments", "S12"); // challenges 1 and 2 keep their handoff here
-const OUT = path.join("docs", "experiments", "S14");
+const OUT = path.join("docs", "experiments", "S15");
 
 // Fake claude: echoes the token everywhere it could leak, edits a file, prints the -p json result.
 const FAKE = `

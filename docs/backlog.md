@@ -1,4 +1,4 @@
-﻿# Backlog do Main Harness
+# Backlog do Main Harness
 
 Itens ainda não planejados. Pedidos dos projetos chegam pelo `inbox/` e `/inbox` os traz para cá. Melhorias vindas de retrospectivas entram via `hx request`.
 
@@ -137,9 +137,9 @@ Itens ainda não planejados. Pedidos dos projetos chegam pelo `inbox/` e `/inbox
 | B127 | Atribuir custo e chamadas de clones e Reviewer à tarefa em andamento, inclusive em paralelo (6thgear S03: 1533 chamadas "sem-tarefa") | inbox: 2026-10-29-6thgear-atribuir-custo-e-chamadas-as-tarefas.md | alta | feito (S14) |
 | B128 | `hx sprint approve` barrado: dizer que Daniel precisa rodar o comando no terminal dele | inbox: 2026-10-29-6thgear-mensagem-do-sprint-approve-bloqueado.md | média | novo |
 | B129 | Revisão da tarefa final não conta o tempo em que outras tarefas ou ajustes correm | inbox: 2026-10-29-6thgear-tempo-de-revisao-da-tarefa-final-inflado.md | baixa | novo |
-| B130 | `sprint-plan` (template e validação) recusa `gemini` na coluna Agente (ADR 0014) | inbox: 2026-10-29-dashboard-ia-sprint-plan-recusar-o-agente-gemini.md | baixa | novo |
+| B130 | `sprint-plan` (template e validação) recusa `gemini` na coluna Agente (ADR 0014) | inbox: 2026-10-29-dashboard-ia-sprint-plan-recusar-o-agente-gemini.md | baixa | feito (S15): `gemini` segue desligado pela regra em `agents/tech-lead.md`; sem validação em código |
 | B131 | Custo do chat principal com várias tarefas em andamento: atribuir ou ratear, em vez de "sem-tarefa" | inbox: 2026-10-29-main-harness-custo-do-tech-lead-em-tarefas-paralelas-fica-sem-tarefa.md | média | feito (S14) |
-| B132 | Evento `handoff` único por arquivo (dedupe), hoje duplica na compactação | inbox: 2026-10-29-main-harness-evento-handoff-gravado-em-duplicata-na-compactacao.md | média | novo |
-| B133 | Testar `gemini/gemini-4-argon` como executor (desafio 3, sonda de ~100 KB antes); na S14 deu 429 até em pedido de uma linha (cota) | S14, decisão de Daniel | média | novo |
-| B134 | `hx worker check` sonda pedido grande (~100 KB) e de uma linha (separa cota de tamanho) antes de dar "pronto" | inbox: 2026-10-30-main-harness-hx-worker-check-deve-sondar-pedido-grande-nao-so-curto.md | média | novo |
-| B135 | Custo de cada clone atribuído pela tarefa dele (`agent_id`), não rateado igual entre clones em paralelo | inbox: 2026-10-30-main-harness-custo-por-tarefa-rateado-igual-entre-clones-em-paralelo.md | baixa | novo |
+| B132 | Evento `handoff` único por arquivo (dedupe), hoje duplica na compactação | inbox: 2026-10-29-main-harness-evento-handoff-gravado-em-duplicata-na-compactacao.md | média | feito (S15) |
+| B133 | Testar `gemini/gemini-4-argon` como executor (desafio 3, sonda de ~100 KB antes); na S14 deu 429 até em pedido de uma linha (cota) | S14, decisão de Daniel | média | feito (S15): deepseek testado direto (ADR 0016); Argon fora (API paga, sem formato Anthropic) |
+| B134 | `hx worker check` sonda pedido grande (~100 KB) e de uma linha (separa cota de tamanho) antes de dar "pronto" | inbox: 2026-10-30-main-harness-hx-worker-check-deve-sondar-pedido-grande-nao-so-curto.md | média | feito (S15) |
+| B135 | Custo de cada clone atribuído pela tarefa dele (`agent_id`), não rateado igual entre clones em paralelo | inbox: 2026-10-30-main-harness-custo-por-tarefa-rateado-igual-entre-clones-em-paralelo.md | baixa | feito (S15) |
