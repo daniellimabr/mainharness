@@ -76,3 +76,30 @@ it("sprint.metrics: cost and calls per task from clones, Reviewer, worker and sp
   const md = renderMetrics("S01", plan, m);
   expect(md).toMatch(/\| T01 \|.*US\$ 4\.50 \(US\$ 1\.00 rateado\) \|/);
 });
+
+it("sprint.metrics: parallel clones and Reviewer go to their agent_id task; only the main chat is split", () => {
+  write([
+    { type: "task.start", ts: ts(0), task: "T01", data: {} },
+    { type: "task.start", ts: ts(0, 1), task: "T02", data: {} },
+    { type: "task.start", ts: ts(0, 2), task: "T03", data: {} },
+    start(ts(1), "c1", "T01", "main-harness:executor"),
+    start(ts(1, 1), "c2", "T02", "main-harness:executor"),
+    start(ts(1, 2), "c3", "T03", "main-harness:executor"),
+    usage(ts(2), 1, { agent: "main-harness:executor" }, "c1"),
+    usage(ts(3), 2, { agent: "main-harness:executor" }, "c2"),
+    usage(ts(4), 4, { agent: "main-harness:executor" }, "c3"),
+    { type: "task.done", ts: ts(5), task: "T02", data: { duration_s: 300 } },
+    usage(ts(6), 8, { agent: "main-harness:executor" }, "c3"),
+    start(ts(7), "r1", "T01", "main-harness:reviewer"),
+    usage(ts(8), 0.5, { agent: "main-harness:reviewer" }, "r1"),
+    usage(ts(9), 3), // main chat: T01 and T03 open
+    { type: "task.done", ts: ts(10), task: "T01", data: { duration_s: 600 } },
+    { type: "task.done", ts: ts(11), task: "T03", data: { duration_s: 660 } },
+  ]);
+  const plan = parsePlan(
+    fs.readFileSync(path.join(REPO_ROOT, "templates", "sprint-plan.md"), "utf8"),
+  );
+  const m = computeMetrics("p", "S01", plan);
+  expect(m.usd_by_task).toEqual({ T01: 3, T02: 2, T03: 13.5 });
+  expect(m.usd_split_by_task).toEqual({ T01: 1.5, T03: 1.5 });
+});
