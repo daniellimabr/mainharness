@@ -141,3 +141,5 @@ Itens ainda não planejados. Pedidos dos projetos chegam pelo `inbox/` e `/inbox
 | B131 | Custo do chat principal com várias tarefas em andamento: atribuir ou ratear, em vez de "sem-tarefa" | inbox: 2026-10-29-main-harness-custo-do-tech-lead-em-tarefas-paralelas-fica-sem-tarefa.md | média | feito (S14) |
 | B132 | Evento `handoff` único por arquivo (dedupe), hoje duplica na compactação | inbox: 2026-10-29-main-harness-evento-handoff-gravado-em-duplicata-na-compactacao.md | média | novo |
 | B133 | Testar `gemini/gemini-4-argon` como executor (desafio 3, sonda de ~100 KB antes); na S14 deu 429 até em pedido de uma linha (cota) | S14, decisão de Daniel | média | novo |
+| B134 | `hx worker check` sonda pedido grande (~100 KB) e de uma linha (separa cota de tamanho) antes de dar "pronto" | inbox: 2026-10-30-main-harness-hx-worker-check-deve-sondar-pedido-grande-nao-so-curto.md | média | novo |
+| B135 | Custo de cada clone atribuído pela tarefa dele (`agent_id`), não rateado igual entre clones em paralelo | inbox: 2026-10-30-main-harness-custo-por-tarefa-rateado-igual-entre-clones-em-paralelo.md | baixa | novo |
