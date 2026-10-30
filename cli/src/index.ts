@@ -11,6 +11,7 @@ const COMMANDS: Record<string, () => Promise<{ run: Run }>> = {
   status: () => import("./commands/status"),
   handoff: () => import("./commands/handoff"),
   run: () => import("./commands/run"),
+  worker: () => import("./commands/worker"),
   request: () => import("./commands/request"),
   metrics: () => import("./commands/metrics"),
   usage: () => import("./commands/usage"),
@@ -41,6 +42,8 @@ const HELP = `hx <command> [args]
   status --where t --next t   registra onde o projeto está e o próximo passo
   handoff [--show|--consume]  grava (stdin)/mostra o handoff
   run <cmd...>                roda e mostra só falhas e resumo
+  worker check <apelido>      confere o modelo externo com uma chamada de verdade
+  worker run <TNN> <handoff> --model <apelido>   roda o handoff num modelo externo
   request --title t ...       cria pedido no inbox do harness
   metrics [sprint]            indicadores da sprint
   usage [--session id]        consumo a partir dos transcripts

@@ -12,8 +12,19 @@ export interface Price {
   cacheRead: number;
 }
 
+/** External Anthropic-format model for `hx worker` (OmniRoute or direct). Token stays out of the repo. */
+export interface Worker {
+  url: string;
+  model: string;
+  token: string;
+  /** US$ per million tokens; absent = unknown cost. */
+  price?: { input: number; output: number };
+}
+
 export interface Config {
   prices: Record<string, Price>;
+  /** `hx worker` aliases. */
+  workers: Record<string, Worker>;
   contextLimit: number;
   handoffAt: number;
   contextStrategy: "compact" | "new-chat";
@@ -49,6 +60,7 @@ export const DEFAULT_CONFIG: Config = {
       cacheRead: 0.1,
     },
   },
+  workers: {},
   contextLimit: 140000,
   handoffAt: 120000,
   contextStrategy: "compact",

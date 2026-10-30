@@ -28,7 +28,8 @@ export const DATA_SCHEMAS = {
   "session.end": { reason: s() },
   prompt: {},
   "turn.end": {},
-  "agent.start": { agent_id: s() },
+  // agent_type/model: set by `hx worker run` (subagent hooks only send agent_id)
+  "agent.start": { agent_id: s(), agent_type: s(opt), model: s(opt) },
   "agent.end": { agent_id: s() },
   "project.status": { where: s(), next: s() },
   statusline: {
@@ -58,6 +59,7 @@ export const DATA_SCHEMAS = {
     handoffs: n(),
     usd_by_agent: { type: "numberRecord" },
     usd_by_task: { type: "numberRecord" },
+    usd_split_by_task: { type: "numberRecord", optional: true },
     actual_min_by_task: { type: "numberRecord" },
     pause_min: n(opt),
     review_min_by_task: { type: "numberRecord", optional: true },
@@ -86,6 +88,7 @@ export const DATA_SCHEMAS = {
     usd: n({ nullable: true }),
     message_id: s(),
     transcript: s({ enum: ["main", "subagent"] }),
+    agent_id: s(opt),
   },
   "usage.limits": {
     five_hour: n(),

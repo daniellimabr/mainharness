@@ -1,4 +1,5 @@
 // S13/T01 (ADR 0014): the Gemini worker is gone; its old events and config stay readable.
+// S14/T01: `hx worker` is back as a generic external worker (see worker.test.ts).
 import * as fs from "node:fs";
 import * as path from "node:path";
 import { afterEach, beforeEach, expect, it } from "vitest";
@@ -10,12 +11,6 @@ beforeEach(() => {
   env = isolateHome();
 });
 afterEach(() => env.cleanup());
-
-it("hx worker is an unknown command", () => {
-  const r = runHx(["worker", "status"], { env: { HARNESS_HOME: env.home } });
-  expect(r.code).toBe(1);
-  expect(r.stderr).toContain("comando desconhecido: worker");
-});
 
 it("loadConfig ignores an old worker key without breaking", () => {
   fs.writeFileSync(
