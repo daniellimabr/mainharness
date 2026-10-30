@@ -457,9 +457,41 @@ export function classifyCommand(
   return ask;
 }
 
+// shortcut: regexes over the raw line, so a trap inside a quoted string or a .sh (e.g. 2>&1 in bash)
+// also warns; harmless (warning only), upgrade to the segment parser if it gets noisy.
+const TRAPS: [RegExp, string][] = [
+  [
+    /\b(set-content|out-file)\b[^|;\n]*-enc\w*[ :]+utf-?8\b/i,
+    "Set-Content/Out-File -Encoding utf8 grava BOM e quebra acentos: use a ferramenta Write/Edit.",
+  ],
+  [
+    /\[(system\.)?io\.(file|path)\]::/i,
+    "Métodos .NET ([IO.File]::) no PowerShell dão erro: use Read/Write/Edit ou cmdlets.",
+  ],
+  [
+    /(?:^|[\s;|&(])hx\b[^;|&\n]*\s--help\b/,
+    "hx --help não existe: leia o index.md ou rode `hx` sem argumentos.",
+  ],
+  [
+    /\b(?:hx|git|npm|npx|node)\b[^;|&\n]*2>&1/,
+    "2>&1 em executável nativo no PowerShell gera NativeCommandError: tire o 2>&1 (o stderr já vem junto).",
+  ],
+  [
+    /\bhx\b[^;\n|]*\|\s*select(?:-object)?\s+-first/i,
+    "Select-Object -First corta a saída do hx: rode sem o pipe.",
+  ],
+];
+
+/** Short pt-BR warnings for command traps that already cost quota. Never blocks. */
+export function commandWarnings(command: unknown): string[] {
+  if (typeof command !== "string") return [];
+  return TRAPS.filter(([re]) => re.test(command)).map(([, msg]) => msg);
+}
+
 export function preBash(input: HookInput): HookOutcome {
   const command = input.tool_input?.command;
   if (typeof command !== "string" || !command.trim()) return {};
+  const warnings = commandWarnings(command);
   const cwd = input.cwd || process.cwd();
   let root = cwd;
   let stable = DEFAULT_CONFIG.stableDir;
@@ -470,7 +502,15 @@ export function preBash(input: HookInput): HookOutcome {
     // invalid HARNESS_HOME: fall back to defaults and keep guarding (never fail open)
   }
   const v = classifyCommand(command, cwd, root, stable);
-  if (!v) return {};
+  if (!v)
+    return warnings.length
+      ? jsonOut({
+          hookSpecificOutput: {
+            hookEventName: "PreToolUse",
+            additionalContext: warnings.join("\n"),
+          },
+        })
+      : {};
   return jsonOut({
     hookSpecificOutput: {
       hookEventName: "PreToolUse",
