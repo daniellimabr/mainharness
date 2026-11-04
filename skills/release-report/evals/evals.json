@@ -72,6 +72,29 @@
         "files-s03/docs/sprints/S03-release.md",
         "files-s03/templates/release-report.md"
       ]
+    },
+    {
+      "id": 4,
+      "prompt": "A S01 terminou, Daniel aprovou a entrega e todas as tarefas (T01 a T03, itens B001 a B003 do backlog) foram entregues. O docs/sprints/S01-release.md já existe com a seção Execução. Fecha a sprint e faz o Release Report.",
+      "expected_output": "Fecha a S01, completa o Release Report e deixa o backlog e o roadmap refletindo a entrega.",
+      "expectations": [
+        "Executa 'hx sprint close S01'",
+        "No docs/backlog.md, o Status de B001, B002 e B003 passa a '[concluído: S01]' (formato exato)",
+        "O B004 continua 'aberto' no backlog",
+        "O docs/roadmap.md é atualizado: a S01 aparece como entregue/concluída e a S02 (CSV) segue como próxima sprint",
+        "A tabela da seção Execução do S01-release.md fica intacta"
+      ],
+      "files": [
+        "files-roadmap/.claude/harness.json",
+        "files-roadmap/.hx-home/config.json",
+        "files-roadmap/.hx-home/events/2026-10-14.jsonl",
+        "files-roadmap/.hx-home/state/pedidos.json",
+        "files-roadmap/docs/backlog.md",
+        "files-roadmap/docs/roadmap.md",
+        "files-roadmap/docs/sprints/S01-plan.md",
+        "files-roadmap/docs/sprints/S01-release.md",
+        "files-roadmap/templates/release-report.md"
+      ]
     }
   ]
 }

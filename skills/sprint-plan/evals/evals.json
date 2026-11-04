@@ -90,6 +90,24 @@
         "files-new/src/api/orders.ts",
         "files-new/src/web/OrdersPage.tsx"
       ]
+    },
+    {
+      "id": 6,
+      "prompt": "Vamos planejar a S01 só com o B001, filtro por data na lista de pedidos. Decisões: de/até por createdAt no servidor (?from=&to=), fuso de Brasília. O B002 (CSV) fica para depois. Sem mais perguntas: escreve o plano.",
+      "expected_output": "Cria o plano da S01 e deixa o backlog com o B001 marcado como planejado na S01 e o B002 intacto.",
+      "expectations": [
+        "Cria docs/sprints/S01-plan.md",
+        "No docs/backlog.md, o Status do B001 passa a '[planejado: S01]' (formato exato, com colchetes)",
+        "O B002 continua 'aberto' no backlog",
+        "Não roda 'hx sprint approve S01' antes do ok de Daniel"
+      ],
+      "files": [
+        "files-new/.claude/harness.json",
+        "files-new/docs/backlog.md",
+        "files-new/package.json",
+        "files-new/src/api/orders.ts",
+        "files-new/src/web/OrdersPage.tsx"
+      ]
     }
   ]
 }

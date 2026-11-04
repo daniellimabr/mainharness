@@ -28,7 +28,8 @@ Nada de código antes do plano aprovado por Daniel. O plano é o contrato da spr
    - Estime cada tarefa pela mais parecida do histórico e cite a de referência (ex.: "como S01/T03"). Essa é a **Bruta**; **Planejado** = bruta × fator (é o que vira indicador).
    - **Total estimado:** soma calibrada (e a bruta) e o relógio separado em tempo de agente e espera por Daniel (teste e ajustes). Relógio de agente = caminho mais longo das dependências (em tempo bruto) × fator **relógio**, nunca a soma das tarefas: em paralelo, a soma não diz quanto tempo passa.
    - **Revisão não é tarefa.** O Reviewer revisa cada onda dentro das tarefas entregues (o tempo dele entra nelas e nos `hx review`). Não crie linha "revisão da onda" na tabela: ela infla o planejado com 0 min real. Só a revisão final, junto com a release, é tarefa.
-8. **Status:** `aguardando aprovação`. Não preencha a seção "Aprovação" à mão.
+8. **Backlog:** no mesmo passo em que grava o plano, troque o Status de cada item do `docs/backlog.md` incluído na sprint para `[planejado: SNN]` (formato exato; substitui `aberto` e o antigo `planejado (SNN)`). Item que sai do plano volta a `aberto`.
+9. **Status:** `aguardando aprovação`. Não preencha a seção "Aprovação" à mão.
 
 ## Aprovação
 
@@ -48,4 +49,5 @@ Qualquer alteração acima da seção "Aprovação" invalida o hash. Explique a 
 - [ ] Só uma tarefa de revisão: a final, com a release (nenhuma "revisão da onda").
 - [ ] Relógio previsto = caminho mais longo × fator relógio.
 - [ ] "Lint e tipos: zero erros e zero avisos" está nos critérios.
+- [ ] Itens do plano marcados `[planejado: SNN]` no `docs/backlog.md`.
 - [ ] Itens que não couberam foram para o backlog (`hx request` se for do harness).

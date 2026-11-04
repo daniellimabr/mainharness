@@ -1,0 +1,5 @@
+{
+  "harnessRepo": ".",
+  "stableDir": "stable-sandbox",
+  "inboxDir": "inbox"
+}

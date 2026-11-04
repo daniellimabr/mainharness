@@ -4,7 +4,7 @@ Itens ainda não planejados. Pedidos dos projetos chegam pelo `inbox/` e `/inbox
 
 - **Origem:** `inbox`, `retro` ou `roadmap`.
 - **Prioridade:** alta, média, baixa.
-- **Status:** `aberto`, `planejado (SNN)`, `feito (SNN)` ou `descartado`.
+- **Status:** `aberto`, `[planejado: SNN]`, `[concluído: SNN]` ou `descartado`.
 
 | Id | Item | Origem | Prioridade | Status |
 |---|---|---|---|---|
@@ -89,20 +89,20 @@ Itens ainda não planejados. Pedidos dos projetos chegam pelo `inbox/` e `/inbox
 | B079 | Espera por resposta de Daniel dentro de uma tarefa não conta como duração | inbox: 2026-10-22-dashboard-ia-espera-por-resposta-de-daniel-dentro-de-uma-tarefa-nao-conta.md | média | novo |
 | B080 | `git rm` de arquivos rastreados previstos no plano aprovado | inbox: 2026-10-22-dashboard-ia-git-rm-de-arquivos-rastreados-previstos-no-plano-aprovado.md | baixa | novo |
 | B081 | `hx help`: documentar `--force` no `sprint approve` | inbox: 2026-10-22-dashboard-ia-hx-help-documentar-force-no-sprint-approve.md | baixa | novo |
-| B082 | `hx task phase` em rodada de ajuste | inbox: 2026-10-22-dashboard-ia-hx-task-phase-em-rodada-de-ajuste.md | baixa | novo |
-| B083 | `hx task phase` falha em tarefa reaberta por ajuste | inbox: 2026-10-22-dashboard-ia-hx-task-phase-falha-em-tarefa-reaberta-por-ajuste.md | média | novo |
-| B084 | Marca de status no `backlog.md` | inbox: 2026-10-22-dashboard-ia-marca-de-status-no-backlog-md.md | alta | novo |
-| B085 | Marcas de status do backlog nas skills `sprint-plan` e `release-report` | inbox: 2026-10-22-dashboard-ia-marcas-de-status-do-backlog-nas-skills-sprint-plan-e-release.md | média | novo |
+| B082 | `hx task phase` em rodada de ajuste | inbox: 2026-10-22-dashboard-ia-hx-task-phase-em-rodada-de-ajuste.md | baixa | planejado (S16) |
+| B083 | `hx task phase` falha em tarefa reaberta por ajuste | inbox: 2026-10-22-dashboard-ia-hx-task-phase-falha-em-tarefa-reaberta-por-ajuste.md | média | planejado (S16) |
+| B084 | Marca de status no `backlog.md` | inbox: 2026-10-22-dashboard-ia-marca-de-status-no-backlog-md.md | alta | planejado (S16) |
+| B085 | Marcas de status do backlog nas skills `sprint-plan` e `release-report` | inbox: 2026-10-22-dashboard-ia-marcas-de-status-do-backlog-nas-skills-sprint-plan-e-release.md | média | planejado (S16) |
 | B086 | Remover a retomada automática agendada de sessão | inbox: 2026-10-22-dashboard-ia-remover-retomada-automatica-agendada-de-sessao.md | alta | feito (S10) |
 | B087 | Retomada automática após limite de uso não funcionou (Windows) | inbox: 2026-10-22-dashboard-ia-retomada-automatica-apos-limite-de-uso-nao-funcionou-windows.md | alta | feito (S10) |
 | B088 | Reviewer com dois nomes nos eventos | inbox: 2026-10-22-dashboard-ia-reviewer-com-dois-nomes-nos-eventos.md | média | novo |
-| B089 | Roadmap não é atualizado no fechamento da sprint | inbox: 2026-10-22-dashboard-ia-roadmap-nao-e-atualizado-no-fechamento-da-sprint.md | alta | novo |
+| B089 | Roadmap não é atualizado no fechamento da sprint | inbox: 2026-10-22-dashboard-ia-roadmap-nao-e-atualizado-no-fechamento-da-sprint.md | alta | planejado (S16) |
 | B090 | `hx release` não recusa pelo `SNN-release.md` da sprint aberta | inbox: 2026-10-22-main-harness-hx-release-nao-recusa-pelo-snn-release-md-da-sprint-aberta.md | baixa | novo |
 | B091 | `hx setup` e `doctor`: só falar do que mudou | inbox: 2026-10-22-main-harness-hx-setup-e-doctor-so-falar-do-que-mudou.md | média | novo |
 | B092 | Modo auto nega `git status` logo após `hx release` falhar | inbox: 2026-10-22-main-harness-modo-auto-nega-git-status-logo-apos-hx-release-falhar.md | baixa | novo |
 | B093 | Fator de estimativa padrão para a primeira sprint | inbox: 2026-10-23-6thgear-fator-de-estimativa-padrao-para-a-primeira-sprint.md | média | novo |
 | B094 | Clones marcam as fases testes, código e lint | inbox: 2026-10-23-dashboard-ia-clones-marcam-as-fases-testes-codigo-e-lint.md | média | feito (S11) |
-| B095 | `hx sprint approve` substitui a seção Aprovação antiga em vez de falhar quando o plano muda | inbox: 2026-10-23-dashboard-ia-hx-sprint-approve-substitui-a-secao-aprovacao-quando-o-plano.md | média | novo |
+| B095 | `hx sprint approve` substitui a seção Aprovação antiga em vez de falhar quando o plano muda | inbox: 2026-10-23-dashboard-ia-hx-sprint-approve-substitui-a-secao-aprovacao-quando-o-plano.md | média | planejado (S16) |
 | B096 | Comando `hx shot` para tirar print com navegador headless e apoiar conferência visual do Reviewer | inbox: 2026-10-23-dashboard-ia-reviewer-com-prints-garantidos-hx-shot.md | média | novo |
 | B097 | `workerNudge` guarda lista de sessões para evitar que dois chats perto do limite alternem o aviso | roadmap | baixa | descartado (S11, ADR 0013) |
 | B098 | Aviso de limite considera `resets_at` para não avisar após a janela reiniciar com leitura velha | roadmap | baixa | descartado (S11, ADR 0013) |
@@ -111,7 +111,7 @@ Itens ainda não planejados. Pedidos dos projetos chegam pelo `inbox/` e `/inbox
 | B101 | Handoff da sessão atualizado sozinho em `hx task done/phase` (estado das tarefas e arquivos não commitados) | inbox: 2026-10-27-main-harness-handoff-atualizado-a-cada-tarefa.md | média | feito (S11) |
 | B102 | `hx eval`: o `hx` da sandbox é o `cli/dist/hx.js` do repo, não o estável | inbox: 2026-10-27-main-harness-hx-eval-usa-o-hx-do-repo-nao-o-estavel.md | alta | feito (S11) |
 | B103 | Experimento: mesma tarefa-desafio no Opus, Sonnet e Gemini (qualidade, tempo, tokens/custo, chamadas, franquia) | S11-release | alta | feito (S12) |
-| B104 | `hx release` negado pelo modo automático: regra de permissão no `hx setup`/docs ou pedir a Daniel no resumo de entrega | inbox: 2026-10-28-main-harness-hx-release-e-bloqueado-pelo-modo-automatico-production-deplo.md; 2026-10-30-main-harness-hx-release-bloqueado-pelo-classificador-do-claude-code.md (S15: negado 2 vezes, Daniel digitou o comando) | média | novo |
+| B104 | `hx release` negado pelo modo automático: regra de permissão no `hx setup`/docs ou pedir a Daniel no resumo de entrega | inbox: 2026-10-28-main-harness-hx-release-e-bloqueado-pelo-modo-automatico-production-deplo.md; 2026-10-30-main-harness-hx-release-bloqueado-pelo-classificador-do-claude-code.md (S15: negado 2 vezes, Daniel digitou o comando) | média | planejado (S16) |
 | B105 | `hx worker run`: trabalhador que morre sem relatório grava relatório de falha e `hx worker status` avisa | inbox: 2026-10-28-main-harness-hx-worker-run-trabalhador-que-morre-sem-relatorio-fica-invis.md | média | feito (S12) |
 | B106 | Testes instáveis no Windows sob carga: timeout maior no `eval.test.ts` e `rm` com `maxRetries` no `helpers.ts` | inbox: 2026-10-28-main-harness-testes-instaveis-no-windows-sob-carga-timeout-e-eperm.md | média | feito (S12) |
 | B107 | Captar quando o agente trava ou erra: hooks `async` `Notification`, `StopFailure`, `PostToolUseFailure` e `PermissionRequest` emitindo eventos novos `attention` e `error` no contrato, só metadados (ver `docs/avaliacao-observabilidade.md`, itens 5, 6 e 13). Base do B109 e do painel "Aguardando você" do Dashboard. A confirmar: se o painel do VS Code dispara `Notification` | avaliação 2026-10-28 | alta | feito (S13) |
@@ -135,7 +135,7 @@ Itens ainda não planejados. Pedidos dos projetos chegam pelo `inbox/` e `/inbox
 | B125 | Estabilizar `worker-run.test.ts` no Windows sob carga (retryDelay maior ou esperar o filho) | inbox: 2026-10-29-main-harness-worker-run-test-ts-oscila-no-windows-sob-carga.md | média | feito (S13) |
 | B126 | Critério na S14: `hx metrics` mostra custo por tarefa (S13 rodou nos ganchos 0.10.2, por isso ficou "sem-tarefa"; sem recalcular a S13) | Daniel, 2026-10-29 | alta | feito (S14) |
 | B127 | Atribuir custo e chamadas de clones e Reviewer à tarefa em andamento, inclusive em paralelo (6thgear S03: 1533 chamadas "sem-tarefa") | inbox: 2026-10-29-6thgear-atribuir-custo-e-chamadas-as-tarefas.md | alta | feito (S14) |
-| B128 | `hx sprint approve` barrado: dizer que Daniel precisa rodar o comando no terminal dele | inbox: 2026-10-29-6thgear-mensagem-do-sprint-approve-bloqueado.md | média | novo |
+| B128 | `hx sprint approve` barrado: dizer que Daniel precisa rodar o comando no terminal dele | inbox: 2026-10-29-6thgear-mensagem-do-sprint-approve-bloqueado.md | média | planejado (S16) |
 | B129 | Revisão da tarefa final não conta o tempo em que outras tarefas ou ajustes correm | inbox: 2026-10-29-6thgear-tempo-de-revisao-da-tarefa-final-inflado.md | baixa | novo |
 | B130 | `sprint-plan` (template e validação) recusa `gemini` na coluna Agente (ADR 0014) | inbox: 2026-10-29-dashboard-ia-sprint-plan-recusar-o-agente-gemini.md | baixa | feito (S15): `gemini` segue desligado pela regra em `agents/tech-lead.md`; sem validação em código |
 | B131 | Custo do chat principal com várias tarefas em andamento: atribuir ou ratear, em vez de "sem-tarefa" | inbox: 2026-10-29-main-harness-custo-do-tech-lead-em-tarefas-paralelas-fica-sem-tarefa.md | média | feito (S14) |
@@ -143,6 +143,6 @@ Itens ainda não planejados. Pedidos dos projetos chegam pelo `inbox/` e `/inbox
 | B133 | Testar `gemini/gemini-4-argon` como executor (desafio 3, sonda de ~100 KB antes); na S14 deu 429 até em pedido de uma linha (cota) | S14, decisão de Daniel | média | feito (S15): deepseek testado direto (ADR 0016); Argon fora (API paga, sem formato Anthropic) |
 | B134 | `hx worker check` sonda pedido grande (~100 KB) e de uma linha (separa cota de tamanho) antes de dar "pronto" | inbox: 2026-10-30-main-harness-hx-worker-check-deve-sondar-pedido-grande-nao-so-curto.md | média | feito (S15) |
 | B135 | Custo de cada clone atribuído pela tarefa dele (`agent_id`), não rateado igual entre clones em paralelo | inbox: 2026-10-30-main-harness-custo-por-tarefa-rateado-igual-entre-clones-em-paralelo.md | baixa | feito (S15) |
-| B136 | `pre-bash` avisa das armadilhas de comando que já custaram franquia (`Set-Content -Encoding utf8` em arquivo do repo, `[IO.File]::`/métodos .NET no PowerShell, `hx <cmd> --help`, `2>&1` em exe nativo, `| Select-Object -First` com `hx`) | S15, pedido de Daniel (2026-10-30) | média | aberto |
-| B137 | Harness leve (S16): medir contexto de abertura com `/context`, desligar plugins/skills sem uso, enxugar hooks de início e CLAUDE.md, perfil mínimo do executor | S15, pedido de Daniel (2026-10-30) | alta | aberto |
-| B138 | `npm test` com `--maxWorkers=3` (ou no `vitest.config.mts`): na S15 a suíte caiu 2 vezes (exit 3221226505 em `worker.test.ts`); com 3 workers passa 516/516 | inbox: 2026-10-30-main-harness-vitest-com-maxworkers-3-no-npm-test.md | baixa | novo |
+| B136 | `pre-bash` avisa das armadilhas de comando que já custaram franquia (`Set-Content -Encoding utf8` em arquivo do repo, `[IO.File]::`/métodos .NET no PowerShell, `hx <cmd> --help`, `2>&1` em exe nativo, `| Select-Object -First` com `hx`) | S15, pedido de Daniel (2026-10-30) | média | planejado (S16) |
+| B137 | Harness leve (S16): medir contexto de abertura com `/context`, desligar plugins/skills sem uso, enxugar hooks de início e CLAUDE.md, perfil mínimo do executor | S15, pedido de Daniel (2026-10-30) | alta | planejado (S16) |
+| B138 | `npm test` com `--maxWorkers=3` (ou no `vitest.config.mts`): na S15 a suíte caiu 2 vezes (exit 3221226505 em `worker.test.ts`); com 3 workers passa 516/516 | inbox: 2026-10-30-main-harness-vitest-com-maxworkers-3-no-npm-test.md | baixa | planejado (S16) |

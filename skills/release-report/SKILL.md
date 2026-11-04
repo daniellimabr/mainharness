@@ -29,7 +29,8 @@ Fecha o ciclo: a sprint termina com números e com melhorias para o harness, nã
 7. **Comparação:** leia os `docs/sprints/*-release.md` anteriores. Diga o que subiu ou desceu (tempo, US$, retrabalho, reprovações) em números lado a lado. Primeira sprint: diga que não há base.
 8. **Retrospectiva curta:** o que funcionou, o que não funcionou, 2 ou 3 linhas cada. Sem culpa, com fato.
 9. **Melhorias do harness:** para cada oportunidade, rode `hx request --title "..." --need "..." --why "..." --priority alta|media|baixa --example "..."`. O "porquê" cita os **números** que a justificam (ex.: "3 reprovações por falta de teste na S02, 2 na S03"). Coloque o arquivo criado no relatório. Melhoria de **projeto** (não do harness) vai para `docs/backlog.md` do projeto.
-10. **CHANGELOG:** se a sprint publica versão do harness, rode `hx release patch|minor|major` (ele atualiza `CHANGELOG.md` e a tag) e confira se as entradas dizem o que mudou para o usuário. Sem versão publicada, não mexa no CHANGELOG.
+10. **Backlog e roadmap:** no `docs/backlog.md`, os itens entregues da sprint passam de `[planejado: SNN]` a `[concluído: SNN]`; item não entregue volta a `aberto`. No `docs/roadmap.md`, marque a sprint entregue e mova a próxima sprint e os itens pendentes para o lugar certo. Edite só essas linhas.
+11. **CHANGELOG:** se a sprint publica versão do harness, rode `hx release patch|minor|major` (ele atualiza `CHANGELOG.md` e a tag) e confira se as entradas dizem o que mudou para o usuário. Sem versão publicada, não mexa no CHANGELOG.
 
 ## Regras
 
@@ -44,4 +45,5 @@ Fecha o ciclo: a sprint termina com números e com melhorias para o harness, nã
 - [ ] Tabela de indicadores colada do `hx`.
 - [ ] Comparação com a sprint anterior (ou "sem base").
 - [ ] Cada melhoria tem um `hx request` e o link.
+- [ ] Backlog com `[concluído: SNN]` e roadmap atualizado.
 - [ ] CHANGELOG atualizado se houve release.
