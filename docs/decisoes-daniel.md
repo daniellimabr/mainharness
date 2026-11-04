@@ -94,3 +94,8 @@ Formato: **Decisão** · **Porquê** · **Descartado** · **Contraponto**.
 - **Descartado:** continuar só no grátis do OmniRoute (ADR 0015).
 - **Contraponto:** a régua segue sendo capacidade de Sonnet; pago por uso só vale se o custo por tarefa ficar bem abaixo do Sonnet. Valor do crédito a confirmar na T04 (pendente de aprovação do plano S15).
 - **Resultado (2026-10-30):** DeepSeek V4 Pro direto nota 66, Sonnet 67, Opus 68; 3 a 5 vezes mais lento; cerca de US$ 0,15 por tarefa. Daniel aceitou o ADR 0016 como **opção pontual** (onde fizer mais sentido: código com handoff claro e teste de aceite); o foco segue no Sonnet. Porquê: Sonnet rende muito no limite semanal (volume grande de tarefas e experimentos com os 10% finais, 99% usado e não esgotou; consumo bem menor que o do Opus), então o externo é complemento, não troca. Contraponto: ganho é poupar limite, não velocidade.
+
+### Harness leve × atual e o Dashboard (S16, 2026-11-04)
+- **Porquê:** medir antes de mexer; Daniel quer menos tokens sem perder qualidade.
+- **Resultado:** Dashboard custa ≪ 2% da sprint (não desligar); leve empata na nota (23,3 × 23,3) e poupa 41% de tokens, com uma corrida por caso. Proposta no ADR 0017: Dashboard ligado, leve como opção até repetir as corridas. **Aguarda decisão de Daniel.**
+- **Contraponto:** uma corrida por caso indica, não prova.
