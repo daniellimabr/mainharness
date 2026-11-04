@@ -156,6 +156,7 @@ Uma linha por arquivo: caminho e propósito. Mantido pelo hook `post-edit`.
 - `docs/adr/0013-modelo-por-papel.md` — ADR 0013 — Um modelo fixo por papel
 - `docs/adr/0014-regra-quem-executa-revisada.md` — ADR 0014 — Regra "quem executa" revisada (Haiku, Gemini desligado, Reviewer Sonnet/Opus)
 - `docs/adr/0016-deepseek-direto-pode-executar.md` — ADR 0016 — DeepSeek direto pode executar tarefa de clone
+- `docs/adr/0017-perfil-leve-e-dashboard.md` — ADR 0017 — Dashboard fica ligado; perfil leve como opção a confirmar
 - `docs/avaliacao-observabilidade.md` — Avaliação de observabilidade: Main Harness e Dashboard IA
 - `docs/backlog.md` — Backlog do Main Harness
 - `docs/contracts/events.md` — Contrato de eventos: Main Harness e Dashboard IA
@@ -169,6 +170,8 @@ Uma linha por arquivo: caminho e propósito. Mantido pelo hook `post-edit`.
 - `docs/experiments/S14/hidden/desafio-3/cli/test/d3-hidden.test.ts` — S14 / desafio 3 hidden cases: `hx worker list` edge cases the model never sees.
 - `docs/experiments/S15/notas-juiz.md` — S15 — Notas do juiz cego
 - `docs/experiments/S16-protocolo.md` — S16 — Protocolo: harness leve × atual e custo do Dashboard
+- `docs/experiments/S16-resultado.md` — S16 — Resultado: harness leve × atual e o custo do Dashboard
+- `docs/experiments/S16/notas-juiz.md` — Notas do juiz cego (Reviewer Sonnet, 0–25)
 - `docs/omniroute.md` — OmniRoute: modelos grátis
 - `docs/roadmap.md` — Roadmap do Main Harness
 - `docs/sprints/S00-plan.md` — sprint plan S00 (criação do harness)

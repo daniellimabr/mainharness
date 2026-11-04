@@ -69,6 +69,10 @@ Gemini e `hx worker` saíram (ADR 0014). `hx task drop|defer` tira ou adia taref
 
 `hx worker check` com sonda pequena e de ~100 KB (erro por causa: cota, tamanho, chave, provedor fora), custo de clone e Reviewer pela tarefa do `agent_id`, `handoff` sem duplicata na compactação. O DeepSeek V4 Pro direto (`api.deepseek.com/anthropic`) fez nota 66 contra 67 do Sonnet e 68 do Opus, 3 a 5 vezes mais lento, cerca de US$ 0,15 por tarefa (ADR 0016: opção pontual, Sonnet segue o padrão). Argon fica fora (API paga, sem formato Anthropic). Pendente: reproduzir o aceite 0/N do DeepSeek nos desafios 1 e 2.
 
+## 14. Harness leve × atual e custo do Dashboard (feito na S16, v0.14.0)
+
+`HARNESS_DASHBOARD=off`, `scripts/overhead.mjs` (ms por hook e tokens por sprint), `bench.mjs --perfil atual|leve|sem-dashboard`. O Dashboard custa muito menos de 2% da sprint (fica ligado); o perfil leve empatou na nota (23,3 × 23,3) com 41% menos tokens, em uma corrida por caso (ADR 0017, proposto). Também: `pre-bash` avisa armadilhas de comando, tarefa reaberta aceita `phase`/`review`, `approve` troca a Aprovação, marcas `[planejado]`/`[concluído]` no backlog, `maxWorkers=3`. Próximo passo: 2 a 3 corridas por caso do leve antes de torná-lo padrão.
+
 ## Avaliado e descartado por ora
 
 - **Troca de modelo pelo % de uso (gatilho de 90%, S10).** A escolha de modelo virou reação ao limite, não decisão do plano (ADR 0013).
