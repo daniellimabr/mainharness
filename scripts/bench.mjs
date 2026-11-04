@@ -100,6 +100,10 @@ function sh(cmd, cwd) {
   const r = spawnSync(cmd, { cwd, env, shell: true, encoding: "utf8", windowsHide: true });
   return { ok: r.status === 0, out: mask(`${r.stdout ?? ""}${r.stderr ?? ""}`) };
 }
+/** claude -p prints the result json plus warnings on stderr: parse the {...} span. */
+function parseJson(out) {
+  return JSON.parse(out.slice(out.indexOf("{"), out.lastIndexOf("}") + 1));
+}
 function must(cmd, cwd) {
   const r = sh(cmd, cwd);
   if (!r.ok) throw new Error(`${cmd}\n${r.out}`);
@@ -204,7 +208,7 @@ async function measureOpening() {
       const r = sh(`${bin} -p "ok" --output-format json --model sonnet ${extra}`, clone);
       let j;
       try {
-        j = JSON.parse(r.out);
+        j = parseJson(r.out);
       } catch {
         throw new Error(`abertura ${i + 1}: sem json\n${r.out}`);
       }
@@ -285,7 +289,7 @@ try {
 
   let res = {};
   try {
-    res = JSON.parse(run.out);
+    res = parseJson(run.out);
   } catch {
     // killed or crashed: no result json
   }

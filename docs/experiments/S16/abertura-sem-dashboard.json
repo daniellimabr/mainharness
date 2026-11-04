@@ -1,0 +1,34 @@
+{
+  "perfil": "sem-dashboard",
+  "model": "sonnet",
+  "runs": [
+    {
+      "input": 2,
+      "cache_read": 29205,
+      "cache_creation": 15703,
+      "output": 179,
+      "cost_usd": 0.0675265
+    },
+    {
+      "input": 2,
+      "cache_read": 31369,
+      "cache_creation": 12945,
+      "output": 175,
+      "cost_usd": 0.056670899999999996
+    },
+    {
+      "input": 2,
+      "cache_read": 31369,
+      "cache_creation": 12952,
+      "output": 172,
+      "cost_usd": 0.0566689
+    }
+  ],
+  "median": {
+    "input": 2,
+    "cache_read": 31369,
+    "cache_creation": 12952,
+    "output": 175,
+    "cost_usd": 0.056670899999999996
+  }
+}
