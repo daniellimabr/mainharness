@@ -2,6 +2,38 @@
 
 Versões do Main Harness (versionamento semântico; `0.y.z` até a 1.0).
 
+## [0.14.0] - 2026-11-04
+
+### Novidades
+
+- feat(S16/T13): repeat leve test with 27 blind runs and leve-plugins profile
+- feat(S16/T13): bench profile leve-plugins and --rep
+- feat(S16/T10): overhead, 9 runs, opening cost and blind judge notes
+- feat(S16/T09): bench profiles atual/leve/sem-dashboard and opening cost
+- feat(S16/T07): overhead script for hook cost per sprint
+- feat(S16/T03): backlog planned/done marks and roadmap update in sprint skills
+- feat(S16/T06): HARNESS_DASHBOARD=off silences emit and observation hooks
+- feat(S16/T05): pre-bash warns about command traps (B136)
+- feat(S16/T01): cap vitest at 3 workers (B138)
+
+### Correções
+
+- fix(S16/T04): reopened task accepts phase, approve replaces Aprovação (B083, B082, B095, B128)
+
+### Outros
+
+- docs(S16): update index
+- docs(S16): fix release report code spans, add harness requests
+- docs(S16): release report
+- docs(S16/T13): ADR 0017 accepted, keep default harness, no lean option
+- docs(S16/T12): backlog marks, roadmap 14, format fix
+- docs(S16/T11): experiment result, ADR 0017 and decision entry
+- docs(S16/T02): hx release is run by Daniel (B104)
+- docs(S16/T08): experiment protocol and lean profile
+- chore(inbox): move 2 requests to backlog
+- chore(harness): migrate to v0.13.0
+- docs(S15): Release Report v0.13.0 e pedidos de melhoria
+
 ## [0.13.0] - 2026-10-30
 
 ### Novidades
