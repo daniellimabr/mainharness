@@ -25,13 +25,13 @@ Horários de Brasília (UTC−3). ✅ feita · 🔄 em andamento · ⬜ a fazer.
 
 ## Entrega
 
-- Harness: ; ;  com perfis  e ;  avisa armadilhas de comando; tarefa reaberta aceita /;  troca a Aprovação; marcas / no backlog; ; regra do  (Daniel roda).
+- Harness: `HARNESS_DASHBOARD=off`; `scripts/overhead.mjs`; `bench.mjs` com perfis `atual|leve|leve-plugins|sem-dashboard` e `--rep`; `pre-bash` avisa armadilhas de comando; tarefa reaberta aceita `phase`/`review`; `approve` troca a Aprovação; marcas `[planejado]`/`[concluído]` no backlog; `maxWorkers=3`; regra do `hx release` (Daniel roda).
 - Experimento: Dashboard custa muito menos de 2% da sprint (fica ligado). Repetição de 27 corridas com juiz cego: atual 22,2, leve 22,8, leve com plugins 23,3; economia de tokens 28% (leve) e 14% (com plugins).
-- Decisão de Daniel: manter o padrão, sem opção leve (ADR 0017 aceito). Detalhes em .
+- Decisão de Daniel: manter o padrão, sem opção leve (ADR 0017 aceito). Detalhes em `docs/experiments/S16-resultado.md`.
 
 ## Indicadores
 
-12/12 tarefas; soma planejada 6 h 9 min contra 1 h 37 min real; custo US$ 10,47 (S15: 4,15; S14: 9,88), dos quais US$ 1,81 no ajuste e US$ 2,49 nos evals/bench; 0 reprovações do Reviewer; 1 ajuste de Daniel; 3 alertas de contexto e 3 handoffs. Tabela completa em .
+12/12 tarefas; soma planejada 6 h 9 min contra 1 h 37 min real; custo US$ 10,47 (S15: 4,15; S14: 9,88), dos quais US$ 1,81 no ajuste e US$ 2,49 nos evals/bench; 0 reprovações do Reviewer; 1 ajuste de Daniel; 3 alertas de contexto e 3 handoffs. Tabela completa em `hx metrics S16`.
 
 ## Revisão
 
@@ -51,4 +51,4 @@ Pediu repetir o teste: o resultado não provava que o leve mantém a qualidade e
 ## Melhorias no harness (viraram pedido)
 
 1. Tabela de execução mostrar a data quando a tarefa cruza o dia.
-2.  abrir uma tarefa de ajuste (TNN) para o custo, o tempo e os commits do ajuste ficarem ligados a ela.
+2. `hx sprint feedback` abrir uma tarefa de ajuste (TNN) para o custo, o tempo e os commits do ajuste ficarem ligados a ela.
