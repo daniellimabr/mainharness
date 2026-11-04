@@ -89,6 +89,7 @@ Uma linha por arquivo: caminho e propósito. Mantido pelo hook `post-edit`.
 - `cli/test/bench.test.ts` — scripts/bench.mjs: one S12 run (challenge x model) in a temp clone, with a fake claude (HX_CLAUDE_BIN).
 - `cli/test/commands.test.ts` — testes de commands
 - `cli/test/config.test.ts` — (sem descrição)
+- `cli/test/dashboard-off.test.ts` — (sem descrição)
 - `cli/test/doctor.test.ts` — testes de doctor
 - `cli/test/e2e.test.ts` — End to end with paths that have spaces: the real plugin root ("C:\Main Harness" on Daniel's
 - `cli/test/eval.test.ts` — (sem descrição)
@@ -106,12 +107,14 @@ Uma linha por arquivo: caminho e propósito. Mantido pelo hook `post-edit`.
 - `cli/test/metrics.test.ts` — (sem descrição)
 - `cli/test/migrate.test.ts` — testes de migrate
 - `cli/test/no-worker.test.ts` — S13/T01 (ADR 0014): the Gemini worker is gone; its old events and config stay readable.
+- `cli/test/overhead.test.ts` — (sem descrição)
 - `cli/test/paths.test.ts` — testes de paths (HARNESS_HOME)
 - `cli/test/post-edit-encoding.test.ts` — post-edit hook: flags BOM and mojibake that lint and prettier miss.
 - `cli/test/post-edit.test.ts` — post-edit hook: drops index.md entries whose files no longer exist.
 - `cli/test/pre-bash-s04.test.ts` — pre-bash S04: cd to /c/... denied, stale bundle on commit asks, Remove-Item with spaces inside the repo allowed.
 - `cli/test/pre-bash-s05.test.ts` — pre-bash S05 (B046, B047): git --output, redirects and PowerShell writers follow the pre-edit rule.
 - `cli/test/pre-bash-s06.test.ts` — pre-bash S06 (B054): Tee-Object and git format-patch -o follow the pre-edit rule.
+- `cli/test/pre-bash-warn.test.ts` — pre-bash B136: command traps that cost quota produce warnings (never blocks).
 - `cli/test/pre-edit.test.ts` — pre-edit hook: denies edits to cli/dist/hx.js and the stable dir.
 - `cli/test/release.test.ts` — testes de release
 - `cli/test/repomap.test.ts` — testes de repomap
@@ -122,6 +125,7 @@ Uma linha por arquivo: caminho e propósito. Mantido pelo hook `post-edit`.
 - `cli/test/session-start-requests.test.ts` — session-start shows, once, the project's harness requests marked `feito (SNN)` in the harness backlog.
 - `cli/test/session-start.test.ts` — session-start after a compaction brings back the task in progress and the hx state, not only the handoff.
 - `cli/test/setup.test.ts` — (sem descrição)
+- `cli/test/sprint-reopen.test.ts` — (sem descrição)
 - `cli/test/sprint.test.ts` — testes de sprint
 - `cli/test/stop-typecheck.test.ts` — Stop hook typecheck: tsc runs only when cli/src changed and blocks with its first lines.
 - `cli/test/task-drop.test.ts` — (sem descrição)
@@ -164,6 +168,7 @@ Uma linha por arquivo: caminho e propósito. Mantido pelo hook `post-edit`.
 - `docs/experiments/S14/desafio-3.md` — Handoff — S14 / Desafio 3: `hx worker list`
 - `docs/experiments/S14/hidden/desafio-3/cli/test/d3-hidden.test.ts` — S14 / desafio 3 hidden cases: `hx worker list` edge cases the model never sees.
 - `docs/experiments/S15/notas-juiz.md` — S15 — Notas do juiz cego
+- `docs/experiments/S16-protocolo.md` — S16 — Protocolo: harness leve × atual e custo do Dashboard
 - `docs/omniroute.md` — OmniRoute: modelos grátis
 - `docs/roadmap.md` — Roadmap do Main Harness
 - `docs/sprints/S00-plan.md` — sprint plan S00 (criação do harness)
@@ -194,11 +199,16 @@ Uma linha por arquivo: caminho e propósito. Mantido pelo hook `post-edit`.
 - `docs/sprints/S13-release.md` — S13 — Release Report
 - `docs/sprints/S14-plan.md` — S14 — Modelos externos pelo OmniRoute, com o Claude como juiz
 - `docs/sprints/S15-plan.md` — S15 — Modelos de fora direto no provedor, sem o OmniRoute no meio
+- `docs/sprints/S15-release.md` — S15 — Release Report
+- `docs/sprints/S16-plan.md` — S16 — Harness leve × atual e o custo do Dashboard
 - `eslint.config.js` — ESLint flat config
 - `hooks/hooks.json` — hooks do plugin (forma exec chamando o hx)
 - `package-lock.json` — versões travadas das dependências de desenvolvimento
 - `package.json` — scripts e dependências de desenvolvimento
 - `scripts/bench.mjs` — S12 experiment: one run of a challenge on one model, in a temp clone, under the same conditions
+- `scripts/overhead.mjs` — S16 experiment: what the Dashboard hooks cost. Prints (or writes) markdown tables:
+- `scripts/perfil-leve/CLAUDE.md` — Projeto
+- `scripts/perfil-leve/agents/executor.md` — Executor de uma tarefa da sprint do Main Harness, a partir de um handoff com objetivo, arquivos permitidos, estado at...
 - `settings.json` — configuração do plugin: agente principal = tech-lead
 - `skills-user/attach/SKILL.md` — Conecta o repo aberto ao Main Harness
 - `skills/adr/SKILL.md` — Registra uma decisão de arquitetura como ADR em docs/adr/NNNN-slug.md, com contexto, o que a documentação diz, altern...
@@ -215,6 +225,8 @@ Uma linha por arquivo: caminho e propósito. Mantido pelo hook `post-edit`.
 - `skills/prd/SKILL.md` — Escreve o PRD (documento de requisitos de produto) de uma funcionalidade em docs/prd/NNNN-slug.md: problema, usuários...
 - `skills/release-report/SKILL.md` — Fecha a sprint e escreve o Release Report docs/sprints/SNN-release.md com indicadores (tempo planejado x real, tokens...
 - `skills/release-report/evals/evals.json` — (sem descrição)
+- `skills/release-report/evals/files-roadmap/docs/backlog.md` — Backlog — Pedidos
+- `skills/release-report/evals/files-roadmap/docs/roadmap.md` — Roadmap
 - `skills/security-review/SKILL.md` — Revisão de segurança POR TAREFA da sprint do Main Harness, só para o Reviewer (chamada como main-harness:security-rev...
 - `skills/sprint-plan/SKILL.md` — Monta o sprint plan docs/sprints/SNN-plan.md a partir da conversa com Daniel: escopo, fora de escopo, critérios de ac...
 - `skills/sprint-plan/evals/evals.json` — (sem descrição)
