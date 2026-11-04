@@ -204,6 +204,7 @@ Uma linha por arquivo: caminho e propósito. Mantido pelo hook `post-edit`.
 - `docs/sprints/S15-plan.md` — S15 — Modelos de fora direto no provedor, sem o OmniRoute no meio
 - `docs/sprints/S15-release.md` — S15 — Release Report
 - `docs/sprints/S16-plan.md` — S16 — Harness leve × atual e o custo do Dashboard
+- `docs/sprints/S16-release.md` — S16 — Release Report
 - `eslint.config.js` — ESLint flat config
 - `hooks/hooks.json` — hooks do plugin (forma exec chamando o hx)
 - `package-lock.json` — versões travadas das dependências de desenvolvimento
