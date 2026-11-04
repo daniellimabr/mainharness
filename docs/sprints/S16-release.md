@@ -19,5 +19,6 @@ Horários de Brasília (UTC−3). ✅ feita · 🔄 em andamento · ⬜ a fazer.
 | ✅ | T09 | `bench.mjs --perfil atual/leve/sem-dashboard` e os arquivos do perfil leve | clone (sonnet) | 34 min | 16:59 | 11:05 | 8 min (fila: 8 min) |
 | ✅ | T10 | Rodar overhead e as 9 corridas, medir abertura, nota do juiz cego | tech-lead (sonnet) + reviewer (sonnet) | 1 h 30 min | 11:05 | 11:37 | 32 min |
 | ✅ | T11 | Resultado, ADR 0017 e decisão de Daniel | tech-lead (sonnet) | 26 min | 11:37 | 11:38 | 0 min |
-| 🔄 revisão | T12 | Revisão final, backlog, CHANGELOG, roadmap e release v0.14.0 (Daniel roda o `hx release`) | tech-lead (sonnet) + reviewer (sonnet) | 19 min | 11:38 |  |  |
-| 🔄 | **Total** | 12 tarefas |  | 3 h 15 min | 2026-10-30 16:48 | ~2026-11-04 13:53 (previsto) |  |
+| ✅ | T12 | Revisão final, backlog, CHANGELOG, roadmap e release v0.14.0 (Daniel roda o `hx release`) | tech-lead (sonnet) + reviewer (sonnet) | 19 min | 11:38 | 11:42 | 3 min (revisão: 2 min) |
+| 🔄 | Ajuste 1 | 1 ajuste(s) |  |  | 11:58 |  |  |
+| ✅ | **Total** | 12 tarefas |  | 3 h 15 min | 2026-10-30 16:48 | 2026-11-04 11:42 | 1 h 4 min (pausas: 113 h 50 min) |

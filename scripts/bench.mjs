@@ -187,7 +187,8 @@ function buildLeve(dest, hxJs, keepPlugins) {
     settings,
     JSON.stringify({ enabledPlugins: Object.fromEntries(off.map((k) => [k, false])) }),
   );
-  return `--plugin-dir "${dest}" --settings "${settings}" --setting-sources project,local`;
+  // leve-plugins needs the user source: that is where the companion plugins are enabled.
+  return `--plugin-dir "${dest}" --settings "${settings}" --setting-sources ${keepPlugins ? "user,project,local" : "project,local"}`;
 }
 
 /** Prepares the clone and env for the profile; returns the extra flags for claude. */

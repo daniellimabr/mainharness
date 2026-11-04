@@ -39,3 +39,41 @@ Notas por desafio (atual/leve/sem): D1 23/20/20, D2 24/25/23, D3 23/25/24. Lint 
 ## 5. Recomendação ao Daniel
 
 Manter o Dashboard ligado. Oferecer o perfil leve como **opção** para projetos onde o custo de tokens pesa, e repetir 2 a 3 corridas por caso antes de torná-lo padrão. Decisão registrada como proposta no ADR 0017.
+
+## 6. Repetição (retorno de Daniel): 3 corridas por caso, 3 perfis
+
+Daniel pediu mais dados e lembrou que o leve desligou plugins julgados valiosos (ponytail, remember, claude-code-setup, security-guidance). Nova variante **leve-plugins** = leve com esses 4 plugins ligados. 27 corridas, juiz único e cego ().
+
+| | atual | leve | leve-plugins |
+|---|---|---|---|
+| Nota média (0–25) | 22,2 | 22,8 | 23,3 |
+| Pior nota | 21 | 20 | 21 |
+| Escondidos | 66/66 | 63/66 | 65/66 |
+| Tokens por corrida | 496 mil | 359 mil (−28%) | 426 mil (−14%) |
+| Custo | US$ 0,240 | 0,196 (−18%) | 0,236 (−2%) |
+| Tempo | 146 s | 107 s | 231 s |
+
+- Qualidade: os 3 perfis ficam a menos de 1,2 ponto entre si, dentro do limite de 2 e dentro do ruído (notas de 20 a 25 no mesmo perfil). **Não há perda de qualidade medida ao tirar contexto**, e nenhuma vantagem medida dos plugins companheiros em nota.
+- Economia: o leve puro poupa 28% de tokens; com os plugins sobra 14% (abaixo dos 20% do critério), custo igual ao atual e tempo maior (os plugins rodam hooks e skills a mais; corridas em paralelo também pesam).
+- Leve puro: pior mínimo (20) e 3 escondidos falhos em 66; leve-plugins 1 em 66.
+- Limites: 3 corridas por caso ainda é amostra pequena; juiz único; o tempo mede 3 corridas em paralelo; a nota não mede o que ponytail/remember dão a longo prazo (memória entre sessões), só o resultado de uma tarefa.
+- **Leitura:** o leve-plugins mantém a qualidade (até um pouco acima) e preserva o que Daniel valoriza, mas deixa de economizar o suficiente para ser padrão. O leve puro economiza, mas com mais risco nos escondidos.
+
+## 6. Repetição (retorno de Daniel): 3 corridas por caso, 3 perfis
+
+Daniel pediu mais dados e lembrou que o leve desligou plugins julgados valiosos (ponytail, remember, claude-code-setup, security-guidance). Nova variante **leve-plugins** = leve com esses 4 plugins ligados. 27 corridas, juiz único e cego (`S16/notas-juiz-2.md`).
+
+| | atual | leve | leve-plugins |
+|---|---|---|---|
+| Nota média (0–25) | 22,2 | 22,8 | 23,3 |
+| Pior nota | 21 | 20 | 21 |
+| Escondidos | 66/66 | 63/66 | 65/66 |
+| Tokens por corrida | 496 mil | 359 mil (−28%) | 426 mil (−14%) |
+| Custo | US$ 0,240 | 0,196 (−18%) | 0,236 (−2%) |
+| Tempo | 146 s | 107 s | 231 s |
+
+- Qualidade: os 3 perfis ficam a menos de 1,2 ponto entre si (limite 2) e dentro do ruído (notas de 20 a 25 no mesmo perfil). **Sem perda de qualidade medida ao tirar contexto**, e sem vantagem medida dos plugins companheiros em nota.
+- Economia: o leve puro poupa 28% de tokens; com os plugins sobra 14% (abaixo dos 20% do critério), custo igual ao atual e tempo maior (hooks e skills a mais; 3 corridas em paralelo também pesam).
+- Leve puro: pior mínimo (20) e 3 escondidos falhos em 66; leve-plugins, 1 em 66.
+- Limites: 3 corridas por caso ainda é amostra pequena; juiz único; o tempo mede corridas em paralelo; a nota mede uma tarefa, não o que ponytail/remember dão a longo prazo (memória entre sessões). A 1ª versão das corridas leve-plugins não carregava os plugins (bug do bench, corrigido; descartadas em `S16/invalido/`).
+- **Leitura:** o leve-plugins mantém a qualidade e preserva o que Daniel valoriza, mas não economiza o bastante para ser padrão. O leve puro economiza, com mais risco nos escondidos.

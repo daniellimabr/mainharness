@@ -1,0 +1,80 @@
+diff --git a/cli/src/commands/worker.ts b/cli/src/commands/worker.ts
+index 2a3f08a..1293f8a 100644
+--- a/cli/src/commands/worker.ts
++++ b/cli/src/commands/worker.ts
+@@ -66,12 +66,35 @@ function alive(pid: unknown): boolean {
+ 
+ function readLock(): { pid?: number; sprint?: string; task?: string } {
+   try {
+-    return (JSON.parse(fs.readFileSync(lockFile(), "utf8")) as { pid?: number } | null) ?? {};
++    return (
++      (JSON.parse(fs.readFileSync(lockFile(), "utf8")) as {
++        pid?: number;
++        sprint?: string;
++        task?: string;
++      } | null) ?? {}
++    );
+   } catch {
+     return {};
+   }
+ }
+ 
++/** Dead worker (lock with a dead PID) and no report newer than the lock: writes a failure report and warns once. */
++function reapDead(): void {
++  const { pid, sprint, task: tnn } = readLock();
++  if (typeof pid !== "number" || !sprint || !tnn || alive(pid)) return;
++  const report = path.join(dir(), `${sprint}-${tnn}.md`);
++  try {
++    if (fs.statSync(report).mtimeMs >= fs.statSync(lockFile()).mtimeMs) return;
++  } catch {
++    // no report yet
++  }
++  fs.writeFileSync(
++    report,
++    `# Trabalhador ${sprint}/${tnn}\n\nO trabalhador falhou (PID ${pid} morreu) sem gravar relatório.\n`,
++  );
++  console.error(`Trabalhador ${sprint}/${tnn} falhou sem relatório (PID ${pid} morreu): ${report}`);
++}
++
+ /** Creates the lock atomically (flag wx), holding this PID until the child's; a stale lock is replaced once. */
+ function takeLock(sprint: string, task: string): boolean {
+   fs.mkdirSync(dir(), { recursive: true });
+@@ -112,6 +135,7 @@ async function start(id: string | undefined, file: string | undefined, deps: Dep
+     console.error(`Handoff não encontrado ou vazio: ${handoff}`);
+     return 1;
+   }
++  reapDead();
+   if (!takeLock(sprint, tnn)) return 1;
+   let w: Awaited<ReturnType<typeof ready>> = null;
+   let child: ReturnType<typeof spawn> | undefined;
+@@ -235,6 +259,7 @@ export async function run(args: string[], deps: Deps = {}): Promise<number> {
+     console.error(USAGE);
+     return 1;
+   }
++  reapDead();
+   const w = await ready(deps);
+   if (!w) return 1;
+   console.log(`Trabalhador pronto: OmniRoute em ${w.url}, modelo ${w.model}.`);
+diff --git a/cli/test/worker-run.test.ts b/cli/test/worker-run.test.ts
+index f3e3047..3314762 100644
+--- a/cli/test/worker-run.test.ts
++++ b/cli/test/worker-run.test.ts
+@@ -241,3 +241,18 @@ describe("hx worker run: lock before spawn (B099)", () => {
+     expect(fakeSpawn).toHaveBeenCalledTimes(3);
+   });
+ });
++
++describe("hx worker status: worker that died without a report (B105)", () => {
++  it("writes a failure report and warns", async () => {
++    const wdir = path.join(env.home, "worker");
++    fs.mkdirSync(wdir, { recursive: true });
++    fs.writeFileSync(
++      path.join(wdir, "lock.json"),
++      JSON.stringify({ pid: 999999, sprint: "S01", task: "T01" }),
++    );
++    expect(await run(["status"], deps())).toBe(0);
++    expect(fs.readFileSync(path.join(wdir, "S01-T01.md"), "utf8")).toMatch(/falhou/i);
++    expect(out.join("\n")).toMatch(/S01\/T01/);
++    expect(out.join("\n")).toMatch(/falhou/i);
++  });
++});

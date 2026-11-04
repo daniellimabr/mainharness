@@ -1,0 +1,104 @@
+diff --git a/cli/src/commands/worker.ts b/cli/src/commands/worker.ts
+index 6793c43..c83c4e9 100644
+--- a/cli/src/commands/worker.ts
++++ b/cli/src/commands/worker.ts
+@@ -193,8 +193,41 @@ async function start(args: string[], deps: Deps): Promise<number> {
+   return r.code === 0 ? 0 : 1;
+ }
+ 
++/** One line per alias, sorted; url without credentials, token never printed. */
++function list(): number {
++  const all: unknown = loadConfig().workers ?? {};
++  if (typeof all !== "object" || all === null || Array.isArray(all)) {
++    console.error("A configuração de workers é inválida: esperado um objeto de apelidos.");
++    return 1;
++  }
++  const entries = Object.entries(all).sort(([a], [b]) => (a < b ? -1 : a > b ? 1 : 0));
++  if (!entries.length) {
++    console.log("Nenhum trabalhador configurado.");
++    return 0;
++  }
++  let code = 0;
++  for (const [alias, raw] of entries) {
++    const w = (typeof raw === "object" && raw !== null ? raw : {}) as Partial<Worker>;
++    if (typeof w.url !== "string" || typeof w.model !== "string") {
++      console.log(`${alias}  (mal configurado)`);
++      code = 1;
++      continue;
++    }
++    const p = w.price;
++    const price = !p
++      ? "sem preço"
++      : p.input === 0 && p.output === 0
++        ? "grátis"
++        : `US$ ${p.input}/${p.output} por milhão`;
++    const url = w.url.replace(/^([a-z][a-z0-9+.-]*:\/\/)[^/?#]*@/i, "$1");
++    console.log(`${alias}  ${w.model}  ${url}  ${price}`);
++  }
++  return code;
++}
++
+ export async function run(args: string[], deps: Deps = {}): Promise<number> {
+   const [sub, ...rest] = args;
++  if (sub === "list") return list();
+   if (sub === "check") return check(rest[0], deps);
+   if (sub === "run") return start(rest, deps);
+   console.error(USAGE);
+diff --git a/cli/test/worker.test.ts b/cli/test/worker.test.ts
+index e26cb92..088f64b 100644
+--- a/cli/test/worker.test.ts
++++ b/cli/test/worker.test.ts
+@@ -186,3 +186,53 @@ describe("hx worker run", () => {
+     expect(fs.existsSync(path.join(env.home, "out.json"))).toBe(false);
+   });
+ });
++
++describe("hx worker list", () => {
++  it("lists aliases sorted, without credentials or token", async () => {
++    fs.writeFileSync(
++      path.join(env.home, "config.json"),
++      JSON.stringify({
++        workers: {
++          zeta: {
++            url: "http://u:p@h:1/x",
++            model: "m/z",
++            token: "sk-zz",
++            price: { input: 0, output: 0 },
++          },
++          alfa: { url: "http://h:2", model: "m/a", token: "sk-aa" },
++        },
++      }),
++    );
++    const log = vi.spyOn(console, "log").mockImplementation(() => {});
++    expect(await run(["list"])).toBe(0);
++    const lines = log.mock.calls.map((c) => String(c[0]));
++    expect(lines[0]).toMatch(/^alfa {2}m\/a {2}http:\/\/h:2 {2}sem preço$/);
++    expect(lines[1]).toMatch(/^zeta {2}m\/z {2}http:\/\/h:1\/x {2}grátis$/);
++    expect(lines.join("\n")).not.toMatch(/sk-|u:p/);
++  });
++
++  it("empty, malformed entry and invalid workers", async () => {
++    const cfg = (workers: unknown) =>
++      fs.writeFileSync(path.join(env.home, "config.json"), JSON.stringify({ workers }));
++    const log = vi.spyOn(console, "log").mockImplementation(() => {});
++    const err = vi.spyOn(console, "error").mockImplementation(() => {});
++    cfg({});
++    expect(await run(["list"])).toBe(0);
++    expect(log.mock.calls[0]?.[0]).toBe("Nenhum trabalhador configurado.");
++    log.mockClear();
++    cfg({
++      b: { url: 1, model: "m", token: "sk-b" },
++      a: { url: "http://h", model: "m", token: "t", price: { input: 1, output: 2 } },
++    });
++    expect(await run(["list"])).toBe(1);
++    expect(log.mock.calls.map((c) => c[0])).toEqual([
++      "a  m  http://h  US$ 1/2 por milhão",
++      "b  (mal configurado)",
++    ]);
++    log.mockClear();
++    cfg(["x"]);
++    expect(await run(["list"])).toBe(1);
++    expect(log).not.toHaveBeenCalled();
++    expect(err.mock.calls.join(" ")).toContain("inválida");
++  });
++});

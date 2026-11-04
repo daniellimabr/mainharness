@@ -1,0 +1,34 @@
+{
+  "perfil": "leve-plugins",
+  "model": "sonnet",
+  "runs": [
+    {
+      "input": 2,
+      "cache_read": 24875,
+      "cache_creation": 15118,
+      "output": 16,
+      "cost_usd": 0.0631235
+    },
+    {
+      "input": 2,
+      "cache_read": 28525,
+      "cache_creation": 11468,
+      "output": 17,
+      "cost_usd": 0.048898500000000004
+    },
+    {
+      "input": 2,
+      "cache_read": 28525,
+      "cache_creation": 11468,
+      "output": 35,
+      "cost_usd": 0.049078500000000004
+    }
+  ],
+  "median": {
+    "input": 2,
+    "cache_read": 28525,
+    "cache_creation": 11468,
+    "output": 17,
+    "cost_usd": 0.049078500000000004
+  }
+}

@@ -71,7 +71,7 @@ Gemini e `hx worker` saíram (ADR 0014). `hx task drop|defer` tira ou adia taref
 
 ## 14. Harness leve × atual e custo do Dashboard (feito na S16, v0.14.0)
 
-`HARNESS_DASHBOARD=off`, `scripts/overhead.mjs` (ms por hook e tokens por sprint), `bench.mjs --perfil atual|leve|sem-dashboard`. O Dashboard custa muito menos de 2% da sprint (fica ligado); o perfil leve empatou na nota (23,3 × 23,3) com 41% menos tokens, em uma corrida por caso (ADR 0017, proposto). Também: `pre-bash` avisa armadilhas de comando, tarefa reaberta aceita `phase`/`review`, `approve` troca a Aprovação, marcas `[planejado]`/`[concluído]` no backlog, `maxWorkers=3`. Próximo passo: 2 a 3 corridas por caso do leve antes de torná-lo padrão.
+`HARNESS_DASHBOARD=off`, `scripts/overhead.mjs` (ms por hook e tokens por sprint), `bench.mjs --perfil atual|leve|sem-dashboard`. O Dashboard custa muito menos de 2% da sprint (fica ligado); o perfil leve empatou na nota (23,3 × 23,3) com 41% menos tokens, em uma corrida por caso (ADR 0017, proposto). Também: `pre-bash` avisa armadilhas de comando, tarefa reaberta aceita `phase`/`review`, `approve` troca a Aprovação, marcas `[planejado]`/`[concluído]` no backlog, `maxWorkers=3`. Repetição com 27 corridas: atual 22,2, leve 22,8, leve-plugins (leve com ponytail, remember etc.) 23,3; economia de tokens 28% no leve e 14% no leve-plugins. Padrão não muda; torná-lo padrão é decisão de Daniel.
 
 ## Avaliado e descartado por ora
 

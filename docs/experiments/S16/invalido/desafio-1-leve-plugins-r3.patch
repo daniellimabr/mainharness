@@ -1,0 +1,97 @@
+diff --git a/cli/src/commands/worker.ts b/cli/src/commands/worker.ts
+index 0777451..d823839 100644
+--- a/cli/src/commands/worker.ts
++++ b/cli/src/commands/worker.ts
+@@ -89,13 +89,45 @@ async function start(id: string | undefined, file: string | undefined, deps: Dep
+     console.error(`Handoff não encontrado ou vazio: ${handoff}`);
+     return 1;
+   }
+-  const lock = readLock();
+-  if (alive(lock.pid)) {
+-    console.error(`Já há um trabalhador rodando (${lock.sprint}/${lock.task}, PID ${lock.pid}).`);
++  // Take the lock before any await so concurrent runs cannot both pass; "wx" makes creation atomic.
++  fs.mkdirSync(dir(), { recursive: true });
++  const mine = JSON.stringify({ pid: process.pid, sprint, task: tnn });
++  for (let i = 0; ; i++) {
++    try {
++      fs.writeFileSync(lockFile(), mine, { flag: "wx" });
++      break;
++    } catch (e) {
++      const lock = readLock();
++      if ((e as NodeJS.ErrnoException).code !== "EEXIST" || alive(lock.pid) || i > 0) {
++        console.error(
++          `Já há um trabalhador rodando (${lock.sprint}/${lock.task}, PID ${lock.pid}).`,
++        );
++        return 1;
++      }
++      fs.rmSync(lockFile(), { force: true }); // stale: dead PID, empty or invalid JSON
++    }
++  }
++  try {
++    return await launch(deps, ctx, sprint, tnn, handoff);
++  } catch (e) {
++    console.error(String(e));
++    fs.rmSync(lockFile(), { force: true });
+     return 1;
+   }
++}
++
++async function launch(
++  deps: Deps,
++  ctx: ReturnType<typeof commandContext>,
++  sprint: string,
++  tnn: string,
++  handoff: string,
++) {
+   const w = await ready(deps);
+-  if (!w) return 1;
++  if (!w) {
++    fs.rmSync(lockFile(), { force: true });
++    return 1;
++  }
+   const m = w.model;
+   const child = (deps.spawn ?? spawn)(
+     process.execPath,
+@@ -119,7 +151,6 @@ async function start(id: string | undefined, file: string | undefined, deps: Dep
+     },
+   );
+   child.unref();
+-  fs.mkdirSync(dir(), { recursive: true });
+   fs.writeFileSync(lockFile(), JSON.stringify({ pid: child.pid, sprint, task: tnn }));
+   emit({
+     project: ctx.id,
+diff --git a/cli/test/worker-run.test.ts b/cli/test/worker-run.test.ts
+index 7709ffa..d3a8d39 100644
+--- a/cli/test/worker-run.test.ts
++++ b/cli/test/worker-run.test.ts
+@@ -188,3 +188,30 @@ describe("hx worker run: end to end with a fake claude", () => {
+     expect(evs.find((e) => e.type === "task.phase")).toMatchObject({ data: { phase: "fila" } });
+   }, 30000);
+ });
++
++describe("hx worker run: lock before spawn (B099)", () => {
++  it("the lock already exists when the child is spawned", async () => {
++    const lock = path.join(env.home, "worker", "lock.json");
++    let seen: unknown;
++    fakeSpawn.mockImplementationOnce(() => {
++      seen = JSON.parse(fs.readFileSync(lock, "utf8"));
++      return { pid: 999999, unref: () => undefined };
++    });
++    expect(await run(["run", "T01", handoff], deps())).toBe(0);
++    expect(seen).toMatchObject({ sprint: "S01", task: "T01" });
++    expect(JSON.parse(fs.readFileSync(lock, "utf8"))).toMatchObject({
++      pid: 999999,
++      sprint: "S01",
++      task: "T01",
++    });
++  });
++
++  it("two simultaneous runs spawn only one worker", async () => {
++    const codes = await Promise.all([
++      run(["run", "T01", handoff], deps()),
++      run(["run", "T01", handoff], deps()),
++    ]);
++    expect(fakeSpawn).toHaveBeenCalledTimes(1);
++    expect(codes.sort()).toEqual([0, 1]);
++  });
++});

@@ -18,12 +18,22 @@ O protocolo da S16 define: leve vale se ficar a até 2 pontos do atual e poupar 
 - Tornar o leve o padrão já: -41% de tokens, mas com uma corrida por caso e sem medir `~/.claude` do usuário.
 - Manter tudo como está.
 
-## Decisão (proposta)
+## Decisão (proposta, revista após a repetição)
 
-1. **Dashboard continua ligado** (custo ≪ 2%, sem injeção sem uso). `HARNESS_DASHBOARD=off` fica como opção de emergência.
-2. **Perfil leve** é opção, não padrão: nota igual (23,3 × 23,3), −41% tokens, −22% custo, −34% tempo. Antes de virar padrão, repetir 2 a 3 corridas por caso.
+1. **Dashboard continua ligado** (custo ≪ 2%, sem injeção sem uso).  fica como opção de emergência.
+2. **O padrão do plugin não muda.** Em 27 corridas (3 por caso), atual 22,2, leve 22,8 e leve-plugins 23,3: sem perda de qualidade medida, mas a economia do leve-plugins é só 14% de tokens (custo igual) e a do leve puro (28%) vem com pior mínimo e 3 escondidos falhos. Os plugins companheiros ficam ligados.
+3. O perfil leve puro é opção para projetos em que token pesa mais que risco; a decisão de torná-lo padrão é de Daniel.
 
 ## Consequências
 
 - Nada muda no comportamento padrão do plugin.
-- Nova sprint pode validar o leve com mais corridas e medir também o efeito do `~/.claude/CLAUDE.md`.
+- Se Daniel quiser o leve como padrão, nova sprint: mais corridas, medir o efeito do `~/.claude/CLAUDE.md` e da memória entre sessões.## Decisão (proposta, revista após a repetição de 27 corridas)
+
+1. **Dashboard continua ligado** (custo ≪ 2%, sem injeção sem uso). HARNESS_DASHBOARD=off fica como opção de emergência.
+2. **O padrão do plugin não muda.** Atual 22,2, leve 22,8 e leve-plugins 23,3: sem perda de qualidade medida, mas o leve-plugins poupa só 14% de tokens (custo igual) e o leve puro (28%) tem pior mínimo e 3 escondidos falhos. Os plugins companheiros ficam ligados.
+3. Tornar o leve puro opção ou padrão é decisão de Daniel.
+
+## Consequências
+
+- Nada muda no comportamento padrão do plugin.
+- Se Daniel quiser o leve como padrão: nova sprint com mais corridas, medindo também o efeito do ~/.claude/CLAUDE.md e da memória entre sessões.

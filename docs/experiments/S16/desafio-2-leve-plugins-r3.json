@@ -1,0 +1,40 @@
+{
+  "challenge": "desafio-2",
+  "model": "sonnet",
+  "perfil": "leve-plugins",
+  "model_id": "sonnet",
+  "base": "bd59ba1b0deb082701fb54652c959d7281d8e127",
+  "duration_s": 263,
+  "turns": 15,
+  "tokens": {
+    "input": 14,
+    "output": 5273,
+    "cache_read": 321455,
+    "cache_creation": 30111
+  },
+  "cost_usd": 0.2056167,
+  "exit_code": 0,
+  "timed_out": false,
+  "errors_429": 0,
+  "limits_before": {
+    "five_hour": 62,
+    "seven_day": 9
+  },
+  "limits_after": null,
+  "diff_lines": 39,
+  "lint": {
+    "typecheck": true,
+    "eslint": true,
+    "format": true
+  },
+  "acceptance": {
+    "ok": true,
+    "passed": 9,
+    "failed": 0
+  },
+  "hidden": {
+    "ok": true,
+    "passed": 7,
+    "failed": 0
+  }
+}
