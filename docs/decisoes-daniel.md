@@ -99,3 +99,4 @@ Formato: **Decisão** · **Porquê** · **Descartado** · **Contraponto**.
 - **Porquê:** medir antes de mexer; Daniel quer menos tokens sem perder qualidade.
 - **Resultado:** Dashboard custa ≪ 2% da sprint (não desligar); leve empata na nota (23,3 × 23,3) e poupa 41% de tokens, com uma corrida por caso. Proposta no ADR 0017: Dashboard ligado, leve como opção até repetir as corridas. **Aguarda decisão de Daniel.**
 - **Contraponto:** uma corrida por caso indica, não prova.
+- **Retorno de Daniel (2026-11-04):** repetir o teste para ter mais dados; o experimento não provou que o leve mantém a qualidade. Além disso, o leve tirou plugins companheiros (ponytail, remember, claude-code-setup, security-guidance) que já tinham sido julgados valiosos e podem fazer falta na qualidade do código. Ação: nova variante `leve-plugins` (reduz só hooks/CLAUDE.md/executor/skills, mantém os plugins) e 3 repetições por caso; ADR 0017 segue proposto.

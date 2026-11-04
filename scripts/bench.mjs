@@ -1,6 +1,6 @@
 // S12 experiment: one run of a challenge on one model, in a temp clone, under the same conditions
 // for every model (docs/experiments/S12-protocolo.md). Writes <challenge>-<model>.json and .patch.
-// usage: node scripts/bench.mjs <desafio> <opus|sonnet|gemini> [--perfil atual|leve|sem-dashboard] [--base <commit>] [--repo <dir>]
+// usage: node scripts/bench.mjs <desafio> <opus|sonnet|gemini> [--perfil atual|leve|leve-plugins|sem-dashboard] [--rep N] [--base <commit>] [--repo <dir>]
 //        node scripts/bench.mjs --abertura <perfil>   (3x `claude -p ok`, median in S16/abertura-<perfil>.json)
 //
 // S16 profiles (docs/experiments/S16-protocolo.md). Without --perfil: old behavior, output in S15.
@@ -25,7 +25,7 @@ import * as path from "node:path";
 const TOOLS = "Read,Edit,Write,Glob,Grep,Bash,PowerShell"; // same as hx worker run
 const TIMEOUT_MS = Number(process.env.HX_BENCH_TIMEOUT_MS) || 60 * 60_000;
 const USAGE =
-  "uso: node scripts/bench.mjs <desafio> <opus|sonnet|apelido-de-workers> [--perfil atual|leve|sem-dashboard] [--base <commit>] [--repo <dir>]\n     node scripts/bench.mjs --abertura <atual|leve|sem-dashboard>";
+  "uso: node scripts/bench.mjs <desafio> <opus|sonnet|apelido-de-workers> [--perfil atual|leve|leve-plugins|sem-dashboard] [--rep N] [--base <commit>] [--repo <dir>]\n     node scripts/bench.mjs --abertura <atual|leve|leve-plugins|sem-dashboard>";
 
 const args = process.argv.slice(2);
 const flag = (name) => {
@@ -36,10 +36,11 @@ const root = path.resolve(flag("--repo") ?? path.join(import.meta.dirname, "..")
 const baseArg = flag("--base") ?? "HEAD";
 const perfilArg = flag("--perfil");
 const abertura = flag("--abertura");
+const rep = flag("--rep"); // repetition n>1 adds -rN to the output name
 const perfil = abertura ?? perfilArg;
 const [challenge, model] = abertura ? [undefined, "sonnet"] : args;
 if (
-  (perfil !== undefined && !["atual", "leve", "sem-dashboard"].includes(perfil)) ||
+  (perfil !== undefined && !["atual", "leve", "leve-plugins", "sem-dashboard"].includes(perfil)) ||
   (!abertura && (!challenge || !/^[\w-]+$/.test(challenge) || !model || !/^[\w-]+$/.test(model)))
 ) {
   console.error(USAGE);
@@ -153,7 +154,7 @@ function tests(clone, files = "") {
 const median = (a) => [...a].sort((x, y) => x - y)[Math.floor(a.length / 2)];
 
 /** Builds the temp copy of the plugin with the lean files (profile leve); returns the claude flags. */
-function buildLeve(dest, hxJs) {
+function buildLeve(dest, hxJs, keepPlugins) {
   const lean = path.join(root, "scripts", "perfil-leve");
   const put = (from, to) => {
     fs.mkdirSync(path.dirname(path.join(dest, to)), { recursive: true });
@@ -167,12 +168,16 @@ function buildLeve(dest, hxJs) {
     fs.rmSync(path.join(dest, "skills", sk, "evals"), { recursive: true, force: true });
   }
   put(hxJs, "cli/dist/hx.js");
-  const off = [
-    "main-harness@harness-stable",
+  // leve-plugins keeps the companion plugins Daniel values (S16 feedback); the rest stays off.
+  const companions = [
     "ponytail@ponytail",
     "remember@claude-plugins-official",
     "claude-code-setup@claude-plugins-official",
     "security-guidance@claude-plugins-official",
+  ];
+  const off = [
+    "main-harness@harness-stable",
+    ...(keepPlugins ? [] : companions),
     "superpowers@claude-plugins-official",
     "understand-anything@understand-anything",
     "ecc@ecc",
@@ -188,10 +193,14 @@ function buildLeve(dest, hxJs) {
 /** Prepares the clone and env for the profile; returns the extra flags for claude. */
 function prepare(name, clone, tmp) {
   if (name === "sem-dashboard") env.HARNESS_DASHBOARD = "off";
-  if (name !== "leve") return "";
+  if (name !== "leve" && name !== "leve-plugins") return "";
   fs.cpSync(path.join(root, "scripts", "perfil-leve", "CLAUDE.md"), path.join(clone, "CLAUDE.md"));
   fs.rmSync(path.join(clone, ".claude"), { recursive: true, force: true });
-  return buildLeve(path.join(tmp, "main-harness"), path.join(clone, "cli", "dist", "hx.js"));
+  return buildLeve(
+    path.join(tmp, "main-harness"),
+    path.join(clone, "cli", "dist", "hx.js"),
+    name === "leve-plugins",
+  );
 }
 
 /** Opening cost: claude -p ok, 3 times in the profile, median of the usage fields. */
@@ -298,7 +307,8 @@ try {
     `${run.err}\n${res.result ?? (res.type ? "" : run.out)}`.match(/\b429\b/g) ?? []
   ).length;
 
-  if (perfil === "leve") must("git checkout -q -- CLAUDE.md .claude", clone); // undo the lean swap
+  if (perfil === "leve" || perfil === "leve-plugins")
+    must("git checkout -q -- CLAUDE.md .claude", clone); // undo the lean swap
   // Diff of the model's work only: before hidden tests and before the build touches cli/dist.
   must("git add -A", clone);
   const patch = mask(sh(`git diff --cached ${base} -- . ":(exclude)cli/dist"`, clone).out);
@@ -353,7 +363,7 @@ try {
     hidden,
   };
   fs.mkdirSync(outDir, { recursive: true });
-  const file = path.join(outDir, `${challenge}-${perfil ?? model}`);
+  const file = path.join(outDir, `${challenge}-${perfil ?? model}${rep > 1 ? `-r${rep}` : ""}`);
   fs.writeFileSync(`${file}.json`, mask(JSON.stringify(result, null, 2)) + "\n");
   fs.writeFileSync(`${file}.patch`, patch);
   console.log(`Corrida gravada: ${file}.json (${duration_s} s, saída ${run.code}).`);
