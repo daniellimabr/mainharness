@@ -38,7 +38,7 @@ Notas por desafio (atual/leve/sem): D1 23/20/20, D2 24/25/23, D3 23/25/24. Lint 
 
 ## 5. Recomendação ao Daniel
 
-Manter o Dashboard ligado. Oferecer o perfil leve como **opção** para projetos onde o custo de tokens pesa, e repetir 2 a 3 corridas por caso antes de torná-lo padrão. Decisão registrada como proposta no ADR 0017.
+Manter o Dashboard ligado. Decisão final de Daniel (após a repetição da seção 6): padrão mantido, sem perfil leve (ADR 0017 aceito).
 
 ## 6. Repetição (retorno de Daniel): 3 corridas por caso, 3 perfis
 
