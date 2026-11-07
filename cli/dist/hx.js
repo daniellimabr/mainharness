@@ -702,8 +702,8 @@ function usd(model, usage, prices) {
   const split = usage.cache_creation;
   const w1h = split ? split.ephemeral_1h_input_tokens ?? 0 : 0;
   const w5m = split ? split.ephemeral_5m_input_tokens ?? 0 : write;
-  const total = (usage.input_tokens ?? 0) * p.input + (usage.output_tokens ?? 0) * p.output + (usage.cache_read_input_tokens ?? 0) * p.cacheRead + w5m * p.cacheWrite5m + w1h * p.cacheWrite1h;
-  return Number((total / 1e6).toFixed(6));
+  const total2 = (usage.input_tokens ?? 0) * p.input + (usage.output_tokens ?? 0) * p.output + (usage.cache_read_input_tokens ?? 0) * p.cacheRead + w5m * p.cacheWrite5m + w1h * p.cacheWrite1h;
+  return Number((total2 / 1e6).toFixed(6));
 }
 var init_price = __esm({
   "cli/src/usage/price.ts"() {
@@ -2755,9 +2755,9 @@ function parseEstimate(s2) {
   );
 }
 function fmtMin(min) {
-  const total = Math.round(min);
-  const h = Math.floor(total / 60);
-  const m = total % 60;
+  const total2 = Math.round(min);
+  const h = Math.floor(total2 / 60);
+  const m = total2 % 60;
   if (!h) return `${m} min`;
   return m ? `${h} h ${m} min` : `${h} h`;
 }
@@ -2948,12 +2948,12 @@ function totalLine(tasks, times, pause = () => 0) {
   const planned = wall ? fmtMin(wall) : "\u2014";
   return `| ${status} | ${TOTAL} | ${tasks.length} tarefas |  | ${planned} | ${start2 && dateHM(start2)} | ${fim} | ${dur} |`;
 }
-function execTable(lines, total) {
+function execTable(lines, total2) {
   return `${EXEC_NOTE}
 
 ${EXEC_HEADER}
 ${lines.join("\n")}
-${total}`;
+${total2}`;
 }
 function writeExecution(text, tasks, lineFor, times = {}, pause, rounds = []) {
   const t = lf(text);
@@ -2983,10 +2983,10 @@ function renderTaskList(projectRoot, sprintId2) {
   const rel = releasePath(projectRoot, sprintId2);
   const stored = fs22.existsSync(rel) ? lf(fs22.readFileSync(rel, "utf8")).split("\n") : [];
   const rounds = stored.filter((l) => /^\| \S+ \| Ajuste \d+ \|/.test(l));
-  const total = stored.find((l) => l.includes(`| ${TOTAL} |`)) ?? totalLine(plan.tasks, {});
+  const total2 = stored.find((l) => l.includes(`| ${TOTAL} |`)) ?? totalLine(plan.tasks, {});
   return `Sprint ${sprintId2} \u2014 ${done}/${plan.tasks.length} feitas
 
-${execTable([...lines, ...rounds], total)}`;
+${execTable([...lines, ...rounds], total2)}`;
 }
 function waitIntervals(evs) {
   const out = [];
@@ -3814,13 +3814,13 @@ function close(ctx, p, id2, force) {
   const st = readState(ctx.id);
   const opened = st.activeSprint === id2 && st.sprintOpenedAt ? Date.parse(st.sprintOpenedAt) : NaN;
   const duration_s = Number.isNaN(opened) ? 0 : Math.max(0, Math.round((Date.parse(at) - opened) / 1e3));
-  const total = plan.tasks.filter((t) => !isAdjustment(t)).length;
-  const done = total - pending.length;
+  const total2 = plan.tasks.filter((t) => !isAdjustment(t)).length;
+  const done = total2 - pending.length;
   emit({
     ...base(ctx, id2),
     type: "sprint.close",
     ts: at,
-    data: { tasks_done: done, tasks_total: total, duration_s }
+    data: { tasks_done: done, tasks_total: total2, duration_s }
   });
   refresh(ctx, id2, plan, st.tasks);
   const m = computeMetrics(ctx.id, id2, plan);
@@ -3841,7 +3841,7 @@ function close(ctx, p, id2, force) {
   const waited = wait >= 1 && Number.isFinite(wait) ? ` (aguardou teste por ${fmtMin(wait)})` : "";
   const work = m.wait_min ? ` \xB7 trabalho ${fmtMin(m.work_min)}, espera por Daniel ${fmtMin(m.wait_min)}` : "";
   console.log(
-    `Sprint ${id2} fechada: ${done}/${total} tarefas em ${fmtMin(m.wall_min)}${paused}${waited}${work}
+    `Sprint ${id2} fechada: ${done}/${total2} tarefas em ${fmtMin(m.wall_min)}${paused}${waited}${work}
 
 ${renderMetrics(id2, plan, m)}`
   );
@@ -4860,8 +4860,77 @@ var init_request = __esm({
 // cli/src/commands/metrics.ts
 var metrics_exports = {};
 __export(metrics_exports, {
+  agentMetrics: () => agentMetrics,
+  renderAgentMetrics: () => renderAgentMetrics,
   run: () => run12
 });
+function merge(iv) {
+  const out = [];
+  for (const [s2, e] of [...iv].sort((x, y) => x[0] - y[0])) {
+    const prev = out.at(-1);
+    if (prev && s2 <= prev[1]) prev[1] = Math.max(prev[1], e);
+    else out.push([s2, e]);
+  }
+  return out;
+}
+function agentMetrics(project, sprintId2, plan) {
+  const evs = readEvents((e) => e.project === project && e.sprint === sprintId2).sort(
+    (x, y) => Date.parse(x.ts) - Date.parse(y.ts)
+  );
+  const planned = new Map(plan.tasks.map((t) => [t.id, t.planned_min]));
+  const sum = {};
+  const passes = [];
+  const reviews = [];
+  const waits = [];
+  const turnEnd = /* @__PURE__ */ new Map();
+  const reviewAt = /* @__PURE__ */ new Map();
+  for (const e of evs) {
+    const t = Date.parse(e.ts);
+    const dur = typeof e.data.duration_s === "number" ? e.data.duration_s : 0;
+    if (e.type === "turn.end") turnEnd.set(e.session, t);
+    else if (e.type === "prompt") {
+      const s2 = turnEnd.get(e.session);
+      if (s2 !== void 0) waits.push([s2, t]);
+      turnEnd.delete(e.session);
+    } else if (e.type === "task.phase" && e.task && e.data.phase === "revis\xE3o")
+      reviewAt.set(e.task, t);
+    else if (e.type === "task.done" && e.task) {
+      passes.push([t - dur * 1e3, t]);
+      const r = reviewAt.get(e.task);
+      if (r !== void 0) reviews.push([r, t]);
+      reviewAt.delete(e.task);
+      const plannedMin = planned.get(e.task) ?? 0;
+      if (plannedMin) {
+        const s2 = sum[e.agent ?? "desconhecido"] ??= [0, 0];
+        s2[0] += dur / 60;
+        s2[1] += plannedMin;
+      }
+    }
+  }
+  const w = merge(waits);
+  const inTask = merge(passes);
+  let inside = 0;
+  for (const [ws, we] of w)
+    for (const [ps, pe] of inTask) inside += Math.max(0, Math.min(we, pe) - Math.max(ws, ps));
+  return {
+    ratio_by_agent: Object.fromEntries(
+      Object.entries(sum).map(([k, [a, p]]) => [k, Math.round(a / p * 10) / 10])
+    ),
+    wait_outside_task_min: min1(total(w) - inside),
+    review_union_min: min1(total(merge(reviews)))
+  };
+}
+function renderAgentMetrics(a) {
+  const ratio = Object.entries(a.ratio_by_agent).map(([k, v]) => `${k} ${v}x`).join(" \xB7 ") || "\u2014";
+  return [
+    "",
+    "| Indicador | Valor |",
+    "|---|---|",
+    `| Real/planejado por agente | ${ratio} |`,
+    `| Espera por Daniel fora das tarefas | ${fmtMin(a.wait_outside_task_min)} |`,
+    `| Revis\xF5es (sem contar sobreposi\xE7\xE3o) | ${fmtMin(a.review_union_min)} |`
+  ].join("\n");
+}
 function run12(args) {
   const p = parseArgs(args);
   const doEmit = boolFlag(p, "emit");
@@ -4870,7 +4939,7 @@ function run12(args) {
   if (!id2) throw new Error("informe a sprint: hx metrics S01");
   const { plan } = loadPlan(ctx.root, id2);
   const m = computeMetrics(ctx.id, id2, plan);
-  console.log(renderMetrics(id2, plan, m));
+  console.log(renderMetrics(id2, plan, m) + renderAgentMetrics(agentMetrics(ctx.id, id2, plan)));
   if (doEmit) {
     emit({
       type: "sprint.metrics",
@@ -4884,6 +4953,7 @@ function run12(args) {
   }
   return 0;
 }
+var total, min1;
 var init_metrics = __esm({
   "cli/src/commands/metrics.ts"() {
     "use strict";
@@ -4892,6 +4962,8 @@ var init_metrics = __esm({
     init_emit();
     init_cmd();
     init_sprint();
+    total = (iv) => iv.reduce((a, [s2, e]) => a + e - s2, 0);
+    min1 = (ms) => Math.round(ms / 6e3) / 10;
   }
 });
 
@@ -4916,7 +4988,7 @@ function uniq(evs) {
 }
 function summary(title2, events) {
   const all = uniq(events);
-  const total = zero();
+  const total2 = zero();
   const spareTotal = zero();
   const by = { agente: /* @__PURE__ */ new Map(), modelo: /* @__PURE__ */ new Map() };
   const isSpare = (e) => e.data.usd === null && !String(e.data.model).startsWith("claude");
@@ -4924,7 +4996,7 @@ function summary(title2, events) {
   const spare = all.filter(isSpare);
   for (const e of spare) add(spareTotal, e.data);
   for (const e of evs) {
-    add(total, e.data);
+    add(total2, e.data);
     for (const [map, k] of [
       [by.agente, e.agent ?? "?"],
       [by.modelo, String(e.data.model)]
@@ -4933,7 +5005,7 @@ function summary(title2, events) {
       add(map.get(k), e.data);
     }
   }
-  const out = [`${title2} (${evs.length} respostas): ${line(total)}`];
+  const out = [`${title2} (${evs.length} respostas): ${line(total2)}`];
   for (const [label, map] of Object.entries(by)) {
     if (!map.size) continue;
     out.push(`  por ${label}:`);
