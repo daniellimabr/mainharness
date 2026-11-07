@@ -2,6 +2,8 @@
 import { flagStr, parseArgs } from "../core/args";
 import { commandContext } from "../core/context";
 import { emit } from "../events/emit";
+import { loadPlan } from "../sprint/cmd";
+import { resolveTaskId } from "../sprint/index";
 
 export function run(args: string[]): number {
   const p = parseArgs(args);
@@ -11,7 +13,14 @@ export function run(args: string[]): number {
     return 1;
   }
   const ctx = commandContext(process.cwd(), flagStr(p, "agent"));
-  const task = raw.toUpperCase();
+  let plan;
+  try {
+    plan = ctx.sprint ? loadPlan(ctx.root, ctx.sprint).plan : undefined;
+  } catch {
+    // no plan file: keep the id as typed
+  }
+  const name = /^ajuste$/i.test(raw) && p._[2] ? `${raw} ${p._[2]}` : raw;
+  const task = (plan ? resolveTaskId(plan, name) : undefined) ?? name.toUpperCase();
   emit({
     type: "review.result",
     project: ctx.id,

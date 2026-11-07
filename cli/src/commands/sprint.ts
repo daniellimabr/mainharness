@@ -6,9 +6,11 @@ import { harnessVersion } from "../core/version";
 import { emit, readEvents, utcStamp } from "../events/emit";
 import { atFlag, boolFlag, loadPlan, sprintId } from "../sprint/cmd";
 import {
+  addAdjustment,
   computeMetrics,
   fillApproval,
   fmtMin,
+  isAdjustment,
   planHash,
   type Plan,
   type PlanTask,
@@ -119,14 +121,24 @@ function feedback(ctx: CommandContext, arg: string | undefined): number {
     throw new Error("uso: hx sprint feedback <n de ajustes>");
   if (!ctx.sprint) throw new Error("nenhuma sprint aberta");
   emit({ ...base(ctx, ctx.sprint), type: "sprint.feedback", data: { adjustments: n } });
+  let task = "";
+  if (n > 0) {
+    const { file, text } = loadPlan(ctx.root, ctx.sprint);
+    const added = addAdjustment(text, n);
+    writePlan(file, text, added.text);
+    task = ` Tarefa ${added.id}.`;
+  }
   refresh(ctx, ctx.sprint, loadPlan(ctx.root, ctx.sprint).plan);
-  console.log(`Retorno de Daniel registrado: ${n} ajuste(s).`);
+  console.log(`Retorno de Daniel registrado: ${n} ajuste(s).${task}`);
   return 0;
 }
 
 function close(ctx: CommandContext, p: Parsed, id: string, force: boolean): number {
   const { plan } = loadPlan(ctx.root, id);
-  const pending = plan.tasks.filter((t) => !plan.execution[t.id]?.done).map((t) => t.id);
+  // adjustment tasks do not block the close: the open feedback round ends with it
+  const pending = plan.tasks
+    .filter((t) => !isAdjustment(t) && !plan.execution[t.id]?.done)
+    .map((t) => t.id);
   if (pending.length && !force)
     throw new Error(`faltam tarefas: ${pending.join(", ")} (use --force para fechar assim mesmo)`);
   const at = atFlag(p);
@@ -135,12 +147,13 @@ function close(ctx: CommandContext, p: Parsed, id: string, force: boolean): numb
   const duration_s = Number.isNaN(opened)
     ? 0
     : Math.max(0, Math.round((Date.parse(at) - opened) / 1000));
-  const done = plan.tasks.length - pending.length;
+  const total = plan.tasks.filter((t) => !isAdjustment(t)).length;
+  const done = total - pending.length;
   emit({
     ...base(ctx, id),
     type: "sprint.close",
     ts: at,
-    data: { tasks_done: done, tasks_total: plan.tasks.length, duration_s },
+    data: { tasks_done: done, tasks_total: total, duration_s },
   });
   refresh(ctx, id, plan, st.tasks); // closes the open feedback round in the table
   const m = computeMetrics(ctx.id, id, plan);
@@ -163,7 +176,7 @@ function close(ctx: CommandContext, p: Parsed, id: string, force: boolean): numb
     ? ` · trabalho ${fmtMin(m.work_min)}, espera por Daniel ${fmtMin(m.wait_min)}`
     : "";
   console.log(
-    `Sprint ${id} fechada: ${done}/${plan.tasks.length} tarefas em ${fmtMin(m.wall_min)}${paused}${waited}${work}\n\n${renderMetrics(id, plan, m)}`,
+    `Sprint ${id} fechada: ${done}/${total} tarefas em ${fmtMin(m.wall_min)}${paused}${waited}${work}\n\n${renderMetrics(id, plan, m)}`,
   );
   return 0;
 }

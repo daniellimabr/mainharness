@@ -7,7 +7,14 @@ import { logError } from "../core/log";
 import { readState, updateState, type TaskTimes } from "../core/state";
 import { emit, readEvents } from "../events/emit";
 import { atFlag, loadPlan } from "../sprint/cmd";
-import { dropTask, renderTaskList, taskLine, updateExecution, writePlan } from "../sprint/index";
+import {
+  dropTask,
+  renderTaskList,
+  resolveTaskId,
+  taskLine,
+  updateExecution,
+  writePlan,
+} from "../sprint/index";
 import { refreshAuto } from "./handoff";
 
 const PHASES = ["testes", "código", "lint", "fila", "revisão", "commit"];
@@ -36,10 +43,12 @@ export function run(args: string[]): number {
   const ctx = commandContext(process.cwd(), flagStr(p, "agent"));
   const sprint = ctx.sprint;
   if (!sprint) throw new Error("nenhuma sprint aberta (rode hx sprint open SNN)");
-  const id = raw.toUpperCase();
   const { plan } = loadPlan(ctx.root, sprint);
+  const spaced = /^ajuste$/i.test(raw) && /^\d+$/.test(p._[2] ?? ""); // hx task phase Ajuste 1 fila
+  const name = spaced ? `${raw} ${p._.splice(2, 1)[0]}` : raw;
+  const id = resolveTaskId(plan, name) ?? name.toUpperCase();
   const task = plan.tasks.find((t) => t.id === id);
-  if (!task) throw new Error(`tarefa ${id} não está no plano ${sprint}`);
+  if (!task) throw new Error(`tarefa ${name.toUpperCase()} não está no plano ${sprint}`);
   const at = atFlag(p);
 
   const prev = readState(ctx.id).tasks[id];

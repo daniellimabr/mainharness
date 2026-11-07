@@ -232,13 +232,48 @@ export function planRel(sprintId: string): string {
 
 const lf = (text: string) => text.replace(/\r\n/g, "\n");
 
-/** SHA-256 of everything before "## Aprovação", with LF line endings. */
+/** Mark in the title of a task created by "hx sprint feedback". */
+const ADJ_MARK = "(ajuste)";
+const ADJ_ROW = new RegExp(`^\\|\\s*T\\d+\\s*\\|.*${ADJ_MARK.replace(/[()]/g, "\\$&")}.*\\n`, "gm");
+
+/** SHA-256 of everything before "## Aprovação", with LF line endings; adjustment task rows are left out. */
 export function planHash(text: string): string {
   const t = lf(text);
   const m = APPROVAL_RE.exec(t);
   return createHash("sha256")
-    .update(m ? t.slice(0, m.index) : t)
+    .update((m ? t.slice(0, m.index) : t).replace(ADJ_ROW, ""))
     .digest("hex");
+}
+
+/** Adds the adjustment task (next TNN) to the Tarefas table; the approval stays valid (planHash skips it). */
+export function addAdjustment(text: string, n: number): { text: string; id: string } {
+  const t = lf(text);
+  const sec = section(t, /^## Tarefas[^\n]*$/m);
+  if (!sec) throw new Error("o plano não tem seção Tarefas");
+  const lines = t.slice(sec.start, sec.end).split("\n");
+  const rows = lines.flatMap((l, i) => (l.trim().startsWith("|") ? [i] : []));
+  const head = cells(lines[rows[0] ?? 0] ?? "");
+  const tasks = parsePlan(t).tasks;
+  const last = tasks.at(-1)?.id ?? "T00";
+  const id = `T${String(tasks.reduce((a, x) => Math.max(a, Number(x.id.slice(1))), 0) + 1).padStart(last.length - 1, "0")}`;
+  const round = tasks.filter((x) => x.title.includes(ADJ_MARK)).length + 1;
+  const row = head.map((h, i) => {
+    if (i === 0) return id;
+    if (i === 1) return `Ajuste ${round}: ${n} ajuste(s) pedido(s) por Daniel ${ADJ_MARK}`;
+    if (i === 2) return "clone";
+    return /^depende de$/i.test(h) ? "—" : "";
+  });
+  lines.splice((rows.at(-1) ?? 0) + 1, 0, `| ${row.join(" | ")} |`);
+  return { text: t.slice(0, sec.start) + lines.join("\n") + t.slice(sec.end), id };
+}
+
+export const isAdjustment = (t: PlanTask) => t.title.includes(ADJ_MARK);
+
+/** "T14" or "Ajuste 2" (2nd adjustment task of the plan) -> task id; undefined when unknown. */
+export function resolveTaskId(plan: Plan, raw: string): string | undefined {
+  const m = /^ajuste\s*(\d+)$/i.exec(raw.trim());
+  if (!m) return raw.toUpperCase();
+  return plan.tasks.filter((t) => t.title.includes(ADJ_MARK))[Number(m[1]) - 1]?.id;
 }
 
 /** "20 min", "1 h", "1 h 30 min", "1h30" -> minutes. */
@@ -624,8 +659,8 @@ export function computeMetrics(project: string, sprintId: string, plan: Plan): S
   for (const [k, s] of Object.entries(durations)) actual_min_by_task[k] = r1(s / 60);
   const rounds = feedbackRounds(evs).map((r) => roundStats(r, a));
   const m: SprintMetrics = {
-    tasks_total: plan.tasks.length,
-    tasks_done: plan.tasks.filter((t) => t.id in durations).length,
+    tasks_total: plan.tasks.filter((t) => !isAdjustment(t)).length,
+    tasks_done: plan.tasks.filter((t) => !isAdjustment(t) && t.id in durations).length,
     planned_min: plan.tasks.reduce((a, t) => a + t.planned_min, 0),
     planned_wall_min: plannedWall(plan.tasks),
     actual_min: r1(Object.values(durations).reduce((a, s) => a + s, 0) / 60),
