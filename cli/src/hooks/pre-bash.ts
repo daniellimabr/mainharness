@@ -363,6 +363,23 @@ function innerCommand(cmd: string, args: string[]): string | Verdict | null {
   return null;
 }
 
+export interface LocalRule {
+  command: string;
+  message: string;
+}
+
+/** Project rules from <root>/.harness/local-rules.json: {"deny":[{"command":"ssh","message":"..."}]}. */
+export function loadLocalRules(root: string): LocalRule[] {
+  try {
+    const j = JSON.parse(fs.readFileSync(path.join(root, ".harness", "local-rules.json"), "utf8"));
+    return (Array.isArray(j.deny) ? j.deny : []).filter(
+      (r: LocalRule) => typeof r?.command === "string" && typeof r?.message === "string",
+    );
+  } catch {
+    return []; // no file or invalid JSON: no project rules
+  }
+}
+
 /** Classifies a full command line. Returns null when it may run normally. */
 export function classifyCommand(
   command: string,
@@ -370,6 +387,7 @@ export function classifyCommand(
   root: string,
   stable: string,
   vars = new Map<string, string>(),
+  rules: LocalRule[] = [],
 ): Verdict | null {
   shellVars = vars;
   let dir = cwd;
@@ -390,11 +408,15 @@ export function classifyCommand(
     const args = words.slice(1);
     let v: Verdict | null = null;
 
+    const rule = rules.find((r) => r.command.toLowerCase().replace(/\.exe$/, "") === cmd);
+    if (rule)
+      return { decision: "deny", reason: `Bloqueado pela regra do projeto: ${rule.message}` };
     for (const r of seg.redirects) v ??= checkWrite(r, dir, root, stable);
     if (!v) {
       const inner =
         cmd === "hx" && args[0] === "run" ? args.slice(1).join(" ") : innerCommand(cmd, args);
-      v = typeof inner === "string" ? classifyCommand(inner, dir, root, stable, vars) : inner;
+      v =
+        typeof inner === "string" ? classifyCommand(inner, dir, root, stable, vars, rules) : inner;
     }
     if (!v && cmd === "xargs") {
       if (args.some((a) => RECURSIVE_DELETE.has(baseName(a)))) v = UNCHECKABLE;
@@ -501,7 +523,7 @@ export function preBash(input: HookInput): HookOutcome {
   } catch {
     // invalid HARNESS_HOME: fall back to defaults and keep guarding (never fail open)
   }
-  const v = classifyCommand(command, cwd, root, stable);
+  const v = classifyCommand(command, cwd, root, stable, new Map(), loadLocalRules(root));
   if (!v)
     return warnings.length
       ? jsonOut({

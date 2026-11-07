@@ -138,6 +138,18 @@ describe("classifyCommand", () => {
     }
   });
 
+  it("denies commands from the project's local rules, not text that mentions them", () => {
+    const rules = [{ command: "ssh", message: "use ssh-vm.ps1" }];
+    const c = (cmd: string) =>
+      classifyCommand(cmd, ROOT, ROOT, STABLE, new Map(), rules)?.decision ?? null;
+    expect(c('ssh.exe dev "ls"')).toBe("deny");
+    expect(c("echo ok && ssh dev ls")).toBe("deny");
+    expect(c('powershell -Command "ssh dev ls"')).toBe("deny");
+    expect(c("python scripts/ssh_vm.py dev ls")).toBeNull();
+    expect(c('git commit -m "docs: nao usar ssh"')).toBeNull();
+    expect(c("grep ssh README.md")).toBeNull();
+  });
+
   it("treats the home folder as outside the project", () => {
     expect(classifyCommand(`rm -rf "${HOME}"`, ROOT, ROOT, STABLE)?.decision).toBe("deny");
   });

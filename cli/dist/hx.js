@@ -1781,7 +1781,17 @@ function innerCommand(cmd, args) {
   }
   return null;
 }
-function classifyCommand(command, cwd, root, stable, vars = /* @__PURE__ */ new Map()) {
+function loadLocalRules(root) {
+  try {
+    const j = JSON.parse(fs15.readFileSync(path16.join(root, ".harness", "local-rules.json"), "utf8"));
+    return (Array.isArray(j.deny) ? j.deny : []).filter(
+      (r) => typeof r?.command === "string" && typeof r?.message === "string"
+    );
+  } catch {
+    return [];
+  }
+}
+function classifyCommand(command, cwd, root, stable, vars = /* @__PURE__ */ new Map(), rules = []) {
   shellVars = vars;
   let dir = cwd;
   let ask = null;
@@ -1795,10 +1805,13 @@ function classifyCommand(command, cwd, root, stable, vars = /* @__PURE__ */ new 
     const cmd = baseName(words[0] ?? "");
     const args = words.slice(1);
     let v = null;
+    const rule = rules.find((r) => r.command.toLowerCase().replace(/\.exe$/, "") === cmd);
+    if (rule)
+      return { decision: "deny", reason: `Bloqueado pela regra do projeto: ${rule.message}` };
     for (const r of seg.redirects) v ??= checkWrite(r, dir, root, stable);
     if (!v) {
       const inner = cmd === "hx" && args[0] === "run" ? args.slice(1).join(" ") : innerCommand(cmd, args);
-      v = typeof inner === "string" ? classifyCommand(inner, dir, root, stable, vars) : inner;
+      v = typeof inner === "string" ? classifyCommand(inner, dir, root, stable, vars, rules) : inner;
     }
     if (!v && cmd === "xargs") {
       if (args.some((a) => RECURSIVE_DELETE.has(baseName(a)))) v = UNCHECKABLE;
@@ -1865,7 +1878,7 @@ function preBash(input) {
     stable = loadConfig().stableDir;
   } catch {
   }
-  const v = classifyCommand(command, cwd, root, stable);
+  const v = classifyCommand(command, cwd, root, stable, /* @__PURE__ */ new Map(), loadLocalRules(root));
   if (!v)
     return warnings.length ? jsonOut({
       hookSpecificOutput: {
