@@ -73,6 +73,10 @@ Gemini e `hx worker` saíram (ADR 0014). `hx task drop|defer` tira ou adia taref
 
 `HARNESS_DASHBOARD=off`, `scripts/overhead.mjs` (ms por hook e tokens por sprint), `bench.mjs --perfil atual|leve|sem-dashboard`. O Dashboard custa muito menos de 2% da sprint (fica ligado); o perfil leve empatou na nota (23,3 × 23,3) com 41% menos tokens, em uma corrida por caso (ADR 0017, proposto). Também: `pre-bash` avisa armadilhas de comando, tarefa reaberta aceita `phase`/`review`, `approve` troca a Aprovação, marcas `[planejado]`/`[concluído]` no backlog, `maxWorkers=3`. Repetição com 27 corridas: atual 22,2, leve 22,8, leve-plugins (leve com ponytail, remember etc.) 23,3; economia de tokens 28% no leve e 14% no leve-plugins. Padrão não muda; torná-lo padrão é decisão de Daniel.
 
+## 15. Ajuste como tarefa, regras do projeto e conferência visual (feito na S17, v0.16.0)
+
+`hx sprint feedback` cria o TNN do ajuste; `approve` valida o plano; eventos com o agente do clone e do Reviewer; `hx metrics` por agente; `pre-bash` com regras locais do projeto; `attach` preserva regras legadas; `hx shot` (print com Chrome headless); `hx eval` repete o caso que falha (2 de 3); toast no Windows; estimativa em minutos de agente com fator padrão (ADR 0018: limite de clones por máquina).
+
 ## Avaliado e descartado por ora
 
 - **Troca de modelo pelo % de uso (gatilho de 90%, S10).** A escolha de modelo virou reação ao limite, não decisão do plano (ADR 0013).

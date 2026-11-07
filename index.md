@@ -40,6 +40,7 @@ Uma linha por arquivo: caminho e propósito. Mantido pelo hook `post-edit`.
 - `cli/src/commands/rollback.ts` — hx rollback: moves the stable clone back to the previous release tag.
 - `cli/src/commands/run.ts` — hx run <cmd...>: runs an agent command and prints only the summary (success) or the failures.
 - `cli/src/commands/setup.ts` — hx setup: one-time machine install (config, marketplace, user-level /attach skill).
+- `cli/src/commands/shot.ts` — hx shot <url|arquivo> [--out arquivo.png] [--width N] [--theme light|dark|both]: print com Chrome/Edge headless.
 - `cli/src/commands/skills.ts` — hx skills [on|off <name>]: lists or toggles optional catalog skills in the current project (ADR 0005).
 - `cli/src/commands/sprint.ts` — hx sprint approve|open|status|feedback|close: sprint lifecycle on docs/sprints/SNN-plan.md.
 - `cli/src/commands/status.ts` — hx status --where <texto> --next <texto>: records where the project is and what comes next (project.status).
@@ -50,6 +51,7 @@ Uma linha por arquivo: caminho e propósito. Mantido pelo hook `post-edit`.
 - `cli/src/core/config.ts` — ~/.harness/config.json: prices, context limits and harness locations.
 - `cli/src/core/context.ts` — Resolves "who/where" for CLI commands run by agents: project, session, sprint, agent.
 - `cli/src/core/fsx.ts` — Small filesystem helpers: safe JSON reads and atomic writes.
+- `cli/src/core/local-rules.ts` — (sem descrição)
 - `cli/src/core/log.ts` — Error log for hooks and commands: ~/.harness/logs/hx-YYYY-MM-DD.log. Never throws.
 - `cli/src/core/paths.ts` — Locations used by hx: the local data folder (~/.harness) and the plugin root.
 - `cli/src/core/proc.ts` — Runs external tools without a shell string: PATH lookup (PATHEXT on Windows), .cmd shims quoted.
@@ -58,6 +60,7 @@ Uma linha por arquivo: caminho e propósito. Mantido pelo hook `post-edit`.
 - `cli/src/core/state.ts` — Per-project runtime state: ~/.harness/state/<project>.json (active sprint, session, task times).
 - `cli/src/core/text.ts` — Free text made safe for an event string field (no content-like chars, max 200).
 - `cli/src/core/time.ts` — Times shown to people, in the configured timezone (America/Sao_Paulo, UTC−3).
+- `cli/src/core/toast.ts` — B109: Windows toast when the agent needs Daniel. Silent on failure; no-op elsewhere.
 - `cli/src/core/version.ts` — Harness version: single source is .claude-plugin/plugin.json.
 - `cli/src/eval/run.ts` — hx eval runner: `claude -p` sessions (Sonnet, 1 run per query, max 3 at once), each in a temp
 - `cli/src/events/emit.ts` — Appends validated events to ~/.harness/events/YYYY-MM-DD.jsonl (UTC day). Append-only.
@@ -84,6 +87,9 @@ Uma linha por arquivo: caminho e propósito. Mantido pelo hook `post-edit`.
 - `cli/src/usage/limits.ts` — B064: plan usage % (5 h and weekly) from the endpoint behind Claude Code's /usage.
 - `cli/src/usage/price.ts` — US$ estimate for one response from its transcript usage block and the config price table.
 - `cli/src/usage/transcript.ts` — TranscriptSource: reads Claude Code JSONL transcripts incrementally and emits `usage` events.
+- `cli/test/agente-eventos.test.ts` — S17/T02: task events carry the running subagent (executor/reviewer); one Reviewer name; agent.start has the TNN.
+- `cli/test/ajuste-tarefa.test.ts` — (sem descrição)
+- `cli/test/attach-legado.test.ts` — hx attach on a repo with a legacy harness: rules migrate to .harness/local-rules.json, docs are copied.
 - `cli/test/attach.test.ts` — E2E tests for hx attach and hx skills, in temp folders with spaces.
 - `cli/test/attention.test.ts` — S13/T07: `attention` (Notification, PermissionRequest) and `error` (StopFailure, PostToolUseFailure), metadata only.
 - `cli/test/bench.test.ts` — scripts/bench.mjs: one S12 run (challenge x model) in a temp clone, with a fake claude (HX_CLAUDE_BIN).
@@ -92,6 +98,7 @@ Uma linha por arquivo: caminho e propósito. Mantido pelo hook `post-edit`.
 - `cli/test/dashboard-off.test.ts` — (sem descrição)
 - `cli/test/doctor.test.ts` — testes de doctor
 - `cli/test/e2e.test.ts` — End to end with paths that have spaces: the real plugin root ("C:\Main Harness" on Daniel's
+- `cli/test/eval-maioria.test.ts` — Tests for the 2-of-3 majority rule in hx eval (B077).
 - `cli/test/eval.test.ts` — (sem descrição)
 - `cli/test/events-s05.test.ts` — S05 events: agent.start/agent.end, prompt (never the text), session.start title, project.status, Stop typecheck only ...
 - `cli/test/events.test.ts` — testes de events
@@ -103,12 +110,15 @@ Uma linha por arquivo: caminho e propósito. Mantido pelo hook `post-edit`.
 - `cli/test/lifecycle.test.ts` — S13/T06: TNN on agent.start, agent_id + task on alert.context, `context` on every Stop, task on usage.
 - `cli/test/limits.test.ts` — B064: plan usage % (5 h and weekly) from the OAuth usage endpoint, throttled in the Stop.
 - `cli/test/lint.test.ts` — testes de lint
+- `cli/test/local-rules.test.ts` — (sem descrição)
+- `cli/test/metrics-agente.test.ts` — (sem descrição)
 - `cli/test/metrics-task.test.ts` — (sem descrição)
 - `cli/test/metrics.test.ts` — (sem descrição)
 - `cli/test/migrate.test.ts` — testes de migrate
 - `cli/test/no-worker.test.ts` — S13/T01 (ADR 0014): the Gemini worker is gone; its old events and config stay readable.
 - `cli/test/overhead.test.ts` — (sem descrição)
 - `cli/test/paths.test.ts` — testes de paths (HARNESS_HOME)
+- `cli/test/plano-validado.test.ts` — (sem descrição)
 - `cli/test/post-edit-encoding.test.ts` — post-edit hook: flags BOM and mojibake that lint and prettier miss.
 - `cli/test/post-edit.test.ts` — post-edit hook: drops index.md entries whose files no longer exist.
 - `cli/test/pre-bash-s04.test.ts` — pre-bash S04: cd to /c/... denied, stale bundle on commit asks, Remove-Item with spaces inside the repo allowed.
@@ -116,6 +126,7 @@ Uma linha por arquivo: caminho e propósito. Mantido pelo hook `post-edit`.
 - `cli/test/pre-bash-s06.test.ts` — pre-bash S06 (B054): Tee-Object and git format-patch -o follow the pre-edit rule.
 - `cli/test/pre-bash-warn.test.ts` — pre-bash B136: command traps that cost quota produce warnings (never blocks).
 - `cli/test/pre-edit.test.ts` — pre-edit hook: denies edits to cli/dist/hx.js and the stable dir.
+- `cli/test/release-setup-doctor.test.ts` — T10 (B090, B091): release ignores SNN-release.md; setup and doctor stay quiet about what is fine.
 - `cli/test/release.test.ts` — testes de release
 - `cli/test/repomap.test.ts` — testes de repomap
 - `cli/test/request.test.ts` — hx request --to <id>: writes into a registered project's inbox/; session-start there warns about it.
@@ -125,12 +136,14 @@ Uma linha por arquivo: caminho e propósito. Mantido pelo hook `post-edit`.
 - `cli/test/session-start-requests.test.ts` — session-start shows, once, the project's harness requests marked `feito (SNN)` in the harness backlog.
 - `cli/test/session-start.test.ts` — session-start after a compaction brings back the task in progress and the hx state, not only the handoff.
 - `cli/test/setup.test.ts` — (sem descrição)
+- `cli/test/shot.test.ts` — hx shot with a fake browser (a script that records its args and writes the screenshot file).
 - `cli/test/sprint-reopen.test.ts` — (sem descrição)
 - `cli/test/sprint.test.ts` — testes de sprint
 - `cli/test/stop-typecheck.test.ts` — Stop hook typecheck: tsc runs only when cli/src changed and blocks with its first lines.
 - `cli/test/task-drop.test.ts` — (sem descrição)
 - `cli/test/task.test.ts` — (sem descrição)
 - `cli/test/text-s06.test.ts` — S06 text fixes: hx status cleans where/next like the title (B057); session-start keeps `\|` in backlog items (B058).
+- `cli/test/toast.test.ts` — S17/T12 (B109): toast on Notification and PermissionRequest, through an injectable trigger.
 - `cli/test/transcript.test.ts` — (sem descrição)
 - `cli/test/turn-end.test.ts` — B045: the Stop hook emits turn.end only when it lets the agent stop.
 - `cli/test/usage.test.ts` — testes de usage
@@ -157,6 +170,7 @@ Uma linha por arquivo: caminho e propósito. Mantido pelo hook `post-edit`.
 - `docs/adr/0014-regra-quem-executa-revisada.md` — ADR 0014 — Regra "quem executa" revisada (Haiku, Gemini desligado, Reviewer Sonnet/Opus)
 - `docs/adr/0016-deepseek-direto-pode-executar.md` — ADR 0016 — DeepSeek direto pode executar tarefa de clone
 - `docs/adr/0017-perfil-leve-e-dashboard.md` — ADR 0017 — Dashboard fica ligado; perfil leve como opção a confirmar
+- `docs/adr/0018-limite-de-clones-por-maquina.md` — ADR 0018 — Limite de clones em paralelo, por máquina
 - `docs/avaliacao-observabilidade.md` — Avaliação de observabilidade: Main Harness e Dashboard IA
 - `docs/backlog.md` — Backlog do Main Harness
 - `docs/contracts/events.md` — Contrato de eventos: Main Harness e Dashboard IA
@@ -205,6 +219,7 @@ Uma linha por arquivo: caminho e propósito. Mantido pelo hook `post-edit`.
 - `docs/sprints/S15-release.md` — S15 — Release Report
 - `docs/sprints/S16-plan.md` — S16 — Harness leve × atual e o custo do Dashboard
 - `docs/sprints/S16-release.md` — S16 — Release Report
+- `docs/sprints/S17-plan.md` — S17 — Backlog inteiro: ajustes com tarefa, clones identificados, plano validado
 - `eslint.config.js` — ESLint flat config
 - `hooks/hooks.json` — hooks do plugin (forma exec chamando o hx)
 - `package-lock.json` — versões travadas das dependências de desenvolvimento
@@ -242,6 +257,7 @@ Uma linha por arquivo: caminho e propósito. Mantido pelo hook `post-edit`.
 - `skills/sprint-plan/evals/files-new/package.json` — (sem descrição)
 - `skills/sprint-plan/evals/files-new/src/api/orders.ts` — (sem descrição)
 - `skills/sprint-plan/evals/files-new/src/web/OrdersPage.tsx` — (sem descrição)
+- `skills/sprint-plan/evals/files/docs/sprints/S01-plan.md` — S01 — Filtro por data e exportação CSV de pedidos
 - `skills/tdd-workflow/LICENSE` — licença MIT do ECC
 - `skills/tdd-workflow/SKILL.md` — Desenvolvimento guiado por testes nas tarefas da sprint: escrever o teste que falha primeiro, ver falhar (RED), imple...
 - `skills/tdd-workflow/SOURCE.md` — Origem

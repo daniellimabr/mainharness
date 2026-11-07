@@ -58,17 +58,19 @@ Teste antes do código em toda tarefa (skill `tdd-workflow`).
 
 Caminhos assumidos a partir da estrutura padrão do harness (TypeScript); se o código real usar outros nomes, o Tech Lead ajusta na T01 e o plano volta para aprovação.
 
-| Id | Tarefa | Agente | Arquivos | Estimativa |
-|---|---|---|---|---|
-| T01 | Contrato: tipos do filtro (`from`, `to`), limite de exportação e formato de erro | tech-lead | `src/shared/orders/orderFilters.ts` | 30 min |
-| T02 | Validação do intervalo e montagem da consulta com fuso de Brasília | clone-a | `src/server/orders/orderQuery.ts`, `src/server/orders/orderQuery.test.ts` | 1 h |
-| T03 | Gerador de CSV (BOM, `;`, escape, formatos pt-BR) | clone-b | `src/server/orders/ordersCsv.ts`, `src/server/orders/ordersCsv.test.ts` | 1 h |
-| T04 | Componente de filtro "De" / "Até" com validação e "Limpar" | clone-c | `src/web/orders/DateRangeFilter.tsx`, `src/web/orders/DateRangeFilter.test.tsx` | 1 h 30 min |
-| T05 | Botão "Exportar CSV" (desabilitado se vazio, download, mensagem de limite) | clone-d | `src/web/orders/ExportCsvButton.tsx`, `src/web/orders/ExportCsvButton.test.tsx` | 45 min |
-| T06 | Rotas: `GET /orders?from&to` e `GET /orders/export.csv` com limite de 10.000 | tech-lead | `src/server/orders/ordersRoutes.ts`, `src/server/orders/ordersRoutes.test.ts` | 1 h |
-| T07 | Integração na tela de pedidos + teste E2E + `index.md` | tech-lead | `src/web/orders/OrdersPage.tsx`, `e2e/orders-filter-export.spec.ts`, `index.md` | 1 h |
-| T08 | Documentar os parâmetros `from`/`to` e a rota de exportação | writer | `docs/api/orders.md` | 20 min |
-| T09 | Revisão: lint e tipos zerados, testes, `main-harness:security-review`, critérios de aceite 1 a 8 | reviewer | (só leitura) | 45 min |
+| Id | Tarefa | Agente | Arquivos | Depende de | Bruta | Planejado |
+|---|---|---|---|---|---|---|
+| T01 | Contrato: tipos do filtro (`from`, `to`), limite de exportação e formato de erro | tech-lead | `src/shared/orders/orderFilters.ts` | — | 30 min | 8 min |
+| T02 | Validação do intervalo e montagem da consulta com fuso de Brasília | clone-a | `src/server/orders/orderQuery.ts`, `src/server/orders/orderQuery.test.ts` | T01 | 1 h | 15 min |
+| T03 | Gerador de CSV (BOM, `;`, escape, formatos pt-BR) | clone-b | `src/server/orders/ordersCsv.ts`, `src/server/orders/ordersCsv.test.ts` | T01 | 1 h | 15 min |
+| T04 | Componente de filtro "De" / "Até" com validação e "Limpar" | clone-c | `src/web/orders/DateRangeFilter.tsx`, `src/web/orders/DateRangeFilter.test.tsx` | T01 | 1 h 30 min | 23 min |
+| T05 | Botão "Exportar CSV" (desabilitado se vazio, download, mensagem de limite) | clone-d | `src/web/orders/ExportCsvButton.tsx`, `src/web/orders/ExportCsvButton.test.tsx` | T01 | 45 min | 11 min |
+| T06 | Rotas: `GET /orders?from&to` e `GET /orders/export.csv` com limite de 10.000 | tech-lead | `src/server/orders/ordersRoutes.ts`, `src/server/orders/ordersRoutes.test.ts` | T02, T03 | 1 h | 15 min |
+| T07 | Integração na tela de pedidos + teste E2E + `index.md` | tech-lead | `src/web/orders/OrdersPage.tsx`, `e2e/orders-filter-export.spec.ts`, `index.md` | T04, T05, T06 | 1 h | 15 min |
+| T08 | Documentar os parâmetros `from`/`to` e a rota de exportação | writer | `docs/api/orders.md` | T01 | 20 min | 5 min |
+| T09 | Revisão: lint e tipos zerados, testes, `main-harness:security-review`, critérios de aceite 1 a 8 | reviewer | (só leitura) | T07, T08 | 45 min | 11 min |
+
+**Ondas:** onda 1 = T01; onda 2 = T02, T03, T04, T05, T08; onda 3 = T06; onda 4 = T07; onda 5 = T09.
 
 **Paralelismo:** depois da T01, as tarefas T02, T03, T04, T05 e T08 rodam em paralelo (clones e writer, sem arquivo em comum). T06 depende de T02 e T03. T07 depende de T04, T05 e T06. T09 é a última.
 

@@ -106,3 +106,9 @@ Formato: **Decisão** · **Porquê** · **Descartado** · **Contraponto**.
 - **Decisão:** a sprint cobre tudo que já foi pedido; o que for repetido ou perdeu sentido é cancelado, não feito. Prioridade de Daniel: clones informarem em qual tarefa estão.
 - **Porquê:** backlog acumulado com pedidos de vários projetos; limpar de uma vez.
 - **Contraponto:** sprint grande (13 tarefas); se a revisão apertar, o que não fecha volta ao backlog.
+
+### Máximo de 4 clones em paralelo no notebook-corp (2026-11-07, ADR 0018)
+- **Decisão:** no notebook-corp, no máximo 4 clones por onda; em outro computador o limite é revisto. Daniel quer ser lembrado de mudar ao subir o harness em outra máquina.
+- **Porquê:** com 7 clones na S17 a CPU foi a 83% e o PC ficou quase inutilizável.
+- **Alternativa descartada:** limite fixo para todas as máquinas.
+- **Contraponto:** a sprint pode demorar um pouco mais; se a causa for o antivírus, o limite pouco ajuda.

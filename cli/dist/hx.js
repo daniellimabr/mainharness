@@ -5949,7 +5949,7 @@ var init_eval = __esm({
     USAGE2 = `uso: hx eval <skill> [--failed] | --changed
   Escopo desde a \xFAltima tag: descri\xE7\xE3o mudou -> trigger.json; corpo mudou -> evals.json;
   s\xF3 evals/ mudou -> nada; skill nova -> ambos + baseline sem skill.
-  <skill> expl\xEDcita sem mudan\xE7a roda ambos. Sonnet, 1 rodada por consulta, at\xE9 3 sess\xF5es em paralelo.
+  <skill> expl\xEDcita sem mudan\xE7a roda ambos. Sonnet, at\xE9 3 sess\xF5es em paralelo; caso que falha roda de novo (vale 2 de 3).
   --failed: roda s\xF3 o que falhou na \xFAltima rodada (mesma skill) e junta com o que passou.`;
   }
 });

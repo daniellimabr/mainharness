@@ -2,6 +2,19 @@
 
 Versões do Main Harness (versionamento semântico; `0.y.z` até a 1.0).
 
+## [0.16.0] - 2026-11-07
+
+### Novidades
+
+- `hx sprint feedback` cria a tarefa de ajuste com TNN próprio; `task` e `review` aceitam TNN de ajuste
+- `hx sprint approve` valida o plano e cita `--force`
+- eventos de tarefa levam o agente do clone e do Reviewer; `hx metrics` mostra a razão por agente
+- `pre-bash` lê regras locais do projeto; `attach` preserva regras do harness legado
+- `hx shot`: print de página com Chrome/Edge headless, claro e escuro
+- `hx eval`: caso que falha roda de novo e vale 2 de 3
+- toast no Windows quando o agente pede permissão ou espera
+- `sprint-plan`: estimativa em minutos de agente, com fator padrão sem histórico
+
 ## [0.15.0] - 2026-11-07
 
 ### Novidades

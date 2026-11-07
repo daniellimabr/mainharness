@@ -10,7 +10,7 @@ import { evalScope, listSkills } from "../release/skills";
 const USAGE = `uso: hx eval <skill> [--failed] | --changed
   Escopo desde a última tag: descrição mudou -> trigger.json; corpo mudou -> evals.json;
   só evals/ mudou -> nada; skill nova -> ambos + baseline sem skill.
-  <skill> explícita sem mudança roda ambos. Sonnet, 1 rodada por consulta, até 3 sessões em paralelo.
+  <skill> explícita sem mudança roda ambos. Sonnet, até 3 sessões em paralelo; caso que falha roda de novo (vale 2 de 3).
   --failed: roda só o que falhou na última rodada (mesma skill) e junta com o que passou.`;
 
 export async function run(args: string[]): Promise<number> {
