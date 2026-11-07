@@ -12,6 +12,7 @@ import {
   fmtMin,
   isAdjustment,
   planHash,
+  planProblems,
   type Plan,
   type PlanTask,
   planRel,
@@ -32,11 +33,14 @@ export function run(args: string[]): number {
   if (sub === "feedback") return feedback(ctx, arg);
   const id = sprintId(arg) ?? ctx.sprint;
   if (!sub || !["approve", "open", "status", "close"].includes(sub)) {
-    console.error("uso: hx sprint approve|open|status|close <id> | hx sprint feedback <n>");
+    console.error(
+      "uso: hx sprint approve|open|status|close <id> | hx sprint feedback <n>\n" +
+        "  approve <id> [--force]: --force aprova mesmo com o plano fora do formato",
+    );
     return 1;
   }
   if (!id) throw new Error(`informe a sprint: hx sprint ${sub} S01`);
-  if (sub === "approve") return approve(ctx, p, id);
+  if (sub === "approve") return approve(ctx, p, id, force);
   if (sub === "open") return open(ctx, p, id);
   if (sub === "close") return close(ctx, p, id, force);
   const list = renderTaskList(ctx.root, id);
@@ -52,8 +56,13 @@ const base = (ctx: CommandContext, sprint: string) => ({
   agent: ctx.agent,
 });
 
-function approve(ctx: CommandContext, p: Parsed, id: string): number {
+function approve(ctx: CommandContext, p: Parsed, id: string, force: boolean): number {
   const { file, text, plan } = loadPlan(ctx.root, id);
+  const missing = planProblems(text);
+  if (missing.length && !force)
+    throw new Error(
+      `plano ${id} fora do formato, falta: ${missing.join("; ")}. Corrija o plano ou use --force para aprovar mesmo assim`,
+    );
   // fillApproval separates a new section with a blank line; hash the text as it will be written.
   const sha = planHash(text.replace(/\n*$/, "\n\n"));
   let a = plan.approval;
@@ -99,7 +108,16 @@ function open(ctx: CommandContext, p: Parsed, id: string): number {
     s.sprintOpenedAt ??= at;
   });
   refresh(ctx, id, plan, st.tasks);
-  emit({ ...base(ctx, id), type: "sprint.open", ts: at, data: { tasks: plan.tasks.length } });
+  emit({
+    ...base(ctx, id),
+    type: "sprint.open",
+    ts: at,
+    data: {
+      tasks: plan.tasks.length,
+      task_info: Object.fromEntries(plan.tasks.map((t) => [t.id, [t.title, t.agent]])),
+      task_planned: Object.fromEntries(plan.tasks.map((t) => [t.id, t.planned_min])),
+    },
+  });
   console.log(renderTaskList(ctx.root, id));
   return 0;
 }

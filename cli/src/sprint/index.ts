@@ -84,7 +84,10 @@ export function updateExecution(
       if (tt.queue !== undefined) queue = (queue ?? 0) + tt.queue;
       min += tt.min;
     }
-    return taskLine(t, { ...x, start: passes[0]?.[0], duration_s: min * 60 }, review, queue);
+    const first = Object.values(times)
+      .flatMap((y) => y.start ?? [])
+      .sort()[0];
+    return taskLine(t, { ...x, start: passes[0]?.[0], duration_s: min * 60 }, review, queue, first);
   };
   // Total row starts at each task's first pass
   const firstTimes = Object.fromEntries(
@@ -345,6 +348,26 @@ export function plannedWall(tasks: PlanTask[]): number {
   return Math.max(0, ...tasks.map((t) => finish(t, new Set())));
 }
 
+const PLAN_COLUMNS = ["Id", "Tarefa", "Agente", "Arquivos", "Depende de", "Bruta", "Planejado"];
+
+/** What a plan lacks to be approved: the standard Tarefas columns and the Ondas line. */
+export function planProblems(text: string): string[] {
+  const t = lf(text);
+  const sec = section(t, /^## Tarefas[^\n]*$/m);
+  const head = sec
+    ? t
+        .slice(sec.start, sec.end)
+        .split("\n")
+        .find((r) => /^\|\s*id\s*\|/i.test(r.trim()))
+    : undefined;
+  const have = head ? cells(head).map((h) => h.toLowerCase()) : [];
+  const out = PLAN_COLUMNS.filter((c) => !have.includes(c.toLowerCase())).map(
+    (c) => `coluna "${c}" na tabela de Tarefas`,
+  );
+  if (!/^\*\*Ondas:\*\*/m.test(t)) out.push('linha "**Ondas:**"');
+  return out;
+}
+
 export function parsePlan(text: string): Plan {
   const t = lf(text);
   const title = /^# (.+)$/m.exec(t)?.[1]?.trim() ?? "";
@@ -467,17 +490,29 @@ export function taskLine(
   times?: TaskTimes,
   reviewMin?: number,
   queueMin?: number,
+  sprintStart?: string,
 ): string {
   const title = t.title.replace(/\|/g, "/");
+  const planned = t.planned_min ? fmtMin(t.planned_min) : "—"; // no estimate: not "0 min"
   const row = (status: string, start = "", end = "", dur = "") =>
-    `| ${status} | ${t.id} | ${title} | ${t.agent} | ${fmtMin(t.planned_min)} | ${start} | ${end} | ${dur} |`;
+    `| ${status} | ${t.id} | ${title} | ${t.agent} | ${planned} | ${start} | ${end} | ${dur} |`;
+  // "+Nd" when the time falls N days after the sprint's first day
+  const hm = (iso: string) => {
+    const days = sprintStart
+      ? Math.round(
+          (Date.parse(localDateTime(iso).slice(0, 10)) -
+            Date.parse(localDateTime(sprintStart).slice(0, 10))) /
+            864e5,
+        )
+      : 0;
+    return localHM(iso) + (days > 0 ? ` +${days}d` : "");
+  };
   if (times?.end) {
     const start = times.start ?? times.end;
     const dur = fmtMin((times.duration_s ?? 0) / 60) + partsSuffix(queueMin, reviewMin);
-    return row(DONE, localHM(start), localHM(times.end), dur);
+    return row(DONE, hm(start), hm(times.end), dur);
   }
-  if (times?.start)
-    return row(times.phase ? `${DOING} ${times.phase}` : DOING, localHM(times.start));
+  if (times?.start) return row(times.phase ? `${DOING} ${times.phase}` : DOING, hm(times.start));
   return row(TODO);
 }
 
@@ -515,7 +550,8 @@ export function totalLine(
     const f = dateHM(new Date(s + plannedWall(tasks) * 60000 + pause(s, Infinity)).toISOString());
     fim = `~${f.slice(0, 10) === dateHM(start).slice(0, 10) ? f.slice(11) : f} (previsto)`;
   }
-  const planned = fmtMin(plannedWall(tasks));
+  const wall = plannedWall(tasks);
+  const planned = wall ? fmtMin(wall) : "—";
   return `| ${status} | ${TOTAL} | ${tasks.length} tarefas |  | ${planned} | ${start && dateHM(start)} | ${fim} | ${dur} |`;
 }
 
@@ -792,7 +828,7 @@ export function renderMetrics(sprintId: string, plan: Plan, m: SprintMetrics): s
   const rows = plan.tasks.map((t) => {
     const a = m.actual_min_by_task[t.id];
     const diff =
-      a === undefined
+      a === undefined || !t.planned_min
         ? "—"
         : `${a - t.planned_min >= 0 ? "+" : "−"}${fmtMin(Math.abs(a - t.planned_min))}`;
     const cost = m.usd_by_task[t.id];
@@ -801,7 +837,7 @@ export function renderMetrics(sprintId: string, plan: Plan, m: SprintMetrics): s
     const shared = m.usd_split_by_task?.[t.id];
     const costCell =
       cost === undefined ? "—" : usd(cost) + (shared ? ` (${usd(shared)} rateado)` : "");
-    return `| ${t.id} | ${fmtMin(t.planned_min)} | ${real} | ${diff} | ${costCell} |`;
+    return `| ${t.id} | ${t.planned_min ? fmtMin(t.planned_min) : "—"} | ${real} | ${diff} | ${costCell} |`;
   });
   const byAgent =
     Object.entries(m.usd_by_agent)
@@ -824,7 +860,7 @@ export function renderMetrics(sprintId: string, plan: Plan, m: SprintMetrics): s
     "| Tarefa | Planejado | Real | Diferença | Custo |",
     "|---|---|---|---|---|",
     ...rows,
-    `| **Total** | ${fmtMin(m.planned_min)} | ${fmtMin(m.actual_min)} (soma) | | ${usd(m.usd)} |`,
+    `| **Total** | ${m.planned_min ? fmtMin(m.planned_min) : "—"} | ${fmtMin(m.actual_min)} (soma) | | ${usd(m.usd)} |`,
     "",
     "| Indicador | Valor |",
     "|---|---|",

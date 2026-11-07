@@ -32,7 +32,7 @@ describe("hx task drop|defer", () => {
     planFile = path.join(dir, "docs", "sprints", "S01-plan.md");
     fs.mkdirSync(path.dirname(planFile), { recursive: true });
     fs.writeFileSync(planFile, PLAN);
-    expect(hx("sprint", "approve", "S01").code).toBe(0);
+    expect(hx("sprint", "approve", "S01", "--force").code).toBe(0);
     expect(hx("sprint", "open", "S01").code).toBe(0);
   });
   afterEach(() => {
@@ -54,7 +54,7 @@ describe("hx task drop|defer", () => {
     expect(ev).toMatchObject({ sprint: "S01", data: { phase: "tirada" } });
 
     expect(hx("sprint", "open", "S01").stderr).toContain("ainda não aprovado");
-    expect(hx("sprint", "approve", "S01").code).toBe(0);
+    expect(hx("sprint", "approve", "S01", "--force").code).toBe(0);
     expect(hx("sprint", "open", "S01").code).toBe(0);
   });
 

@@ -465,9 +465,9 @@ describe("pauses, time to review and feedback rounds (B035, B037, B040)", () => 
     updateExecution(dir, "S01", plan.tasks, (t) => taskLine(t), { T01: t1, T02: t2, T03: t3 });
     const rel = fs.readFileSync(path.join(dir, "docs", "sprints", "S01-release.md"), "utf8");
     expect(rel).toContain(
-      "| ✅ | T01 | Descrição curta | tech-lead | 20 min | 23:00 | 00:10 | 15 min (revisão: 10 min) |",
+      "| ✅ | T01 | Descrição curta | tech-lead | 20 min | 23:00 | 00:10 +1d | 15 min (revisão: 10 min) |",
     );
-    expect(rel).toMatch(/\| ✅ \| T02 \|.*\| 00:10 \| 00:45 \| 35 min \|/);
+    expect(rel).toMatch(/\| ✅ \| T02 \|.*\| 00:10 \+1d \| 00:45 \+1d \| 35 min \|/);
     expect(rel).toContain("| ✅ | Ajuste 1 | 2 ajuste(s) |  |  | 01:10 | 01:30 | 20 min |");
     expect(rel).toContain("| ✅ | Ajuste 2 | 1 ajuste(s) |  |  | 01:30 | 01:50 | 20 min |");
     expect(rel).toContain(

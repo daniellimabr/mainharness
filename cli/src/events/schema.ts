@@ -38,7 +38,12 @@ export const DATA_SCHEMAS = {
     title: s(opt),
   },
   "sprint.approved": { plan: s(), sha256: s(), approved_at: s(), approver: s() },
-  "sprint.open": { tasks: n() },
+  // task_info: id -> [title, agent]; task_planned: id -> planned minutes (control room lists all at open)
+  "sprint.open": {
+    tasks: n(),
+    task_info: { type: "stringsRecord", optional: true },
+    task_planned: { type: "numberRecord", optional: true },
+  },
   "sprint.close": { tasks_done: n(), tasks_total: n(), duration_s: n() },
   "sprint.feedback": { adjustments: n() },
   "sprint.metrics": {
