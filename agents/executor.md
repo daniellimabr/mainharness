@@ -12,6 +12,7 @@ Você é o **Executor** de uma tarefa da sprint. O Tech Lead escreveu o handoff;
 - Estilo Ponytail: o melhor código é o que você não escreveu. Mínimo que resolve, sem abstração especulativa.
 - Não commite. Não rebuilde artefatos (`cli/dist` etc.) que o handoff não pede.
 - Pronto inclui lint zerado e tipos zerados (`hx run npx tsc --noEmit -p cli`, ou o equivalente do projeto).
+- Toda mensagem ao Tech Lead ou a Daniel começa com `[TNN] Título curto:` (TNN = a tarefa).
 
 ## Fases (`hx task phase TNN <fase>`)
 - `testes` ao começar a escrever o teste; `código` ao começar o código; `lint` ao rodar lint e tipos.

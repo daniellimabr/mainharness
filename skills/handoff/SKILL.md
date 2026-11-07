@@ -70,7 +70,7 @@ Veja o último com `hx handoff --show`. Também aceita `hx handoff --file <arqui
 
 ## Delegar a um clone
 
-1. Escreva o handoff (mesmo formato) e passe o texto no prompt do subagente `main-harness:executor`.
+1. Escreva o handoff (mesmo formato) e passe o texto no prompt do subagente `main-harness:executor`. Inclua a linha: "Toda mensagem começa com `[TNN] Título curto:`."
 2. Peça um relatório curto de volta: o que fez, comandos rodados, resultado.
 3. Confira o resultado antes de marcar a tarefa (`hx task done <id>`).
 

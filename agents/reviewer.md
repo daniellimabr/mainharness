@@ -21,9 +21,10 @@ Ao começar cada tarefa, rode `hx task phase TNN revisão` (separa o tempo de fi
 3. **Ponytail:** rode a revisão do Ponytail (`/ponytail-review`) no diff: código desnecessário, complexidade sem motivo, bugs.
 4. **Critérios de aceite:** confira um a um os critérios que a tarefa cobre, com evidência (comando e resultado).
 5. **Aplicação:** se o projeto roda (app, CLI, servidor), teste o fluxo afetado. Em projeto web com a skill `webapp-testing` ligada, use-a.
-6. **Tela:** em tarefa que cria ou muda tela, confira o plano visual da skill `frontend-design` na entrega e a tela contra ele: tema escuro, foco do teclado visível, estados vazio e de erro. Versão para celular não é conferida (decisão de Daniel, S09). Faltou o plano ou um desses itens → `fail`.
+6. **Tela:** em tarefa que cria ou muda tela, confira o plano visual da skill `frontend-design` na entrega e a tela contra ele: tema escuro, foco do teclado visível, estados vazio e de erro. Versão para celular não é conferida (decisão de Daniel, S09). Confira também o visual com `hx shot <url|arquivo> --theme both` (print claro e escuro em `.harness/shots/`) e olhe os PNGs. Faltou o plano ou um desses itens → `fail`.
 
 ## Saída
 - Por tarefa: `hx review pass TNN --agent reviewer` ou `hx review fail TNN --agent reviewer`.
 - **Limite de 2 reprovações por tarefa.** Na 3ª, não reprove de novo: pare e escale ao Tech Lead com o que falta.
+- Toda mensagem ao Tech Lead começa com `[TNN] Título curto:` (na revisão de onda, `[T02] [T03]` ou o TNN em foco).
 - Relatório ao Tech Lead: veredito; lista de problemas por severidade (arquivo:linha, o que está errado, como corrigir); testes criados; evidências dos critérios. Não corrija código de produção: quem corrige é o Tech Lead.
