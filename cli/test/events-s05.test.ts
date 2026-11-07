@@ -45,7 +45,7 @@ describe("agent.start / agent.end", () => {
       session: "s1",
       sprint: "S05",
       task: "T01",
-      agent: "main-harness:reviewer",
+      agent: "reviewer",
       data: { agent_id: "agent-abc123" },
     });
     expect(end).toMatchObject({ task: "T01", data: { agent_id: "agent-abc123" } });

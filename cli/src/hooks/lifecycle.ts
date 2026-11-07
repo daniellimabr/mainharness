@@ -3,6 +3,7 @@ import { spawnSync } from "node:child_process";
 import * as fs from "node:fs";
 import * as path from "node:path";
 import { loadConfig } from "../core/config";
+import { agentName } from "../core/context";
 import { logError } from "../core/log";
 import { resolveProject, type ProjectContext } from "../core/projects";
 import { readJson } from "../core/fsx";
@@ -189,7 +190,7 @@ function emitAgent(type: "agent.start" | "agent.end", input: HookInput, c: Ctx):
     session: c.session,
     sprint: c.st.activeSprint,
     task,
-    agent: t && ID_RE.test(t) ? t : null,
+    agent: t && ID_RE.test(t) ? agentName(t) : null,
     data: { agent_id: input.agent_id },
   });
 }
