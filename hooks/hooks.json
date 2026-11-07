@@ -93,7 +93,8 @@
             "type": "command",
             "command": "node",
             "args": ["${CLAUDE_PLUGIN_ROOT}/cli/dist/hx.js", "hook", "subagent-stop"],
-            "timeout": 30
+            "timeout": 30,
+            "async": true
           }
         ]
       }
@@ -105,7 +106,8 @@
             "type": "command",
             "command": "node",
             "args": ["${CLAUDE_PLUGIN_ROOT}/cli/dist/hx.js", "hook", "pre-compact"],
-            "timeout": 30
+            "timeout": 30,
+            "async": true
           }
         ]
       }

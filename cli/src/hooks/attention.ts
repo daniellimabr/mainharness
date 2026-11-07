@@ -2,6 +2,7 @@
 // Metadata only: never the message, the error text or the tool input.
 import { resolveProject } from "../core/projects";
 import { readState } from "../core/state";
+import { showToast, type ToastFn } from "../core/toast";
 import { emit } from "../events/emit";
 import { ID_RE } from "../events/schema";
 import { currentTask } from "./lifecycle";
@@ -31,9 +32,13 @@ function record(
   return {};
 }
 
-export const notification = (i: HookInput) =>
-  record("attention", "notification", i.notification_type, i);
-export const permissionRequest = (i: HookInput) =>
-  record("attention", "permission", i.tool_name, i);
+export function notification(i: HookInput, toast: ToastFn = showToast): HookOutcome {
+  toast("Main Harness", "O agente está esperando por você.");
+  return record("attention", "notification", i.notification_type, i);
+}
+export function permissionRequest(i: HookInput, toast: ToastFn = showToast): HookOutcome {
+  toast("Main Harness", "O agente pediu permissão.");
+  return record("attention", "permission", i.tool_name, i);
+}
 export const stopFailure = (i: HookInput) => record("error", "stop", i.error, i);
 export const postToolUseFailure = (i: HookInput) => record("error", "tool", i.tool_name, i);
