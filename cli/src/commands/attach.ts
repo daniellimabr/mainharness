@@ -9,6 +9,7 @@ import { createIfMissing, installPlugins, mergeSettings, render, setupLint } fro
 import { parseArgs } from "../core/args";
 import { loadConfig } from "../core/config";
 import { readJson } from "../core/fsx";
+import { type LocalRule, readLocalRules } from "../core/local-rules";
 import { readHarnessJson, registerProject, slugify, writeHarnessJson } from "../core/projects";
 import { harnessVersion } from "../core/version";
 import { git as gitRun } from "../release/git";
@@ -28,24 +29,88 @@ const CREATES = [
   ".claude/settings.json",
 ];
 
+const PROHIBITION = /\b(nunca|não|proib\w*|never|don'?t|do not|forbidden)\b/i;
+const COMMAND = /`([a-z][\w-]*)`|\b(ssh|scp|sftp)\b/gi;
+
+/** shortcut: a prohibition line naming `commands` (backticked or ssh/scp/sftp) becomes one rule; smarter parsing is for the Tech Lead. */
+function extractRules(text: string): LocalRule[] {
+  const rules: LocalRule[] = [];
+  for (const line of text.split("\n")) {
+    if (!PROHIBITION.test(line)) continue;
+    const commands = [
+      ...new Set([...line.matchAll(COMMAND)].map((m) => (m[1] ?? m[2] ?? "").toLowerCase())),
+    ];
+    if (commands.length) rules.push({ commands, message: line.replace(/^[\s>*-]+/, "").trim() });
+  }
+  return rules;
+}
+
 /**
- * A moved legacy CLAUDE.md/AGENTS.md keeps its rules alive: copied verbatim into claude-local.md (the new
- * CLAUDE.md points to it) with an empty .claude/local-rules.json to fill. Never overwrites; safe to rerun.
+ * A moved legacy CLAUDE.md/AGENTS.md keeps its rules alive: copied verbatim into claude-local.md, prohibitions
+ * migrated to .harness/local-rules.json, context docs copied to docs/contexto/. Never overwrites (clashes are
+ * listed as "Conflito"); a rerun changes nothing. Returns the report lines.
  */
-function preserveLegacyRules(root: string): string | null {
+function preserveLegacy(root: string, docs: string[]): string[] {
   const legacy = ["CLAUDE.md", "AGENTS.md"]
     .map((f) => path.join(root, LEGACY_DIR, f))
     .filter((f) => fs.existsSync(f));
-  if (!legacy.length || fs.existsSync(path.join(root, "claude-local.md"))) return null;
+  if (!legacy.length) return [];
+  const texts = legacy.map((f) => fs.readFileSync(f, "utf8"));
   const body = legacy
-    .map((f) => `## Do ${path.basename(f)} legado\n\n${fs.readFileSync(f, "utf8").trim()}`)
+    .map((f, i) => `## Do ${path.basename(f)} legado\n\n${texts[i]?.trim()}`)
     .join("\n\n");
   createIfMissing(
     path.join(root, "claude-local.md"),
     `# Regras locais do projeto\n\nCopiadas do harness anterior (original em ${LEGACY_DIR}/). O Tech Lead lê este arquivo todo início de sessão; Daniel decide o que conflita com o Main Harness.\n\n${body}\n`,
   );
-  createIfMissing(path.join(root, ".claude", "local-rules.json"), '{"deny":[]}\n');
-  return "Regras do harness legado copiadas para claude-local.md. Tech Lead: revise com Daniel, liste conflitos com o Main Harness e transforme proibições em .claude/local-rules.json.";
+
+  const conflicts: string[] = [];
+  const rulesFile = path.join(root, ".harness", "local-rules.json");
+  let current: LocalRule[] = [];
+  let writable = true;
+  if (fs.existsSync(rulesFile)) {
+    current = readLocalRules(root);
+    try {
+      writable = Array.isArray(JSON.parse(fs.readFileSync(rulesFile, "utf8")));
+    } catch {
+      writable = false;
+    }
+    if (!writable)
+      conflicts.push(".harness/local-rules.json ilegível; regras do legado não migradas");
+  }
+  const added: LocalRule[] = [];
+  for (const r of texts.flatMap(extractRules)) {
+    const commands = r.commands.filter((c) => {
+      const hit = [...current, ...added].find((x) => x.commands.includes(c));
+      if (hit && hit.message !== r.message)
+        conflicts.push(
+          `regra de "${c}" já existe (mantida: "${hit.message}"; legado: "${r.message}")`,
+        );
+      return !hit;
+    });
+    if (commands.length && writable) added.push({ commands, message: r.message });
+  }
+  if (added.length) {
+    fs.mkdirSync(path.dirname(rulesFile), { recursive: true });
+    fs.writeFileSync(rulesFile, JSON.stringify([...current, ...added], null, 2) + "\n");
+  }
+
+  let copied = 0;
+  for (const d of docs) {
+    if (!/\.md$/i.test(d) || /^(readme|claude|agents|gemini|index)\b/i.test(d) || d.includes("/"))
+      continue;
+    const to = path.join(root, "docs", "contexto", d);
+    const src = fs.readFileSync(path.join(root, d), "utf8");
+    if (!fs.existsSync(to)) {
+      createIfMissing(to, src);
+      copied++;
+    } else if (fs.readFileSync(to, "utf8") !== src)
+      conflicts.push(`docs/contexto/${d} já existe e difere de ${d} (nada copiado)`);
+  }
+  return [
+    `Legado: Regras migradas: ${added.length}; documentos copiados para docs/contexto/: ${copied}; originais mantidos.`,
+    ...conflicts.map((c) => `Conflito (Daniel decide): ${c}`),
+  ];
 }
 
 /** index.md from the repo map; the bare template if the map fails. */
@@ -128,7 +193,7 @@ export function run(args: string[]): number {
   for (const d of ["adr", "prd", "sprints"])
     createIfMissing(path.join(root, "docs", d, ".gitkeep"), "");
   createIfMissing(path.join(root, "CLAUDE.md"), render("CLAUDE.md", vars));
-  const legacyRules = preserveLegacyRules(root);
+  const legacyReport = preserveLegacy(root, c.docs);
 
   // 5. Lint. 6. Settings and plugins.
   const lintMsg = setupLint(root, p.flags["no-install"] !== true);
@@ -172,10 +237,7 @@ export function run(args: string[]): number {
       pluginMsg,
       gitMsg,
       doctorMsg,
-      ...(legacyRules ? ["", legacyRules] : []),
-      c.docs.length
-        ? `\nDocumentos de contexto a reorganizar no padrão do harness (Tech Lead): ${c.docs.join(", ")}`
-        : "",
+      ...(legacyReport.length ? ["", ...legacyReport] : []),
       "",
       "Próximo passo: Abra um chat novo neste repo para carregar o harness.",
     ].join("\n"),

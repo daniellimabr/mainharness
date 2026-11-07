@@ -426,7 +426,12 @@ var init_schema = __esm({
         title: s(opt)
       },
       "sprint.approved": { plan: s(), sha256: s(), approved_at: s(), approver: s() },
-      "sprint.open": { tasks: n() },
+      // task_info: id -> [title, agent]; task_planned: id -> planned minutes (control room lists all at open)
+      "sprint.open": {
+        tasks: n(),
+        task_info: { type: "stringsRecord", optional: true },
+        task_planned: { type: "numberRecord", optional: true }
+      },
       "sprint.close": { tasks_done: n(), tasks_total: n(), duration_s: n() },
       "sprint.feedback": { adjustments: n() },
       "sprint.metrics": {
@@ -650,6 +655,39 @@ var init_config = __esm({
       inboxDir: "C:\\Main Harness\\inbox",
       timezone: "America/Sao_Paulo"
     };
+  }
+});
+
+// cli/src/core/context.ts
+function runningAgent(project, argv) {
+  const tnn = argv.find((a) => /^T\d{2,3}$/i.test(a))?.toUpperCase();
+  if (!tnn) return null;
+  const evs = readEvents((e) => e.project === project && e.type.startsWith("agent."));
+  const ended = new Set(evs.filter((e) => e.type === "agent.end").map((e) => e.data.agent_id));
+  const start2 = evs.reverse().find(
+    (e) => e.type === "agent.start" && e.task === tnn && e.agent && !ended.has(e.data.agent_id)
+  );
+  return start2?.agent ?? null;
+}
+function commandContext(cwd = process.cwd(), agent, argv = process.argv) {
+  const p = resolveProject(cwd);
+  if (!p) throw new Error("este repo n\xE3o est\xE1 conectado ao harness (rode /attach)");
+  const st = readState(p.id);
+  return {
+    ...p,
+    session: process.env.HARNESS_SESSION || st.session,
+    sprint: st.activeSprint,
+    agent: agent || process.env.HARNESS_AGENT || runningAgent(p.id, argv) || "tech-lead"
+  };
+}
+var agentName;
+var init_context = __esm({
+  "cli/src/core/context.ts"() {
+    "use strict";
+    init_projects();
+    init_emit();
+    init_state();
+    agentName = (type) => type.replace(/^[^:]+:/, "");
   }
 });
 
@@ -1142,7 +1180,7 @@ function emitAgent(type, input, c) {
     session: c.session,
     sprint: c.st.activeSprint,
     task,
-    agent: t && ID_RE.test(t) ? t : null,
+    agent: t && ID_RE.test(t) ? agentName(t) : null,
     data: { agent_id: input.agent_id }
   });
 }
@@ -1206,6 +1244,7 @@ var init_lifecycle = __esm({
     fs11 = __toESM(require("node:fs"));
     path11 = __toESM(require("node:path"));
     init_config();
+    init_context();
     init_log();
     init_projects();
     init_fsx();
@@ -2586,7 +2625,8 @@ function updateExecution(projectRoot, sprintId2, tasks, lineFor, times) {
       if (tt.queue !== void 0) queue = (queue ?? 0) + tt.queue;
       min += tt.min;
     }
-    return taskLine(t, { ...x, start: passes[0]?.[0], duration_s: min * 60 }, review, queue);
+    const first = Object.values(times).flatMap((y) => y.start ?? []).sort()[0];
+    return taskLine(t, { ...x, start: passes[0]?.[0], duration_s: min * 60 }, review, queue, first);
   };
   const firstTimes = Object.fromEntries(
     Object.entries(times).map(([id2, x]) => [
@@ -2758,6 +2798,17 @@ function plannedWall(tasks) {
   };
   return Math.max(0, ...tasks.map((t) => finish(t, /* @__PURE__ */ new Set())));
 }
+function planProblems(text) {
+  const t = lf(text);
+  const sec = section(t, /^## Tarefas[^\n]*$/m);
+  const head = sec ? t.slice(sec.start, sec.end).split("\n").find((r) => /^\|\s*id\s*\|/i.test(r.trim())) : void 0;
+  const have = head ? cells(head).map((h) => h.toLowerCase()) : [];
+  const out = PLAN_COLUMNS.filter((c) => !have.includes(c.toLowerCase())).map(
+    (c) => `coluna "${c}" na tabela de Tarefas`
+  );
+  if (!/^\*\*Ondas:\*\*/m.test(t)) out.push('linha "**Ondas:**"');
+  return out;
+}
 function parsePlan(text) {
   const t = lf(text);
   const title2 = /^# (.+)$/m.exec(t)?.[1]?.trim() ?? "";
@@ -2857,16 +2908,22 @@ Precisa de nova aprova\xE7\xE3o: ${id2} ${label}.
   const out = asec ? t.slice(0, asec.start) + block + t.slice(asec.end) : t.replace(/\n*$/, "\n\n") + block;
   return out.replace(/\n+$/, "\n");
 }
-function taskLine(t, times, reviewMin, queueMin) {
+function taskLine(t, times, reviewMin, queueMin, sprintStart) {
   const title2 = t.title.replace(/\|/g, "/");
-  const row = (status, start2 = "", end = "", dur = "") => `| ${status} | ${t.id} | ${title2} | ${t.agent} | ${fmtMin(t.planned_min)} | ${start2} | ${end} | ${dur} |`;
+  const planned = t.planned_min ? fmtMin(t.planned_min) : "\u2014";
+  const row = (status, start2 = "", end = "", dur = "") => `| ${status} | ${t.id} | ${title2} | ${t.agent} | ${planned} | ${start2} | ${end} | ${dur} |`;
+  const hm = (iso) => {
+    const days = sprintStart ? Math.round(
+      (Date.parse(localDateTime(iso).slice(0, 10)) - Date.parse(localDateTime(sprintStart).slice(0, 10))) / 864e5
+    ) : 0;
+    return localHM(iso) + (days > 0 ? ` +${days}d` : "");
+  };
   if (times?.end) {
     const start2 = times.start ?? times.end;
     const dur = fmtMin((times.duration_s ?? 0) / 60) + partsSuffix(queueMin, reviewMin);
-    return row(DONE, localHM(start2), localHM(times.end), dur);
+    return row(DONE, hm(start2), hm(times.end), dur);
   }
-  if (times?.start)
-    return row(times.phase ? `${DOING} ${times.phase}` : DOING, localHM(times.start));
+  if (times?.start) return row(times.phase ? `${DOING} ${times.phase}` : DOING, hm(times.start));
   return row(TODO);
 }
 function totalLine(tasks, times, pause = () => 0) {
@@ -2887,7 +2944,8 @@ function totalLine(tasks, times, pause = () => 0) {
     const f = dateHM(new Date(s2 + plannedWall(tasks) * 6e4 + pause(s2, Infinity)).toISOString());
     fim = `~${f.slice(0, 10) === dateHM(start2).slice(0, 10) ? f.slice(11) : f} (previsto)`;
   }
-  const planned = fmtMin(plannedWall(tasks));
+  const wall = plannedWall(tasks);
+  const planned = wall ? fmtMin(wall) : "\u2014";
   return `| ${status} | ${TOTAL} | ${tasks.length} tarefas |  | ${planned} | ${start2 && dateHM(start2)} | ${fim} | ${dur} |`;
 }
 function execTable(lines, total) {
@@ -3084,13 +3142,13 @@ function computeMetrics(project, sprintId2, plan) {
 function renderMetrics(sprintId2, plan, m) {
   const rows = plan.tasks.map((t) => {
     const a = m.actual_min_by_task[t.id];
-    const diff = a === void 0 ? "\u2014" : `${a - t.planned_min >= 0 ? "+" : "\u2212"}${fmtMin(Math.abs(a - t.planned_min))}`;
+    const diff = a === void 0 || !t.planned_min ? "\u2014" : `${a - t.planned_min >= 0 ? "+" : "\u2212"}${fmtMin(Math.abs(a - t.planned_min))}`;
     const cost = m.usd_by_task[t.id];
     const parts2 = partsSuffix(m.queue_min_by_task?.[t.id], m.review_min_by_task[t.id]);
     const real = a === void 0 ? "\u2014" : fmtMin(a) + parts2;
     const shared = m.usd_split_by_task?.[t.id];
     const costCell = cost === void 0 ? "\u2014" : usd2(cost) + (shared ? ` (${usd2(shared)} rateado)` : "");
-    return `| ${t.id} | ${fmtMin(t.planned_min)} | ${real} | ${diff} | ${costCell} |`;
+    return `| ${t.id} | ${t.planned_min ? fmtMin(t.planned_min) : "\u2014"} | ${real} | ${diff} | ${costCell} |`;
   });
   const byAgent = Object.entries(m.usd_by_agent).map(([k, v]) => `${k} ${usd2(v)}`).join(" \xB7 ") || "\u2014";
   const byModel = Object.entries(m.usd_by_model).map(([k, v]) => `${k} ${usd2(v)}`).join(" \xB7 ") || "\u2014";
@@ -3103,7 +3161,7 @@ function renderMetrics(sprintId2, plan, m) {
     "| Tarefa | Planejado | Real | Diferen\xE7a | Custo |",
     "|---|---|---|---|---|",
     ...rows,
-    `| **Total** | ${fmtMin(m.planned_min)} | ${fmtMin(m.actual_min)} (soma) | | ${usd2(m.usd)} |`,
+    `| **Total** | ${m.planned_min ? fmtMin(m.planned_min) : "\u2014"} | ${fmtMin(m.actual_min)} (soma) | | ${usd2(m.usd)} |`,
     "",
     "| Indicador | Valor |",
     "|---|---|",
@@ -3126,7 +3184,7 @@ function renderMetrics(sprintId2, plan, m) {
     `| Handoffs | ${m.handoffs} |`
   ].join("\n");
 }
-var import_node_crypto2, fs22, path23, APPROVAL_RE, APPROVAL_LINE, EXEC_HEADING, PAUSE_MS, lf, ADJ_MARK, ADJ_ROW, isAdjustment, cells, DONE, DOING, TODO, EXEC_HEADER, EXEC_NOTE, TOTAL, dateHM, r1, r4, num, usd2, tok, joinUsd;
+var import_node_crypto2, fs22, path23, APPROVAL_RE, APPROVAL_LINE, EXEC_HEADING, PAUSE_MS, lf, ADJ_MARK, ADJ_ROW, isAdjustment, cells, PLAN_COLUMNS, DONE, DOING, TODO, EXEC_HEADER, EXEC_NOTE, TOTAL, dateHM, r1, r4, num, usd2, tok, joinUsd;
 var init_sprint = __esm({
   "cli/src/sprint/index.ts"() {
     "use strict";
@@ -3145,6 +3203,7 @@ var init_sprint = __esm({
     ADJ_ROW = new RegExp(`^\\|\\s*T\\d+\\s*\\|.*${ADJ_MARK.replace(/[()]/g, "\\$&")}.*\\n`, "gm");
     isAdjustment = (t) => t.title.includes(ADJ_MARK);
     cells = (row) => row.trim().replace(/^\||(?<!\\)\|$/g, "").split(/(?<!\\)\|/).map((c) => c.trim().replace(/\\\|/g, "|"));
+    PLAN_COLUMNS = ["Id", "Tarefa", "Agente", "Arquivos", "Depende de", "Bruta", "Planejado"];
     DONE = "\u2705";
     DOING = "\u{1F504}";
     TODO = "\u2B1C";
@@ -3351,26 +3410,6 @@ var init_hooks = __esm({
       "stop-failure": stopFailure,
       "post-tool-failure": postToolUseFailure
     };
-  }
-});
-
-// cli/src/core/context.ts
-function commandContext(cwd = process.cwd(), agent) {
-  const p = resolveProject(cwd);
-  if (!p) throw new Error("este repo n\xE3o est\xE1 conectado ao harness (rode /attach)");
-  const st = readState(p.id);
-  return {
-    ...p,
-    session: process.env.HARNESS_SESSION || st.session,
-    sprint: st.activeSprint,
-    agent: agent || process.env.HARNESS_AGENT || "tech-lead"
-  };
-}
-var init_context = __esm({
-  "cli/src/core/context.ts"() {
-    "use strict";
-    init_projects();
-    init_state();
   }
 });
 
@@ -3669,11 +3708,13 @@ function run5(args) {
   if (sub === "feedback") return feedback(ctx, arg);
   const id2 = sprintId(arg) ?? ctx.sprint;
   if (!sub || !["approve", "open", "status", "close"].includes(sub)) {
-    console.error("uso: hx sprint approve|open|status|close <id> | hx sprint feedback <n>");
+    console.error(
+      "uso: hx sprint approve|open|status|close <id> | hx sprint feedback <n>\n  approve <id> [--force]: --force aprova mesmo com o plano fora do formato"
+    );
     return 1;
   }
   if (!id2) throw new Error(`informe a sprint: hx sprint ${sub} S01`);
-  if (sub === "approve") return approve(ctx, p, id2);
+  if (sub === "approve") return approve(ctx, p, id2, force);
   if (sub === "open") return open(ctx, p, id2);
   if (sub === "close") return close(ctx, p, id2, force);
   const list = renderTaskList(ctx.root, id2);
@@ -3681,8 +3722,13 @@ function run5(args) {
   console.log(list);
   return 0;
 }
-function approve(ctx, p, id2) {
+function approve(ctx, p, id2, force) {
   const { file: file2, text, plan } = loadPlan(ctx.root, id2);
+  const missing = planProblems(text);
+  if (missing.length && !force)
+    throw new Error(
+      `plano ${id2} fora do formato, falta: ${missing.join("; ")}. Corrija o plano ou use --force para aprovar mesmo assim`
+    );
   const sha = planHash(text.replace(/\n*$/, "\n\n"));
   let a = plan.approval;
   if (!a || a.sha256 !== sha) {
@@ -3725,7 +3771,16 @@ function open(ctx, p, id2) {
     s2.sprintOpenedAt ??= at;
   });
   refresh(ctx, id2, plan, st.tasks);
-  emit({ ...base(ctx, id2), type: "sprint.open", ts: at, data: { tasks: plan.tasks.length } });
+  emit({
+    ...base(ctx, id2),
+    type: "sprint.open",
+    ts: at,
+    data: {
+      tasks: plan.tasks.length,
+      task_info: Object.fromEntries(plan.tasks.map((t) => [t.id, [t.title, t.agent]])),
+      task_planned: Object.fromEntries(plan.tasks.map((t) => [t.id, t.planned_min]))
+    }
+  });
   console.log(renderTaskList(ctx.root, id2));
   return 0;
 }
@@ -5493,12 +5548,24 @@ var attach_exports = {};
 __export(attach_exports, {
   run: () => run16
 });
-function preserveLegacyRules(root) {
+function extractRules(text) {
+  const rules = [];
+  for (const line2 of text.split("\n")) {
+    if (!PROHIBITION.test(line2)) continue;
+    const commands = [
+      ...new Set([...line2.matchAll(COMMAND)].map((m) => (m[1] ?? m[2] ?? "").toLowerCase()))
+    ];
+    if (commands.length) rules.push({ commands, message: line2.replace(/^[\s>*-]+/, "").trim() });
+  }
+  return rules;
+}
+function preserveLegacy(root, docs) {
   const legacy = ["CLAUDE.md", "AGENTS.md"].map((f) => path37.join(root, LEGACY_DIR, f)).filter((f) => fs37.existsSync(f));
-  if (!legacy.length || fs37.existsSync(path37.join(root, "claude-local.md"))) return null;
-  const body = legacy.map((f) => `## Do ${path37.basename(f)} legado
+  if (!legacy.length) return [];
+  const texts = legacy.map((f) => fs37.readFileSync(f, "utf8"));
+  const body = legacy.map((f, i) => `## Do ${path37.basename(f)} legado
 
-${fs37.readFileSync(f, "utf8").trim()}`).join("\n\n");
+${texts[i]?.trim()}`).join("\n\n");
   createIfMissing(
     path37.join(root, "claude-local.md"),
     `# Regras locais do projeto
@@ -5508,8 +5575,52 @@ Copiadas do harness anterior (original em ${LEGACY_DIR}/). O Tech Lead l\xEA est
 ${body}
 `
   );
-  createIfMissing(path37.join(root, ".claude", "local-rules.json"), '{"deny":[]}\n');
-  return "Regras do harness legado copiadas para claude-local.md. Tech Lead: revise com Daniel, liste conflitos com o Main Harness e transforme proibi\xE7\xF5es em .claude/local-rules.json.";
+  const conflicts = [];
+  const rulesFile = path37.join(root, ".harness", "local-rules.json");
+  let current = [];
+  let writable = true;
+  if (fs37.existsSync(rulesFile)) {
+    current = readLocalRules(root);
+    try {
+      writable = Array.isArray(JSON.parse(fs37.readFileSync(rulesFile, "utf8")));
+    } catch {
+      writable = false;
+    }
+    if (!writable)
+      conflicts.push(".harness/local-rules.json ileg\xEDvel; regras do legado n\xE3o migradas");
+  }
+  const added = [];
+  for (const r of texts.flatMap(extractRules)) {
+    const commands = r.commands.filter((c) => {
+      const hit = [...current, ...added].find((x) => x.commands.includes(c));
+      if (hit && hit.message !== r.message)
+        conflicts.push(
+          `regra de "${c}" j\xE1 existe (mantida: "${hit.message}"; legado: "${r.message}")`
+        );
+      return !hit;
+    });
+    if (commands.length && writable) added.push({ commands, message: r.message });
+  }
+  if (added.length) {
+    fs37.mkdirSync(path37.dirname(rulesFile), { recursive: true });
+    fs37.writeFileSync(rulesFile, JSON.stringify([...current, ...added], null, 2) + "\n");
+  }
+  let copied = 0;
+  for (const d of docs) {
+    if (!/\.md$/i.test(d) || /^(readme|claude|agents|gemini|index)\b/i.test(d) || d.includes("/"))
+      continue;
+    const to = path37.join(root, "docs", "contexto", d);
+    const src = fs37.readFileSync(path37.join(root, d), "utf8");
+    if (!fs37.existsSync(to)) {
+      createIfMissing(to, src);
+      copied++;
+    } else if (fs37.readFileSync(to, "utf8") !== src)
+      conflicts.push(`docs/contexto/${d} j\xE1 existe e difere de ${d} (nada copiado)`);
+  }
+  return [
+    `Legado: Regras migradas: ${added.length}; documentos copiados para docs/contexto/: ${copied}; originais mantidos.`,
+    ...conflicts.map((c) => `Conflito (Daniel decide): ${c}`)
+  ];
 }
 function indexMd(root, vars) {
   try {
@@ -5576,7 +5687,7 @@ function run16(args) {
   for (const d of ["adr", "prd", "sprints"])
     createIfMissing(path37.join(root, "docs", d, ".gitkeep"), "");
   createIfMissing(path37.join(root, "CLAUDE.md"), render("CLAUDE.md", vars));
-  const legacyRules = preserveLegacyRules(root);
+  const legacyReport = preserveLegacy(root, c.docs);
   const lintMsg = setupLint(root, p.flags["no-install"] !== true);
   mergeSettings(root, loadConfig().contextLimit);
   const pluginMsg = p.flags["no-plugins"] === true ? "plugins: pulados (--no-plugins)." : installPlugins(root);
@@ -5610,16 +5721,14 @@ function run16(args) {
       pluginMsg,
       gitMsg,
       doctorMsg,
-      ...legacyRules ? ["", legacyRules] : [],
-      c.docs.length ? `
-Documentos de contexto a reorganizar no padr\xE3o do harness (Tech Lead): ${c.docs.join(", ")}` : "",
+      ...legacyReport.length ? ["", ...legacyReport] : [],
       "",
       "Pr\xF3ximo passo: Abra um chat novo neste repo para carregar o harness."
     ].join("\n")
   );
   return 0;
 }
-var fs37, path37, CREATES;
+var fs37, path37, CREATES, PROHIBITION, COMMAND;
 var init_attach = __esm({
   "cli/src/commands/attach.ts"() {
     "use strict";
@@ -5633,6 +5742,7 @@ var init_attach = __esm({
     init_args();
     init_config();
     init_fsx();
+    init_local_rules();
     init_projects();
     init_version();
     init_git();
@@ -5650,6 +5760,8 @@ var init_attach = __esm({
       ".claude/harness.json",
       ".claude/settings.json"
     ];
+    PROHIBITION = /\b(nunca|não|proib\w*|never|don'?t|do not|forbidden)\b/i;
+    COMMAND = /`([a-z][\w-]*)`|\b(ssh|scp|sftp)\b/gi;
   }
 });
 

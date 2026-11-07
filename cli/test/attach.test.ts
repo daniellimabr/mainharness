@@ -194,9 +194,7 @@ describe("hx attach", () => {
     expect(fs.readFileSync(path.join(dir, "CLAUDE.md"), "utf8")).toContain("Compact Instructions");
     expect(fs.existsSync(path.join(dir, ".claude", "harness.json"))).toBe(true);
     expect(fs.readFileSync(path.join(dir, "claude-local.md"), "utf8")).toContain("old rules");
-    expect(fs.readFileSync(path.join(dir, ".claude", "local-rules.json"), "utf8")).toContain(
-      "deny",
-    );
+    expect(fs.existsSync(path.join(dir, ".claude", "local-rules.json"))).toBe(false);
   });
 
   it("merges .claude/settings.json without losing keys; falls back to enabledPlugins", () => {
