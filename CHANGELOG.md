@@ -2,6 +2,18 @@
 
 Versões do Main Harness (versionamento semântico; `0.y.z` até a 1.0).
 
+## [0.15.0] - 2026-11-07
+
+### Novidades
+
+- feat(attach): keep legacy rules in claude-local.md; local-rules.json moves to .claude
+- feat(inbox): pre-bash denies commands from .harness/local-rules.json
+
+### Outros
+
+- chore(inbox): add pending project requests
+- chore(harness): migrate to v0.14.0
+
 ## [0.14.0] - 2026-11-04
 
 ### Novidades
