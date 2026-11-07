@@ -139,7 +139,7 @@ describe("classifyCommand", () => {
   });
 
   it("denies commands from the project's local rules, not text that mentions them", () => {
-    const rules = [{ command: "ssh", message: "use ssh-vm.ps1" }];
+    const rules = [{ commands: ["ssh"], message: "use ssh-vm.ps1" }];
     const c = (cmd: string) =>
       classifyCommand(cmd, ROOT, ROOT, STABLE, new Map(), rules)?.decision ?? null;
     expect(c('ssh.exe dev "ls"')).toBe("deny");

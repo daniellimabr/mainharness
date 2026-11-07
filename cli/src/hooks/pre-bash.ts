@@ -5,6 +5,7 @@ import * as os from "node:os";
 import * as path from "node:path";
 import { DEFAULT_CONFIG, loadConfig } from "../core/config";
 import { isInside, samePathKey } from "../core/fsx";
+import { type LocalRule, readLocalRules } from "../core/local-rules";
 import { resolveProject } from "../core/projects";
 import { writeBlocked } from "./pre-edit";
 import { jsonOut, type HookInput, type HookOutcome } from "./runner";
@@ -363,23 +364,6 @@ function innerCommand(cmd: string, args: string[]): string | Verdict | null {
   return null;
 }
 
-export interface LocalRule {
-  command: string;
-  message: string;
-}
-
-/** Project rules from <root>/.claude/local-rules.json:{"deny":[{"command":"ssh","message":"..."}]}. */
-export function loadLocalRules(root: string): LocalRule[] {
-  try {
-    const j = JSON.parse(fs.readFileSync(path.join(root, ".claude", "local-rules.json"), "utf8"));
-    return (Array.isArray(j.deny) ? j.deny : []).filter(
-      (r: LocalRule) => typeof r?.command === "string" && typeof r?.message === "string",
-    );
-  } catch {
-    return []; // no file or invalid JSON: no project rules
-  }
-}
-
 /** Classifies a full command line. Returns null when it may run normally. */
 export function classifyCommand(
   command: string,
@@ -408,7 +392,7 @@ export function classifyCommand(
     const args = words.slice(1);
     let v: Verdict | null = null;
 
-    const rule = rules.find((r) => r.command.toLowerCase().replace(/\.exe$/, "") === cmd);
+    const rule = rules.find((r) => r.commands.some((c) => baseName(c) === cmd));
     if (rule)
       return { decision: "deny", reason: `Bloqueado pela regra do projeto: ${rule.message}` };
     for (const r of seg.redirects) v ??= checkWrite(r, dir, root, stable);
@@ -523,7 +507,7 @@ export function preBash(input: HookInput): HookOutcome {
   } catch {
     // invalid HARNESS_HOME: fall back to defaults and keep guarding (never fail open)
   }
-  const v = classifyCommand(command, cwd, root, stable, new Map(), loadLocalRules(root));
+  const v = classifyCommand(command, cwd, root, stable, new Map(), readLocalRules(root));
   if (!v)
     return warnings.length
       ? jsonOut({
