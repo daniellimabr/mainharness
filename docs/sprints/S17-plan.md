@@ -88,9 +88,7 @@ Fator, só das sprints com fase `revisão`: S15 relógio 32%, soma 24%; S16 rel�
 
 ## Aprovação
 
-- **Aprovado por:** _pendente_
-- **Data/hora (UTC):** _pendente_
-- **Hash SHA-256 do plano** (conteúdo antes desta seção, finais de linha normalizados para LF): _pendente_
-- **Versão do harness:** _pendente_
-
-<!-- Preenchido por `hx sprint approve SNN` após o ok de Daniel. Qualquer mudança acima desta seção invalida a aprovação. A seção "## Execução" é criada por `hx sprint open SNN` e fica fora do hash. -->
+- **Aprovado por:** Daniel
+- **Data/hora:** 2026-11-07 18:28:40 (horário de Brasília) — UTC 2026-11-07T21:28:40Z
+- **Hash SHA-256 do plano** (conteúdo antes desta seção, finais de linha normalizados para LF): `76ef9a583b118f3d1686d94b0c9c5e9136f63ce92b758a0218c7b5570e6ff74a`
+- **Versão do harness:** 0.15.0
