@@ -359,7 +359,7 @@ describe("evalSkill (fake claude)", () => {
       process.env.FAKE_JUDGE2 = "ainda não";
       const res = await run();
       expect(res).toMatchObject({ passed: false, evals: { passed: 0, total: 2 } });
-      expect(judgeCalls()).toHaveLength(2);
+      expect(judgeCalls()).toHaveLength(4); // 2 per round; the miss reruns once (2 misses = fail)
       expect(failed().map((r) => r.failed)).toEqual([
         ["sem veredito do juiz"],
         ["sem veredito do juiz"],
@@ -402,14 +402,15 @@ describe("evalSkill (fake claude)", () => {
         }),
       );
       judge(true);
-      await run(false); // 2 trigger + 3 cases + 1 judge
-    });
+      // trigger a + b (b misses twice) + 3 cases + judge + case 3 rerun + judge
+      await run(false);
+    }, 60_000);
 
     it("reruns only failed cases and queries, merges with the passed ones", async () => {
-      expect(usage()).toBe(6);
+      expect(usage()).toBe(9);
       judge(false);
       const res = await run(true);
-      expect(usage()).toBe(6 + 3); // 1 query + 1 case + 1 judge
+      expect(usage()).toBe(9 + 4); // query b twice + 1 case + 1 judge
       expect(res).toMatchObject({
         trigger: { passed: 1, total: 2 },
         evals: { passed: 3, total: 3 },
@@ -434,7 +435,7 @@ describe("evalSkill (fake claude)", () => {
       await run(true);
       expect(warn).toHaveBeenCalledWith("skill mudou desde a última rodada: rodando tudo");
       warn.mockRestore();
-      expect(usage()).toBe(12);
+      expect(usage()).toBe(9 + 9); // same as the first run: everything reruns
     });
   });
 });

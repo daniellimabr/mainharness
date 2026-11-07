@@ -282,6 +282,37 @@ const ASSUMES_REPO = /\bsprint\b|\bS\d{2}\b|release report|repo conectado|\bhx /
 export const needsFixtures = (c: { prompt: string; files?: string[] }): boolean =>
   !c.files?.length && ASSUMES_REPO.test(c.prompt);
 
+/**
+ * Majority of up to 3: a pass on the first try is final (no repeat); a miss reruns, and 2 of 3 wins.
+ * Two misses stop early (majority impossible). Each round batches the pending items through `attempt`.
+ */
+export async function majority<T, R extends { passed: boolean }>(
+  items: T[],
+  attempt: (xs: T[]) => Promise<R[]>,
+  retry: (x: T) => boolean = () => true,
+): Promise<(R & { attempts: number })[]> {
+  const st = items.map(() => ({ wins: 0, runs: 0, last: undefined as R | undefined }));
+  let todo = st.map((_, i) => i);
+  while (todo.length) {
+    const rs = await attempt(todo.map((i) => items[i] as T));
+    todo.forEach((i, k) => {
+      const s = st[i] as (typeof st)[number];
+      s.last = rs[k];
+      s.runs++;
+      if (rs[k]?.passed) s.wins++;
+    });
+    todo = todo.filter((i) => {
+      const s = st[i] as (typeof st)[number];
+      return s.runs - s.wins === 1 && s.wins < 2 && retry(items[i] as T);
+    });
+  }
+  return st.map((s) => ({
+    ...(s.last as R),
+    passed: s.wins > s.runs - s.wins,
+    attempts: s.runs,
+  }));
+}
+
 const frac = (xs: boolean[]) => ({ passed: xs.filter(Boolean).length, total: xs.length });
 
 /**
@@ -327,15 +358,16 @@ export async function evalSkill(
     );
     const find = (q: TriggerQuery) => old.find((o) => o.query === q.query);
     // ponytail: max-turns 2 stops a triggered skill from doing the whole task; Skill is called first.
-    const fresh = await pool(
+    const fresh = await majority(
       qs.filter((q) => !find(q)),
-      PARALLEL,
-      (q) =>
-        inSandbox(dir, async (sb) => {
-          const s = await claude(q.query, sb, ["--max-turns", "2"], ctx);
-          const triggered = s.skills.includes(name);
-          return { ...q, triggered, skills: s.skills, passed: triggered === q.should_trigger };
-        }),
+      (xs) =>
+        pool(xs, PARALLEL, (q) =>
+          inSandbox(dir, async (sb) => {
+            const s = await claude(q.query, sb, ["--max-turns", "2"], ctx);
+            const triggered = s.skills.includes(name);
+            return { ...q, triggered, skills: s.skills, passed: triggered === q.should_trigger };
+          }),
+        ),
     );
     const results = qs.flatMap((q) => find(q) ?? fresh.filter((f) => f.query === q.query));
     writeJson(path.join(evalsDir, "trigger-results.json"), { date, results });
@@ -359,10 +391,8 @@ export async function evalSkill(
       (g) => g.passed || g.baseline,
     );
     const find = (id: string) => old.find((g) => g.id === id);
-    const done = await pool(
-      runs.filter((r) => !find(r.id)),
-      PARALLEL,
-      (r) =>
+    const exec = (rs: typeof runs) =>
+      pool(rs, PARALLEL, (r) =>
         inSandbox(
           r.withSkill ? dir : null,
           async (sb) => {
@@ -374,9 +404,10 @@ export async function evalSkill(
           r.c.files,
           evalsDir,
         ),
-    );
+      );
+    type Done = Awaited<ReturnType<typeof exec>>;
     // One judge session grades every run (cheaper than one judge per case, independent of the run).
-    const judge = async (rs: typeof done): Promise<Verdict[]> => {
+    const judge = async (rs: Done): Promise<Verdict[]> => {
       if (!rs.length) return [];
       const { text } = await inSandbox(null, (sb) =>
         claude(
@@ -413,21 +444,30 @@ export async function evalSkill(
         return [];
       }
     };
-    const graded1 = await judge(done);
     const has = (vs: Verdict[], id: string) => vs.some((x) => String(x.id) === id);
-    // Retry once, judge only: runs left without a verdict (bad JSON or omitted id).
-    const verdicts = [...graded1, ...(await judge(done.filter((r) => !has(graded1, r.id))))];
-    const fresh = done.map((r) => {
-      const v = verdicts.find((x) => String(x.id) === r.id);
-      return {
-        id: r.id,
-        baseline: !r.withSkill,
-        passed: v?.passed === true,
-        failed: v ? (v.failed ?? []) : ["sem veredito do juiz"],
-        skills: r.skills,
-        answer: r.answer.slice(0, 2000),
-      };
-    });
+    const grade = async (rs: typeof runs) => {
+      const done = await exec(rs);
+      const graded1 = await judge(done);
+      // Retry once, judge only: runs left without a verdict (bad JSON or omitted id).
+      const verdicts = [...graded1, ...(await judge(done.filter((r) => !has(graded1, r.id))))];
+      return done.map((r) => {
+        const v = verdicts.find((x) => String(x.id) === r.id);
+        return {
+          id: r.id,
+          baseline: !r.withSkill,
+          passed: v?.passed === true,
+          failed: v ? (v.failed ?? []) : ["sem veredito do juiz"],
+          skills: r.skills,
+          answer: r.answer.slice(0, 2000),
+        };
+      });
+    };
+    // Baselines are expected to fail: one execution only, never the majority rerun.
+    const fresh = await majority(
+      runs.filter((r) => !find(r.id)),
+      grade,
+      (r) => r.withSkill,
+    );
     const graded = runs.flatMap((r) => find(r.id) ?? fresh.filter((g) => g.id === r.id));
     writeJson(path.join(evalsDir, "cases-results.json"), { date, runs: graded });
     evals = frac(graded.filter((g) => !g.baseline).map((g) => g.passed));
