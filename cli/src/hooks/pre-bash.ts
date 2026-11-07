@@ -368,10 +368,10 @@ export interface LocalRule {
   message: string;
 }
 
-/** Project rules from <root>/.harness/local-rules.json: {"deny":[{"command":"ssh","message":"..."}]}. */
+/** Project rules from <root>/.claude/local-rules.json:{"deny":[{"command":"ssh","message":"..."}]}. */
 export function loadLocalRules(root: string): LocalRule[] {
   try {
-    const j = JSON.parse(fs.readFileSync(path.join(root, ".harness", "local-rules.json"), "utf8"));
+    const j = JSON.parse(fs.readFileSync(path.join(root, ".claude", "local-rules.json"), "utf8"));
     return (Array.isArray(j.deny) ? j.deny : []).filter(
       (r: LocalRule) => typeof r?.command === "string" && typeof r?.message === "string",
     );

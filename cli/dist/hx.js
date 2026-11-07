@@ -1783,7 +1783,7 @@ function innerCommand(cmd, args) {
 }
 function loadLocalRules(root) {
   try {
-    const j = JSON.parse(fs15.readFileSync(path16.join(root, ".harness", "local-rules.json"), "utf8"));
+    const j = JSON.parse(fs15.readFileSync(path16.join(root, ".claude", "local-rules.json"), "utf8"));
     return (Array.isArray(j.deny) ? j.deny : []).filter(
       (r) => typeof r?.command === "string" && typeof r?.message === "string"
     );
@@ -5266,6 +5266,24 @@ var attach_exports = {};
 __export(attach_exports, {
   run: () => run15
 });
+function preserveLegacyRules(root) {
+  const legacy = ["CLAUDE.md", "AGENTS.md"].map((f) => path35.join(root, LEGACY_DIR, f)).filter((f) => fs35.existsSync(f));
+  if (!legacy.length || fs35.existsSync(path35.join(root, "claude-local.md"))) return null;
+  const body = legacy.map((f) => `## Do ${path35.basename(f)} legado
+
+${fs35.readFileSync(f, "utf8").trim()}`).join("\n\n");
+  createIfMissing(
+    path35.join(root, "claude-local.md"),
+    `# Regras locais do projeto
+
+Copiadas do harness anterior (original em ${LEGACY_DIR}/). O Tech Lead l\xEA este arquivo todo in\xEDcio de sess\xE3o; Daniel decide o que conflita com o Main Harness.
+
+${body}
+`
+  );
+  createIfMissing(path35.join(root, ".claude", "local-rules.json"), '{"deny":[]}\n');
+  return "Regras do harness legado copiadas para claude-local.md. Tech Lead: revise com Daniel, liste conflitos com o Main Harness e transforme proibi\xE7\xF5es em .claude/local-rules.json.";
+}
 function indexMd(root, vars) {
   try {
     return buildRepoMap(root);
@@ -5331,6 +5349,7 @@ function run15(args) {
   for (const d of ["adr", "prd", "sprints"])
     createIfMissing(path35.join(root, "docs", d, ".gitkeep"), "");
   createIfMissing(path35.join(root, "CLAUDE.md"), render("CLAUDE.md", vars));
+  const legacyRules = preserveLegacyRules(root);
   const lintMsg = setupLint(root, p.flags["no-install"] !== true);
   mergeSettings(root, loadConfig().contextLimit);
   const pluginMsg = p.flags["no-plugins"] === true ? "plugins: pulados (--no-plugins)." : installPlugins(root);
@@ -5364,6 +5383,9 @@ function run15(args) {
       pluginMsg,
       gitMsg,
       doctorMsg,
+      ...legacyRules ? ["", legacyRules] : [],
+      c.docs.length ? `
+Documentos de contexto a reorganizar no padr\xE3o do harness (Tech Lead): ${c.docs.join(", ")}` : "",
       "",
       "Pr\xF3ximo passo: Abra um chat novo neste repo para carregar o harness."
     ].join("\n")

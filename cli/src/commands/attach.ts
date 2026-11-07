@@ -2,7 +2,7 @@
 import * as fs from "node:fs";
 import * as path from "node:path";
 import { classify, hasPreviousHarness } from "../attach/classify";
-import { gitBackup, moveToLegacy, writePlan } from "../attach/reorg";
+import { LEGACY_DIR, gitBackup, moveToLegacy, writePlan } from "../attach/reorg";
 import { isGitRepo } from "../release/git";
 import { enableSkill, isWebProject, listCatalog } from "../attach/skills";
 import { createIfMissing, installPlugins, mergeSettings, render, setupLint } from "../attach/setup";
@@ -27,6 +27,26 @@ const CREATES = [
   ".claude/harness.json",
   ".claude/settings.json",
 ];
+
+/**
+ * A moved legacy CLAUDE.md/AGENTS.md keeps its rules alive: copied verbatim into claude-local.md (the new
+ * CLAUDE.md points to it) with an empty .claude/local-rules.json to fill. Never overwrites; safe to rerun.
+ */
+function preserveLegacyRules(root: string): string | null {
+  const legacy = ["CLAUDE.md", "AGENTS.md"]
+    .map((f) => path.join(root, LEGACY_DIR, f))
+    .filter((f) => fs.existsSync(f));
+  if (!legacy.length || fs.existsSync(path.join(root, "claude-local.md"))) return null;
+  const body = legacy
+    .map((f) => `## Do ${path.basename(f)} legado\n\n${fs.readFileSync(f, "utf8").trim()}`)
+    .join("\n\n");
+  createIfMissing(
+    path.join(root, "claude-local.md"),
+    `# Regras locais do projeto\n\nCopiadas do harness anterior (original em ${LEGACY_DIR}/). O Tech Lead lê este arquivo todo início de sessão; Daniel decide o que conflita com o Main Harness.\n\n${body}\n`,
+  );
+  createIfMissing(path.join(root, ".claude", "local-rules.json"), '{"deny":[]}\n');
+  return "Regras do harness legado copiadas para claude-local.md. Tech Lead: revise com Daniel, liste conflitos com o Main Harness e transforme proibições em .claude/local-rules.json.";
+}
 
 /** index.md from the repo map; the bare template if the map fails. */
 function indexMd(root: string, vars: Record<string, string>): string {
@@ -108,6 +128,7 @@ export function run(args: string[]): number {
   for (const d of ["adr", "prd", "sprints"])
     createIfMissing(path.join(root, "docs", d, ".gitkeep"), "");
   createIfMissing(path.join(root, "CLAUDE.md"), render("CLAUDE.md", vars));
+  const legacyRules = preserveLegacyRules(root);
 
   // 5. Lint. 6. Settings and plugins.
   const lintMsg = setupLint(root, p.flags["no-install"] !== true);
@@ -151,6 +172,10 @@ export function run(args: string[]): number {
       pluginMsg,
       gitMsg,
       doctorMsg,
+      ...(legacyRules ? ["", legacyRules] : []),
+      c.docs.length
+        ? `\nDocumentos de contexto a reorganizar no padrão do harness (Tech Lead): ${c.docs.join(", ")}`
+        : "",
       "",
       "Próximo passo: Abra um chat novo neste repo para carregar o harness.",
     ].join("\n"),
