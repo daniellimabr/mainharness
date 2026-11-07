@@ -101,3 +101,8 @@ Formato: **Decisão** · **Porquê** · **Descartado** · **Contraponto**.
 - **Contraponto:** uma corrida por caso indica, não prova.
 - **Retorno de Daniel (2026-11-04):** repetir o teste para ter mais dados; o experimento não provou que o leve mantém a qualidade. Além disso, o leve tirou plugins companheiros (ponytail, remember, claude-code-setup, security-guidance) que já tinham sido julgados valiosos e podem fazer falta na qualidade do código. Ação: nova variante `leve-plugins` (reduz só hooks/CLAUDE.md/executor/skills, mantém os plugins) e 3 repetições por caso; ADR 0017 segue proposto.
 - **Resultado da repetição (2026-11-04):** 27 corridas, juiz cego. Atual 22,2; leve 22,8 (−28% tokens, 3 escondidos falhos); leve-plugins 23,3 (−14% tokens, custo igual). Sem perda de qualidade medida, economia pequena com os plugins. **Decisão de Daniel (2026-11-04):** manter o padrão atual, sem nem opção de rodar o harness no modelo leve (ADR 0017 aceito). Porquê: prefere o harness completo e os plugins companheiros; a economia medida não compensou. Contraponto: o leve puro poupava 28% de tokens sem perda de nota medida.
+
+### Escopo da S17: todo o backlog aberto (2026-11-07)
+- **Decisão:** a sprint cobre tudo que já foi pedido; o que for repetido ou perdeu sentido é cancelado, não feito. Prioridade de Daniel: clones informarem em qual tarefa estão.
+- **Porquê:** backlog acumulado com pedidos de vários projetos; limpar de uma vez.
+- **Contraponto:** sprint grande (13 tarefas); se a revisão apertar, o que não fecha volta ao backlog.
