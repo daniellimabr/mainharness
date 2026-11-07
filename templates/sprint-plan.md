@@ -45,7 +45,7 @@ Formato único (`onda N = Txx, Txx; onda M = ...`): quais tarefas rodam juntas. 
 |---|---|---|---|---|
 | SNN | 1 h | 30 min | 2 h | 1 h |
 
-Fator: relógio X%, soma Y%; média = fator padrão. Sprint fora da média: motivo. (Sem histórico: fator 1.)
+Fator: relógio X%, soma Y%; média = fator padrão. Sprint fora da média: motivo. (Sem histórico: fator padrão das S15 e S16, soma 0,25 e relógio 0,33.) Estimativas em minutos de agente, não de dev humano.
 
 **Total estimado:** soma calibrada (bruta). Relógio: caminho mais longo × fator relógio (tempo de agente) + espera por Daniel (teste e ajustes), à parte.
 

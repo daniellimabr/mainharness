@@ -108,6 +108,25 @@
         "files-new/src/api/orders.ts",
         "files-new/src/web/OrdersPage.tsx"
       ]
+    },
+    {
+      "id": 7,
+      "prompt": "Vamos planejar a S01 só com o B001, filtro por data na lista de pedidos. Decisões: de/até por createdAt no servidor (?from=&to=), fuso de Brasília. Este projeto é novo: não há sprint fechada nem histórico no hx metrics. Sem mais perguntas: escreve o plano.",
+      "expected_output": "Cria o plano da S01 com estimativas em minutos de agente e o fator padrão, por não haver histórico.",
+      "expectations": [
+        "Cria docs/sprints/S01-plan.md com a tabela de tarefas",
+        "Diz que não há histórico e usa o fator padrão: Planejado = bruta × 0,25 (soma) e relógio do caminho mais longo = bruta × 0,33",
+        "Não usa fator 1 nem deixa Planejado igual à Bruta",
+        "As estimativas estão em minutos de agente (tempo do agente executando, não de dev humano)",
+        "Não roda 'hx sprint approve S01' antes do ok de Daniel"
+      ],
+      "files": [
+        "files-new/.claude/harness.json",
+        "files-new/docs/backlog.md",
+        "files-new/package.json",
+        "files-new/src/api/orders.ts",
+        "files-new/src/web/OrdersPage.tsx"
+      ]
     }
   ]
 }
