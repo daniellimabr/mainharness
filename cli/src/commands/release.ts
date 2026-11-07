@@ -95,7 +95,8 @@ export function moveStable(repo: string, stable: string, tag: string): void {
 function release(kind: "patch" | "minor" | "major", skipChecks: boolean): number {
   const repo = repoRoot();
   const cfg = loadConfig();
-  if (git(repo, ["status", "--porcelain"]))
+  // The sprint's Release Report (docs/sprints/SNN-release.md) is written before the release.
+  if (git(repo, ["status", "--porcelain", "--", ".", ":(exclude)docs/sprints/S*-release.md"]))
     throw new Error("há alterações não commitadas no repo do harness");
   const tags = versionTags(repo);
   const prev = tags[tags.length - 1] ?? null;

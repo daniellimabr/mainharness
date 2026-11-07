@@ -102,11 +102,16 @@ export function ensureAutoModeRule(): "added" | "present" | "invalid" {
 export function run(args: string[]): number {
   const dry = parseArgs(args).flags["dry-run"] === true;
   const say = (msg: string) => console.log(dry ? `[simulação] ${msg}` : msg);
+  let changed = false;
+  const news = (msg: string) => {
+    changed = true;
+    say(msg);
+  };
 
-  if (fs.existsSync(home.config())) say("config.json já existe");
-  else {
+  // Repeated runs only talk about what changed (B091).
+  if (!fs.existsSync(home.config())) {
     if (!dry) ensureConfig();
-    say(`config.json criado em ${home.config()}`);
+    news(`config.json criado em ${home.config()}`);
   }
   const cfg = loadConfig();
 
@@ -114,9 +119,8 @@ export function run(args: string[]): number {
     path.join(claudeHome(), "plugins", "known_marketplaces.json"),
     {},
   );
-  if (known["harness-stable"]) say("marketplace harness-stable já registrado");
-  else {
-    say(`registrando marketplace: claude plugin marketplace add "${cfg.stableDir}"`);
+  if (!known["harness-stable"]) {
+    news(`registrando marketplace: claude plugin marketplace add "${cfg.stableDir}"`);
     if (!dry) {
       const r = runTool("claude", ["plugin", "marketplace", "add", cfg.stableDir], 60000);
       if (!r.ok) {
@@ -128,34 +132,45 @@ export function run(args: string[]): number {
 
   const src = path.join(pluginRoot(), "skills-user", "attach");
   const dest = path.join(claudeHome(), "skills", "attach");
-  say(`instalando a skill /attach em ${dest}`);
+  const stable = cfg.stableDir.replace(/\\/g, "/").replace(/\/+$/, "");
+  const skillText = fs
+    .readFileSync(path.join(src, "SKILL.md"), "utf8")
+    .split(PLACEHOLDER)
+    .join(stable);
+  if (dry || readText(path.join(dest, "SKILL.md")) !== skillText)
+    news(`instalando a skill /attach em ${dest}`);
   if (!dry) {
     fs.rmSync(dest, { recursive: true, force: true });
     fs.cpSync(src, dest, { recursive: true });
-    const skill = path.join(dest, "SKILL.md");
-    const stable = cfg.stableDir.replace(/\\/g, "/").replace(/\/+$/, "");
-    fs.writeFileSync(skill, fs.readFileSync(skill, "utf8").split(PLACEHOLDER).join(stable));
+    fs.writeFileSync(path.join(dest, "SKILL.md"), skillText);
   }
-  say("desligando o painel do ponytail (Task board: /plugin → ponytail → Task board)");
+  if (dry || readText(path.join(claudeHome(), ".ponytail-band"))?.trim() !== "off")
+    news("desligando o painel do ponytail (Task board: /plugin → ponytail → Task board)");
   if (!dry) disablePonytailBand();
-  say("liberando o hx no modo auto (autoMode.allow em ~/.claude/settings.json)");
+  if (dry || autoModeRuleState() !== "current")
+    news("liberando o hx no modo auto (autoMode.allow em ~/.claude/settings.json)");
   if (!dry && ensureAutoModeRule() === "invalid")
     console.error("settings.json do Claude ilegível: corrija o JSON e rode hx setup de novo");
-  if (!dry && removeStatusLine()) say("status line antiga do hx (hx statusline) removida");
-  say(`instalando o comando hx em ${shimDir()} (aponta para ${cfg.stableDir})`);
+  if (!dry && removeStatusLine()) news("status line antiga do hx (hx statusline) removida");
+  const shimFile = path.join(shimDir(), "hx.cmd");
+  const shimBefore = readText(shimFile);
   let restart = false;
   if (!dry) {
     writeShims(cfg.stableDir);
     const r = addToUserPath(shimDir());
     if (r === "added") {
-      say("pasta do hx adicionada ao PATH do usuário");
       restart = true;
+      news("pasta do hx adicionada ao PATH do usuário");
     } else if (r && r !== "present") console.error(r);
   }
+  if (dry || readText(shimFile) !== shimBefore)
+    news(`instalando o comando hx em ${shimDir()} (aponta para ${cfg.stableDir})`);
   say(
-    restart
-      ? "Pronto. Feche e abra o VS Code para o hx valer nos chats novos; depois rode hx doctor."
-      : "Pronto. Rode hx doctor para conferir.",
+    !changed
+      ? "Tudo em ordem, nada a mudar."
+      : restart
+        ? "Pronto. Feche e abra o VS Code para o hx valer nos chats novos; depois rode hx doctor."
+        : "Pronto. Rode hx doctor para conferir.",
   );
   return 0;
 }

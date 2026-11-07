@@ -113,12 +113,9 @@ describe("runDoctor", () => {
     expect(line(runDoctor({ projectRoot: proj }).lines, "autoCompactWindow")).toMatch(/^✓/);
   });
 
-  it("warns when the project path has a space", () => {
+  it("no longer warns when the project path has a space (B091)", () => {
     const r = runDoctor({ projectRoot: proj });
-    const w = line(r.lines, "No such file or directory");
-    expect(w).toMatch(/^⚠ .*espaço/);
-    expect(w).toContain("PowerShell");
-    expect(w).toContain('cd "');
+    expect(line(r.lines, "No such file or directory")).toBe("");
   });
 
   it("says nothing about spaces when the project path has none", () => {
