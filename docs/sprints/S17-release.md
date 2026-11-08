@@ -20,5 +20,5 @@ Horários de Brasília (UTC−3). ✅ feita · 🔄 em andamento · ⬜ a fazer.
 | ✅ | T10 | `release` ignora `SNN-release.md`; `setup` e `doctor` calados no que já está ok (B090, B091) | clone (sonnet) | 10 min | 18:29 | 18:59 | 18 min (fila: 11 min, revisão: 1 min) |
 | ✅ | T11 | `hx eval`: caso que falha roda de novo e vale 2 de 3 (B077) | clone (sonnet) | 11 min | 18:29 | 18:59 | 20 min (fila: 9 min, revisão: 1 min) |
 | ✅ | T12 | Toast no Windows em permissão/espera e `async` nos hooks de observação (B109) | clone (sonnet) | 13 min | 18:29 | 18:59 | 7 min (fila: 21 min, revisão: 1 min) |
-| 🔄 revisão | T13 | Revisão final, evals (`hx eval --changed`), CHANGELOG, roadmap, backlog e release v0.16.0 (Daniel roda o `hx release`) | tech-lead + reviewer | 23 min | 19:25 |  |  |
-| 🔄 | **Total** | 13 tarefas |  | 1 h 8 min | 2026-11-07 18:29 | ~19:37 (previsto) |  |
+| ✅ | T13 | Revisão final, evals (`hx eval --changed`), CHANGELOG, roadmap, backlog e release v0.16.0 (Daniel roda o `hx release`) | tech-lead + reviewer | 23 min | 19:25 | 19:44 | 13 min (revisão: 6 min) |
+| ✅ | **Total** | 13 tarefas |  | 1 h 8 min | 2026-11-07 18:29 | 2026-11-07 19:44 | 1 h 15 min |

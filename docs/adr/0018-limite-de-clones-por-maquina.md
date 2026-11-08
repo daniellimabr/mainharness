@@ -1,6 +1,6 @@
 # ADR 0018 — Limite de clones em paralelo, por máquina
 
-- **Status:** proposto
+- **Status:** aceito
 - **Data:** 2026-11-07
 - **Harness:** 0.15.0
 
