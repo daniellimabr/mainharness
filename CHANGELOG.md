@@ -2,6 +2,36 @@
 
 Versões do Main Harness (versionamento semântico; `0.y.z` até a 1.0).
 
+## [0.16.0] - 2026-11-08
+
+### Novidades
+
+- feat(S17/T04): metrics ratio per agent, Daniel wait outside tasks, non-overlapping review
+- feat(S17/T07): attach preserves legacy rules and copies context docs
+- feat(S17/T03): approve validates plan format; sprint.open carries tasks; +Nd in table
+- feat(S17/T02): task and agent events carry the clone/reviewer name and task
+- feat(S17/T08): hx shot headless screenshot, light and dark
+- feat(S17/T12): Windows toast on notification and permission; async observation hooks
+- feat(S17/T11): eval reruns failing cases, 2 of 3 wins
+- feat(S17/T06): pre-bash denies commands from .harness/local-rules.json
+- feat(S17/T05): sprint-plan estimates in agent minutes with default factor
+- feat(S17/T01): feedback creates the adjustment task; task and review accept TNN and 'Ajuste N'
+
+### Correções
+
+- fix(eval): allow PowerShell hx in case sandbox; widen sprint-plan trigger description
+- fix(S17/T10): release ignores SNN-release.md; setup and doctor stay quiet when ok
+
+### Outros
+
+- docs(S17/T13): ADR 0018 accepted, final S17 release table
+- docs(S17/T13): changelog 0.16.0, roadmap, backlog, eval fixture and results
+- docs(S17/T09): [TNN] prefix in agent messages; reviewer uses hx shot
+- docs(S17): approve sprint plan
+- docs(S17): sprint plan, backlog cleanup and scope decision
+- chore(inbox): move 13 requests to backlog
+- chore(harness): migrate to v0.15.0
+
 ## [0.16.0] - 2026-11-07
 
 ### Novidades
