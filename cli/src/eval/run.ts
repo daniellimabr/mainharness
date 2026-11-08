@@ -397,7 +397,13 @@ export async function evalSkill(
           r.withSkill ? dir : null,
           async (sb) => {
             // Edits stay in the sandbox; Bash only for hx (isolated HARNESS_HOME), as skills call it.
-            const perms = ["--permission-mode", "acceptEdits", "--allowedTools", '"Bash(hx:*)"'];
+            const perms = [
+              "--permission-mode",
+              "acceptEdits",
+              "--allowedTools",
+              '"Bash(hx:*)"',
+              '"PowerShell(hx:*)"',
+            ];
             const s = await claude(r.c.prompt, sb, perms, ctx);
             return { ...r, answer: s.answer, skills: s.skills, files: outputs(sb) };
           },

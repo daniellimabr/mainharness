@@ -1,6 +1,6 @@
 ---
 name: sprint-plan
-description: "Monta o sprint plan docs/sprints/SNN-plan.md a partir da conversa com Daniel: escopo, fora de escopo, critérios de aceite, plano de testes e tabela de tarefas dividida por arquivo para trabalho em paralelo; pede a aprovação de Daniel e roda 'hx sprint approve SNN'. Use SEMPRE que for planejar, replanejar ou ajustar uma sprint, ou quando Daniel disser 'vamos planejar', 'próxima sprint', 'monta o plano'."
+description: "Monta o sprint plan docs/sprints/SNN-plan.md a partir da conversa com Daniel: escopo, fora de escopo, critérios de aceite, plano de testes e tabela de tarefas dividida por arquivo para trabalho em paralelo; pede a aprovação de Daniel e roda 'hx sprint approve SNN'. Use SEMPRE que for planejar, replanejar ou ajustar uma sprint, ou quando Daniel disser 'vamos planejar', 'próxima sprint', 'monta o plano', 'organiza em tarefas com estimativa', 'o que cabe na próxima sprint' (a partir do inbox/backlog ou de uma lista de coisas a fazer)."
 argument-hint: "[SNN]"
 ---
 

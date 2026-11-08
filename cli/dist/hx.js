@@ -4487,7 +4487,13 @@ async function evalSkill(repo, skill, scope, ctx, opts = {}) {
       (r) => inSandbox(
         r.withSkill ? dir : null,
         async (sb) => {
-          const perms = ["--permission-mode", "acceptEdits", "--allowedTools", '"Bash(hx:*)"'];
+          const perms = [
+            "--permission-mode",
+            "acceptEdits",
+            "--allowedTools",
+            '"Bash(hx:*)"',
+            '"PowerShell(hx:*)"'
+          ];
           const s2 = await claude(r.c.prompt, sb, perms, ctx);
           return { ...r, answer: s2.answer, skills: s2.skills, files: outputs(sb) };
         },
