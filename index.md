@@ -83,6 +83,8 @@ Uma linha por arquivo: caminho e propósito. Mantido pelo hook `post-edit`.
 - `cli/src/repomap/index.ts` — Repo map (index.md): one line per file with its purpose, kept up to date by the post-edit hook.
 - `cli/src/sprint/cmd.ts` — Shared helpers for sprint commands: --at timestamps, boolean flags and loading a sprint plan.
 - `cli/src/sprint/index.ts` — Sprint plan (docs/sprints/SNN-plan.md): parse the task table, approval hash, execution table (SNN-release.md), metrics.
+- `cli/src/state/build.ts` — Pure: project events -> state object (contract: docs/contracts/state.md). No I/O.
+- `cli/src/state/write.ts` — Writes ~/.harness/dashboard/<project>.json (contract: docs/contracts/state.md). Never throws.
 - `cli/src/usage/index.ts` — Usage (tokens and US$) public API: ingest transcripts, current context size, transcript folder.
 - `cli/src/usage/limits.ts` — B064: plan usage % (5 h and weekly) from the endpoint behind Claude Code's /usage.
 - `cli/src/usage/price.ts` — US$ estimate for one response from its transcript usage block and the config price table.
@@ -102,6 +104,9 @@ Uma linha por arquivo: caminho e propósito. Mantido pelo hook `post-edit`.
 - `cli/test/eval.test.ts` — (sem descrição)
 - `cli/test/events-s05.test.ts` — S05 events: agent.start/agent.end, prompt (never the text), session.start title, project.status, Stop typecheck only ...
 - `cli/test/events.test.ts` — testes de events
+- `cli/test/ext-model.test.ts` — (sem descrição)
+- `cli/test/ext-status.test.ts` — (sem descrição)
+- `cli/test/ext-store.test.ts` — (sem descrição)
 - `cli/test/fsx.test.ts` — (sem descrição)
 - `cli/test/global-setup.ts` — Builds cli/dist/hx.js once before the suite, so integration tests run the real bundle.
 - `cli/test/helpers.ts` — Test helpers: temp folders WITH SPACES, isolated HARNESS_HOME, running the built hx.js.
@@ -139,6 +144,7 @@ Uma linha por arquivo: caminho e propósito. Mantido pelo hook `post-edit`.
 - `cli/test/shot.test.ts` — hx shot with a fake browser (a script that records its args and writes the screenshot file).
 - `cli/test/sprint-reopen.test.ts` — (sem descrição)
 - `cli/test/sprint.test.ts` — testes de sprint
+- `cli/test/state-write.test.ts` — (sem descrição)
 - `cli/test/stop-typecheck.test.ts` — Stop hook typecheck: tsc runs only when cli/src changed and blocks with its first lines.
 - `cli/test/task-drop.test.ts` — (sem descrição)
 - `cli/test/task.test.ts` — (sem descrição)
@@ -171,9 +177,11 @@ Uma linha por arquivo: caminho e propósito. Mantido pelo hook `post-edit`.
 - `docs/adr/0016-deepseek-direto-pode-executar.md` — ADR 0016 — DeepSeek direto pode executar tarefa de clone
 - `docs/adr/0017-perfil-leve-e-dashboard.md` — ADR 0017 — Dashboard fica ligado; perfil leve como opção a confirmar
 - `docs/adr/0018-limite-de-clones-por-maquina.md` — ADR 0018 — Limite de clones em paralelo, por máquina
+- `docs/adr/0019-state-json-e-extensao-vscode.md` — ADR 0019 — `state.json` por projeto e extensão do VS Code no mesmo repo
 - `docs/avaliacao-observabilidade.md` — Avaliação de observabilidade: Main Harness e Dashboard IA
 - `docs/backlog.md` — Backlog do Main Harness
 - `docs/contracts/events.md` — Contrato de eventos: Main Harness e Dashboard IA
+- `docs/contracts/state.md` — Contrato do `state.json` (v1)
 - `docs/decisoes-daniel.md` — Decisões de Daniel
 - `docs/experiments/S12-protocolo.md` — S12 — Protocolo do experimento de modelos
 - `docs/experiments/S12-resultado.md` — S12 — Resultado do experimento: Opus × Sonnet × Gemini
@@ -187,6 +195,7 @@ Uma linha por arquivo: caminho e propósito. Mantido pelo hook `post-edit`.
 - `docs/experiments/S16-resultado.md` — S16 — Resultado: harness leve × atual e o custo do Dashboard
 - `docs/experiments/S16/notas-juiz.md` — Notas do juiz cego (Reviewer Sonnet, 0–25)
 - `docs/omniroute.md` — OmniRoute: modelos grátis
+- `docs/prd/0001-harness-dash-extensao.md` — PRD 0001 — Harness Dash: painel do harness dentro do VS Code
 - `docs/roadmap.md` — Roadmap do Main Harness
 - `docs/sprints/S00-plan.md` — sprint plan S00 (criação do harness)
 - `docs/sprints/S00-release.md` — Release Report da S00 (tabela de execução gerada pelo hx)
@@ -220,7 +229,19 @@ Uma linha por arquivo: caminho e propósito. Mantido pelo hook `post-edit`.
 - `docs/sprints/S16-plan.md` — S16 — Harness leve × atual e o custo do Dashboard
 - `docs/sprints/S16-release.md` — S16 — Release Report
 - `docs/sprints/S17-plan.md` — S17 — Backlog inteiro: ajustes com tarefa, clones identificados, plano validado
+- `docs/sprints/S18-plan.md` — S18 — Harness Dash: estado por projeto e extensão do VS Code
 - `eslint.config.js` — ESLint flat config
+- `extension/.vscodeignore` — o que sai do .vsix do Harness Dash (src, tsconfig, esbuild, mapas)
+- `extension/README.md` — Harness Dash: o que é, instalação do .vsix, como abrir, de onde lê e como atualizar
+- `extension/esbuild.mjs` — build da extensão (esbuild → dist/extension.js)
+- `extension/media/panel.css` — Theme comes from VS Code variables, so light, dark and high contrast follow the editor.
+- `extension/media/panel.js` — Webview script: renders the view-model with textContent only (no innerHTML, no user text as markup).
+- `extension/src/extension.ts` — ativa a extensão: comando "Abrir Harness Dash" e barra de status
+- `extension/src/model.ts` — Pure view-model for the panel (no vscode import). Missing data is "sem dado", never zero.
+- `extension/src/panel.ts` — painel webview: lê o estado e envia ao front (media/)
+- `extension/src/statusBar.ts` — item da barra de status (agentes ativos / parado)
+- `extension/src/statusModel.ts` — Pure status bar model (no vscode import): projects + states + workspace folders -> text/tooltip/command.
+- `extension/src/store.ts` — Reads the dashboard state files written by hx (docs/contracts/state.md). No vscode import: the UI wiring lives elsewh...
 - `hooks/hooks.json` — hooks do plugin (forma exec chamando o hx)
 - `package-lock.json` — versões travadas das dependências de desenvolvimento
 - `package.json` — scripts e dependências de desenvolvimento
