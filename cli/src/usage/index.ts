@@ -2,6 +2,7 @@
 import * as fs from "node:fs";
 import * as path from "node:path";
 import { claudeHome } from "../core/paths";
+import { writeDashboardState } from "../state/write";
 import { type IngestOptions, transcriptSource } from "./transcript";
 
 export { usd, type TranscriptUsage } from "./price";
@@ -14,7 +15,9 @@ export {
 
 /** Ingests new responses of a session (main + subagents) into `usage` events. */
 export function ingestSession(opts: IngestOptions): { events: number } {
-  return { events: transcriptSource.ingest(opts).length };
+  const events = transcriptSource.ingest(opts).length;
+  if (events > 0) writeDashboardState(opts.project);
+  return { events };
 }
 
 /** Claude Code transcript folder of a project (~/.claude/projects/<encoded path>), or null. */

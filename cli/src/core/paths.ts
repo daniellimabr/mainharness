@@ -23,6 +23,7 @@ export const home = {
   events: () => path.join(harnessHome(), "events"),
   logs: () => path.join(harnessHome(), "logs"),
   state: () => path.join(harnessHome(), "state"),
+  dashboard: () => path.join(harnessHome(), "dashboard"),
   handoffs: (project: string) => path.join(harnessHome(), "handoffs", project),
   usageCache: () => path.join(harnessHome(), "cache", "usage"),
 };

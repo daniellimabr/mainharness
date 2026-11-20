@@ -96,7 +96,9 @@ describe("buildState", () => {
   });
 
   it("agent started over 30 min ago without end is not active", () => {
-    const s = buildState([ev("agent.start", { agent: "executor", data: { agent_id: "z" } })], { now: NOW });
+    const s = buildState([ev("agent.start", { agent: "executor", data: { agent_id: "z" } })], {
+      now: NOW,
+    });
     expect(s.agents).toEqual([]);
     expect(s.project.parado).toBe(true);
   });

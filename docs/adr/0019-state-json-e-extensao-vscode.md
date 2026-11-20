@@ -22,12 +22,12 @@ Daniel decidiu juntar o Dashboard IA e o harness num projeto só (2026-11-20). O
 
 ## Decisão
 
-1. **Arquivo:** `~/.harness/state/<id-do-projeto>.json`, central (nada dentro dos repos, funciona com a janela fechada). Contrato em `docs/contracts/state.md`, com campo `v`.
+1. **Arquivo:** `~/.harness/dashboard/<id-do-projeto>.json` (a pasta `state/` já guarda o estado de runtime do `hx`; ajuste da S18/T02), central (nada dentro dos repos, funciona com a janela fechada). Contrato em `docs/contracts/state.md`, com campo `v`.
 2. **Conteúdo:** projeto, sprint ativa, tarefas (status, agente do plano, papel, fase, custo), agentes ativos (id, papel, tarefa, início), sprints com situação e custo, gasto por dia e total, `updated_at`.
 3. **Quem escreve:** uma função pura `buildState` recalcula o arquivo inteiro a partir dos eventos e do plano; é chamada em `emit()` para eventos de ciclo (tarefa, revisão, sprint, agente) e uma vez por lote depois de ingerir `usage`. Recalcular tudo (e não aplicar diferença) torna a corrida entre hooks inofensiva: o último a escrever também leu tudo. Gravação atômica (arquivo temporário e `rename`). `HARNESS_DASHBOARD=off` não grava.
 4. **`hx state rebuild [--all]`** reconstrói o histórico dos eventos existentes (um projeto ou todos do registro).
 5. **Papel:** derivado do `agent` do envelope (`executor` → clone, `main-harness:reviewer` → reviewer, o resto → tech-lead).
-6. **Extensão:** pasta `extension/` neste repo, TypeScript com esbuild, sem React; lê só `projects.json` e `state/*.json`, observa a pasta, sem porta. Distribuída como `.vsix` à parte (a pasta `extension/` segue no clone do plugin, sem efeito).
+6. **Extensão:** pasta `extension/` neste repo, TypeScript com esbuild, sem React; lê só `projects.json` e `dashboard/*.json`, observa a pasta, sem porta. Distribuída como `.vsix` à parte (a pasta `extension/` segue no clone do plugin, sem efeito).
 7. **Custo vem dos eventos `usage`**, não das transcrições. A conferência com o dashboard atual (até 1%) decide se isso basta.
 
 ## Consequências

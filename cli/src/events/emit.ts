@@ -3,8 +3,12 @@ import * as fs from "node:fs";
 import * as path from "node:path";
 import { home } from "../core/paths";
 import { harnessVersion } from "../core/version";
+import { writeDashboardState } from "../state/write";
 import { EVENT_VERSION, type EventType, type HarnessEvent, validateEvent } from "./schema";
 import { ulid } from "./ulid";
+
+// Cycle events refresh the dashboard state; usage is written once per batch (ingestSession).
+const CYCLE = /^(session|agent|sprint|task|review)\./;
 
 export interface EmitInput {
   type: EventType;
@@ -46,6 +50,7 @@ export function emit(input: EmitInput): HarnessEvent {
   const dir = home.events();
   fs.mkdirSync(dir, { recursive: true });
   fs.appendFileSync(path.join(dir, `${ev.ts.slice(0, 10)}.jsonl`), JSON.stringify(ev) + "\n");
+  if (CYCLE.test(ev.type)) writeDashboardState(ev.project);
   return ev;
 }
 

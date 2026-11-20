@@ -1,6 +1,6 @@
 # Contrato do `state.json` (v1)
 
-Arquivo por projeto, gerado por `buildState` (`cli/src/state/build.ts`) a partir dos eventos (`docs/contracts/events.md`). ADR 0019. Quem lê (extensão) ignora campo desconhecido e avisa se `v` for maior que o conhecido.
+Local: `~/.harness/dashboard/<id-do-projeto>.json` (não `state/`, que é do runtime do `hx`). Arquivo por projeto, gerado por `buildState` (`cli/src/state/build.ts`) a partir dos eventos (`docs/contracts/events.md`). ADR 0019. Quem lê (extensão) ignora campo desconhecido e avisa se `v` for maior que o conhecido.
 
 ## Regras
 
