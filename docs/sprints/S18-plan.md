@@ -58,7 +58,7 @@ O papel real do agente e o `agent.start` com TNN já saíram na S17; o pedido do
 | T08 | Empacotar `.vsix`, README de instalação, `index.md` | clone (haiku) | `extension/README.md`, `extension/.vscodeignore`, `index.md` | T06, T07 | 60 min | 15 min |
 | T09 | Revisão final, evals (`hx eval --changed`), CHANGELOG, roadmap, backlog e release v0.17.0 (Daniel roda o `hx release`) | tech-lead + reviewer | `CHANGELOG.md`, `docs/roadmap.md`, `docs/backlog.md` | T03, T08 | 60 min | 15 min |
 | T10 | Conferência: `hx state rebuild --all`, total do painel contra o dashboard atual (até 1%); diferença maior volta a Daniel | tech-lead | `docs/sprints/S18-conferencia.md` | T09 | 30 min | 8 min |
-| T11 | Descontinuar o Dashboard IA: README de aviso e arquivar o repo (só depois da confirmação de Daniel após alguns dias de uso) | tech-lead | `docs/entrada-dashboard-ia/LEIA-ME.md`, `docs/decisoes-daniel.md` | T10 | 30 min | 8 min |
+| ~~T11~~ | Descontinuar o Dashboard IA: README de aviso e arquivar o repo (só depois da confirmação de Daniel após alguns dias de uso) **(adiada: so depois de alguns dias de uso da extensao)** | tech-lead | `docs/entrada-dashboard-ia/LEIA-ME.md`, `docs/decisoes-daniel.md` | T10 | 30 min | 8 min |
 
 **Ondas:** onda 1 = T01; onda 2 = T02, T04; onda 3 = T03, T05; onda 4 = T06, T07; onda 5 = T08; onda 6 = T09; onda 7 = T10; onda 8 = T11
 
@@ -75,6 +75,6 @@ T06 (tela nova) usa a skill `frontend-design` (e `dataviz` nos gráficos) e traz
 ## Aprovação
 
 - **Aprovado por:** Daniel
-- **Data/hora:** 2026-11-20 16:35:41 (horário de Brasília) — UTC 2026-11-20T19:35:41Z
-- **Hash SHA-256 do plano** (conteúdo antes desta seção, finais de linha normalizados para LF): `896d56a2ee9a065a45304da73dd1e04424df7a5a4f341ebcaa3ac90ead6d9744`
+- **Data/hora:** 2026-11-20 18:28:36 (horário de Brasília) — UTC 2026-11-20T21:28:36Z
+- **Hash SHA-256 do plano** (conteúdo antes desta seção, finais de linha normalizados para LF): `be2d5539cddba648222955462e55fc78b76823b20197a2b05e9bebd7cada225a`
 - **Versão do harness:** 0.16.0

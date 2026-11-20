@@ -229,6 +229,7 @@ Uma linha por arquivo: caminho e propósito. Mantido pelo hook `post-edit`.
 - `docs/sprints/S16-plan.md` — S16 — Harness leve × atual e o custo do Dashboard
 - `docs/sprints/S16-release.md` — S16 — Release Report
 - `docs/sprints/S17-plan.md` — S17 — Backlog inteiro: ajustes com tarefa, clones identificados, plano validado
+- `docs/sprints/S18-conferencia.md` — S18: conferência do estado contra o Dashboard IA
 - `docs/sprints/S18-plan.md` — S18 — Harness Dash: estado por projeto e extensão do VS Code
 - `eslint.config.js` — ESLint flat config
 - `extension/.vscodeignore` — o que sai do .vsix do Harness Dash (src, tsconfig, esbuild, mapas)
