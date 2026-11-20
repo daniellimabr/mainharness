@@ -680,18 +680,22 @@ var init_build = __esm({
 });
 
 // cli/src/state/write.ts
+function rebuildDashboardState(project) {
+  if (!project || project !== path7.basename(project)) throw new Error(`id inv\xE1lido: "${project}"`);
+  const state = buildState(
+    readEvents((e) => e.project === project),
+    { project }
+  );
+  writeFileAtomic(
+    path7.join(home.dashboard(), `${project}.json`),
+    JSON.stringify(state, null, 2) + "\n"
+  );
+}
 function writeDashboardState(project) {
   if (process.env.HARNESS_DASHBOARD === "off") return;
   if (!project || project !== path7.basename(project)) return;
   try {
-    const state = buildState(
-      readEvents((e) => e.project === project),
-      { project }
-    );
-    writeFileAtomic(
-      path7.join(home.dashboard(), `${project}.json`),
-      JSON.stringify(state, null, 2) + "\n"
-    );
+    rebuildDashboardState(project);
   } catch (err) {
     logError("state", err);
   }
@@ -2525,15 +2529,15 @@ var init_args = __esm({
 });
 
 // cli/src/migrations/index.ts
-function removeResumeTasks(run21 = (c, a) => runTool(c, a, 1e4)) {
+function removeResumeTasks(run22 = (c, a) => runTool(c, a, 1e4)) {
   const dir = path22.join(harnessHome(), "resume");
   if (!fs20.existsSync(dir)) return [];
-  const { ok, out } = run21("schtasks", ["/query", "/fo", "csv", "/nh"]);
+  const { ok, out } = run22("schtasks", ["/query", "/fo", "csv", "/nh"]);
   if (!ok) return [];
   for (const tn of new Set(
     out.match(/MainHarness-Resume-[0-9a-f]{8}(-[0-9a-f]{4}){3}-[0-9a-f]{12}/gi)
   ))
-    run21("schtasks", ["/delete", "/tn", tn, "/f"]);
+    run22("schtasks", ["/delete", "/tn", tn, "/f"]);
   fs20.rmSync(dir, { recursive: true, force: true });
   return [];
 }
@@ -4130,17 +4134,57 @@ var init_status = __esm({
   }
 });
 
+// cli/src/commands/state.ts
+var state_exports = {};
+__export(state_exports, {
+  run: () => run8
+});
+function run8(args) {
+  const p = parseArgs(args);
+  if (p._[0] !== "rebuild") {
+    console.error("uso: hx state rebuild [--all]");
+    return 1;
+  }
+  let ids;
+  try {
+    ids = p.flags.all ? readProjects().map((e) => e.id) : [commandContext().id];
+  } catch (err) {
+    console.error(err.message);
+    return 1;
+  }
+  let code = 0;
+  for (const id2 of ids) {
+    try {
+      rebuildDashboardState(id2);
+      console.log(`${id2}: estado reconstru\xEDdo`);
+    } catch (err) {
+      console.error(`${id2}: n\xE3o consegui gravar o estado (${err.message})`);
+      code = 1;
+    }
+  }
+  return code;
+}
+var init_state2 = __esm({
+  "cli/src/commands/state.ts"() {
+    "use strict";
+    init_args();
+    init_context();
+    init_projects();
+    init_write();
+  }
+});
+
 // cli/src/commands/shot.ts
 var shot_exports = {};
 __export(shot_exports, {
-  run: () => run8
+  run: () => run9
 });
 function findBrowser() {
   const env = process.env.HX_CHROME;
   if (env) return fs26.existsSync(env) ? env : null;
   return CANDIDATES.find((c) => fs26.existsSync(c)) ?? null;
 }
-function run8(args) {
+function run9(args) {
   const p = parseArgs(args);
   const input = p._[0];
   if (!input) {
@@ -4234,9 +4278,9 @@ var init_shot = __esm({
 // cli/src/commands/run.ts
 var run_exports = {};
 __export(run_exports, {
-  run: () => run9
+  run: () => run10
 });
-function run9(args) {
+function run10(args) {
   const parts2 = args[0] === "--" ? args.slice(1) : args;
   if (!parts2.length) {
     console.error("uso: hx run <comando>");
@@ -4783,7 +4827,7 @@ var init_run2 = __esm({
 // cli/src/commands/worker.ts
 var worker_exports = {};
 __export(worker_exports, {
-  run: () => run10
+  run: () => run11
 });
 function worker(alias) {
   const all = loadConfig().workers ?? {};
@@ -4942,7 +4986,7 @@ ${e.message}` }));
     console.error(mask(`claude -p saiu com c\xF3digo ${r.code}. ${r.err.trim().slice(-500)}`));
   return r.code === 0 ? 0 : 1;
 }
-async function run10(args, deps = {}) {
+async function run11(args, deps = {}) {
   const [sub, ...rest] = args;
   if (sub === "check") return check(rest[0], deps);
   if (sub === "run") return start(rest, deps);
@@ -4972,9 +5016,9 @@ var init_worker = __esm({
 // cli/src/commands/request.ts
 var request_exports = {};
 __export(request_exports, {
-  run: () => run11
+  run: () => run12
 });
-function run11(args) {
+function run12(args) {
   const p = parseArgs(args);
   const title2 = flagStr(p, "title");
   const need = flagStr(p, "need");
@@ -5052,7 +5096,7 @@ var metrics_exports = {};
 __export(metrics_exports, {
   agentMetrics: () => agentMetrics,
   renderAgentMetrics: () => renderAgentMetrics,
-  run: () => run12
+  run: () => run13
 });
 function merge(iv) {
   const out = [];
@@ -5121,7 +5165,7 @@ function renderAgentMetrics(a) {
     `| Revis\xF5es (sem contar sobreposi\xE7\xE3o) | ${fmtMin(a.review_union_min)} |`
   ].join("\n");
 }
-function run12(args) {
+function run13(args) {
   const p = parseArgs(args);
   const doEmit = boolFlag(p, "emit");
   const ctx = commandContext(process.cwd(), flagStr(p, "agent"));
@@ -5160,7 +5204,7 @@ var init_metrics = __esm({
 // cli/src/commands/usage.ts
 var usage_exports = {};
 __export(usage_exports, {
-  run: () => run13
+  run: () => run14
 });
 function add2(t, d) {
   t.input += Number(d.input) || 0;
@@ -5207,7 +5251,7 @@ function summary(title2, events) {
   }
   return out;
 }
-function run13(args) {
+function run14(args) {
   const p = parseArgs(args);
   let ctx;
   try {
@@ -5409,7 +5453,7 @@ __export(setup_exports, {
   disablePonytailBand: () => disablePonytailBand,
   ensureAutoModeRule: () => ensureAutoModeRule,
   removeStatusLine: () => removeStatusLine,
-  run: () => run14,
+  run: () => run15,
   userHomeVarSet: () => userHomeVarSet
 });
 function userHomeVarSet() {
@@ -5461,7 +5505,7 @@ function ensureAutoModeRule() {
   writeJson(file2, st);
   return "added";
 }
-function run14(args) {
+function run15(args) {
   const dry = parseArgs(args).flags["dry-run"] === true;
   const say = (msg) => console.log(dry ? `[simula\xE7\xE3o] ${msg}` : msg);
   let changed = false;
@@ -5551,7 +5595,7 @@ var init_setup2 = __esm({
 // cli/src/commands/doctor.ts
 var doctor_exports = {};
 __export(doctor_exports, {
-  run: () => run15,
+  run: () => run16,
   runDoctor: () => runDoctor
 });
 function pythonVersion() {
@@ -5768,7 +5812,7 @@ function runDoctor(opts = {}) {
   lines.push(problems ? `${problems} problema${problems > 1 ? "s" : ""}` : "Tudo certo");
   return { ok: problems === 0, lines };
 }
-function run15(_args) {
+function run16(_args) {
   const r = runDoctor();
   for (const l of r.lines) console.log(l);
   return r.ok ? 0 : 1;
@@ -5808,7 +5852,7 @@ var init_doctor = __esm({
 // cli/src/commands/attach.ts
 var attach_exports = {};
 __export(attach_exports, {
-  run: () => run16
+  run: () => run17
 });
 function extractRules(text) {
   const rules = [];
@@ -5891,7 +5935,7 @@ function indexMd(root, vars) {
     return render("index.md", { ...vars, map: "" });
   }
 }
-function run16(args) {
+function run17(args) {
   const p = parseArgs(args);
   const root = path38.resolve(p._[0] ?? process.cwd());
   if (!fs37.existsSync(root) || !fs37.statSync(root).isDirectory()) {
@@ -6030,9 +6074,9 @@ var init_attach = __esm({
 // cli/src/commands/skills.ts
 var skills_exports = {};
 __export(skills_exports, {
-  run: () => run17
+  run: () => run18
 });
-function run17(args) {
+function run18(args) {
   const [action, name] = args;
   const p = resolveProject(process.cwd());
   if (!p) {
@@ -6078,9 +6122,9 @@ var init_skills3 = __esm({
 // cli/src/commands/eval.ts
 var eval_exports = {};
 __export(eval_exports, {
-  run: () => run18
+  run: () => run19
 });
-async function run18(args) {
+async function run19(args) {
   const p = parseArgs(args);
   const repo = path39.resolve(loadConfig().harnessRepo);
   const tag = versionTags(repo).pop() ?? null;
@@ -6148,7 +6192,7 @@ var init_eval = __esm({
 var release_exports = {};
 __export(release_exports, {
   moveStable: () => moveStable,
-  run: () => run19
+  run: () => run20
 });
 function repoRoot() {
   const repo = path40.resolve(loadConfig().harnessRepo);
@@ -6259,7 +6303,7 @@ function release(kind, skipChecks) {
   console.log(updatePlugins(readProjects().map((p) => p.path)));
   return 0;
 }
-function run19(args) {
+function run20(args) {
   const p = parseArgs(args);
   const [sub, target] = p._;
   if (sub === "check") {
@@ -6317,9 +6361,9 @@ var init_release = __esm({
 // cli/src/commands/rollback.ts
 var rollback_exports = {};
 __export(rollback_exports, {
-  run: () => run20
+  run: () => run21
 });
-function run20(_args) {
+function run21(_args) {
   const stable = path41.resolve(loadConfig().stableDir);
   if (!fs39.existsSync(path41.join(stable, ".git")))
     throw new Error(`vers\xE3o est\xE1vel n\xE3o encontrada em ${stable}`);
@@ -6359,6 +6403,7 @@ var COMMANDS = {
   sprint: () => Promise.resolve().then(() => (init_sprint2(), sprint_exports)),
   review: () => Promise.resolve().then(() => (init_review(), review_exports)),
   status: () => Promise.resolve().then(() => (init_status(), status_exports)),
+  state: () => Promise.resolve().then(() => (init_state2(), state_exports)),
   shot: () => Promise.resolve().then(() => (init_shot(), shot_exports)),
   handoff: () => Promise.resolve().then(() => (init_handoff(), handoff_exports)),
   run: () => Promise.resolve().then(() => (init_run(), run_exports)),
@@ -6391,6 +6436,7 @@ var HELP = `hx <command> [args]
   review pass|fail <task>     resultado da revis\xE3o
   shot <url|arquivo> [--out f.png] [--width N] [--theme light|dark|both]
   status --where t --next t  registra onde o projeto est\xE1 e o pr\xF3ximo passo
+  state rebuild [--all]       reconstr\xF3i o estado do dashboard (projeto atual ou todos)
   handoff [--show|--consume]  grava (stdin)/mostra o handoff
   run <cmd...>                roda e mostra s\xF3 falhas e resumo
   worker check <apelido>      confere o modelo externo com uma chamada de verdade

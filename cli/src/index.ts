@@ -9,6 +9,7 @@ const COMMANDS: Record<string, () => Promise<{ run: Run }>> = {
   sprint: () => import("./commands/sprint"),
   review: () => import("./commands/review"),
   status: () => import("./commands/status"),
+  state: () => import("./commands/state"),
   shot: () => import("./commands/shot"),
   handoff: () => import("./commands/handoff"),
   run: () => import("./commands/run"),
@@ -42,6 +43,7 @@ const HELP = `hx <command> [args]
   review pass|fail <task>     resultado da revisão
   shot <url|arquivo> [--out f.png] [--width N] [--theme light|dark|both]
   status --where t --next t  registra onde o projeto está e o próximo passo
+  state rebuild [--all]       reconstrói o estado do dashboard (projeto atual ou todos)
   handoff [--show|--consume]  grava (stdin)/mostra o handoff
   run <cmd...>                roda e mostra só falhas e resumo
   worker check <apelido>      confere o modelo externo com uma chamada de verdade
