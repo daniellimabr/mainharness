@@ -112,3 +112,14 @@ Formato: **Decisão** · **Porquê** · **Descartado** · **Contraponto**.
 - **Porquê:** com 7 clones na S17 a CPU foi a 83% e o PC ficou quase inutilizável.
 - **Alternativa descartada:** limite fixo para todas as máquinas.
 - **Contraponto:** a sprint pode demorar um pouco mais; se a causa for o antivírus, o limite pouco ajuda.
+
+### Dashboard e harness viram um projeto só; extensão do VS Code (2026-11-20, ADR 0019)
+- **Decisão:** o Dashboard IA e o Main Harness passam a ser um repo só; a extensão "Harness Dash" fica em `extension/`. O `hx` grava um `state.json` por projeto e a extensão só o lê (sem servidor, sem porta). Backlog, Docs, Timeline, Roadmap e Chats do dashboard atual ficam de fora.
+- **Porquê:** um painel dentro do VS Code, sem servidor para lembrar de iniciar; um repo só evita manter dois formatos de evento.
+- **Alternativa descartada:** extensão com leitores próprios de eventos e transcrições (plano S16 do Dashboard IA).
+- **Contraponto:** o gasto de antes dos eventos pode passar de 1% de diferença; se passar, volta a Daniel decidir.
+
+### Descontinuar o Dashboard IA depois do uso (2026-11-20)
+- **Decisão:** quando a extensão bater com o dashboard atual (até 1%) e Daniel usar por alguns dias, arquivar o repo Dashboard IA: README de aviso, sem apagar. É a T11 da S18.
+- **Porquê:** não manter dois dashboards.
+- **Contraponto:** perde-se a visão do navegador (Backlog, Docs, Timeline, Roadmap, Chats) até alguém pedir de volta.

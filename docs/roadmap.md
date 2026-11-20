@@ -77,6 +77,10 @@ Gemini e `hx worker` saíram (ADR 0014). `hx task drop|defer` tira ou adia taref
 
 `hx sprint feedback` cria o TNN do ajuste; `approve` valida o plano; eventos com o agente do clone e do Reviewer; `hx metrics` por agente; `pre-bash` com regras locais do projeto; `attach` preserva regras legadas; `hx shot` (print com Chrome headless); `hx eval` repete o caso que falha (2 de 3); toast no Windows; estimativa em minutos de agente com fator padrão (ADR 0018: limite de clones por máquina).
 
+## 16. Harness Dash: estado por projeto e extensão do VS Code (S18, v0.17.0)
+
+O `hx` grava o estado de cada projeto em `~/.harness/dashboard/<id>.json` (contrato `docs/contracts/state.md`, ADR 0019); `hx state rebuild [--all]` refaz tudo a partir dos eventos. A extensão `extension/` (painel webview e item na barra de status) só lê esses arquivos, sem servidor. Instalação por `.vsix` (README da extensão). O Dashboard IA só sai depois que Daniel usar alguns dias e a conferência (≤1%) passar. Pendente: B155 (eval com PowerShell no sandbox).
+
 ## Avaliado e descartado por ora
 
 - **Troca de modelo pelo % de uso (gatilho de 90%, S10).** A escolha de modelo virou reação ao limite, não decisão do plano (ADR 0013).
