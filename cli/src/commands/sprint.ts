@@ -114,7 +114,9 @@ function open(ctx: CommandContext, p: Parsed, id: string): number {
     ts: at,
     data: {
       tasks: plan.tasks.length,
-      task_info: Object.fromEntries(plan.tasks.map((t) => [t.id, [t.title, t.agent]])),
+      task_info: Object.fromEntries(
+        plan.tasks.map((t) => [t.id, [t.title, t.agent].map((s) => s.replace(/[{};<>`]/g, ""))]),
+      ),
       task_planned: Object.fromEntries(plan.tasks.map((t) => [t.id, t.planned_min])),
     },
   });

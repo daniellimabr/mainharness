@@ -3777,7 +3777,9 @@ function open(ctx, p, id2) {
     ts: at,
     data: {
       tasks: plan.tasks.length,
-      task_info: Object.fromEntries(plan.tasks.map((t) => [t.id, [t.title, t.agent]])),
+      task_info: Object.fromEntries(
+        plan.tasks.map((t) => [t.id, [t.title, t.agent].map((s2) => s2.replace(/[{};<>`]/g, ""))])
+      ),
       task_planned: Object.fromEntries(plan.tasks.map((t) => [t.id, t.planned_min]))
     }
   });
