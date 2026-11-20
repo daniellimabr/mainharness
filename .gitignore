@@ -6,3 +6,5 @@ coverage/
 skills/*/evals/workspace/
 __pycache__/
 .worker/
+extension/dist/
+*.vsix

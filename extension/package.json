@@ -1,0 +1,22 @@
+{
+  "name": "harness-dash",
+  "displayName": "Harness Dash",
+  "description": "Painel do Main Harness dentro do VS Code.",
+  "version": "0.1.0",
+  "publisher": "main-harness",
+  "private": true,
+  "license": "UNLICENSED",
+  "engines": {
+    "vscode": "^1.90.0"
+  },
+  "main": "./dist/extension.js",
+  "activationEvents": [],
+  "contributes": {
+    "commands": [
+      {
+        "command": "harnessDash.open",
+        "title": "Abrir Harness Dash"
+      }
+    ]
+  }
+}
