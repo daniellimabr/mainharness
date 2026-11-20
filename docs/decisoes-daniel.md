@@ -123,3 +123,9 @@ Formato: **Decisão** · **Porquê** · **Descartado** · **Contraponto**.
 - **Decisão:** quando a extensão bater com o dashboard atual (até 1%) e Daniel usar por alguns dias, arquivar o repo Dashboard IA: README de aviso, sem apagar. É a T11 da S18.
 - **Porquê:** não manter dois dashboards.
 - **Contraponto:** perde-se a visão do navegador (Backlog, Docs, Timeline, Roadmap, Chats) até alguém pedir de volta.
+
+### Conferência de custo da S18 dispensada (2026-11-20)
+- **Decisão:** pular a conferência de 1% contra o Dashboard IA; o custo vale daqui em diante, pelos eventos do `hx`.
+- **Porquê:** poucas sprints do financeiro rodaram com este harness e o 6thGear foi cancelado; a diferença vem dos dados antigos.
+- **Alternativa descartada:** investigar sprint a sprint até chegar a 1%.
+- **Contraponto:** o total histórico do painel não bate com o do dashboard antigo.
