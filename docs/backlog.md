@@ -163,9 +163,9 @@ Itens ainda não planejados. Pedidos dos projetos chegam pelo `inbox/` e `/inbox
 | B153 | `planHash` ignora linha com "(ajuste)" em qualquer lugar do título, não só no sufixo (S17/T01) | revisão S17 | baixa | aberto |
 | B154 | Toast do Windows (T12) não foi visto em desktop real; conferir na primeira permissão pedida (S17) | revisão S17 | média | aberto |
 | B155 | `hx eval`: casos que usam PowerShell no sandbox falham com "malformed syntax" nesta máquina (sprint-plan caso 2 e 2 consultas de acionamento); investigar se é o PowerShell em ConstrainedLanguage (S17) | S17/T13 | alta | aberto |
-| B156 | `state.json` por projeto gravado pelo `hx` (ADR 0019) e `hx state rebuild` | inbox: 2026-11-20-dashboard-ia-eventos-de-agente-com-papel-tech-lead-clone-reviewer-e-taref.md | alta | concluído: S18 |
-| B157 | Extensão Harness Dash do VS Code em `extension/` (painel, barra de status, `.vsix`) | docs/entrada-dashboard-ia/ | alta | concluído: S18 |
-| B158 | Arquivar o repo Dashboard IA depois da conferência (≤1%) e do uso de Daniel | decisão de Daniel 2026-11-20 | média | aberto |
+| B156 | `state.json` por projeto gravado pelo `hx` (ADR 0019) e `hx state rebuild` | inbox: 2026-11-20-dashboard-ia-eventos-de-agente-com-papel-tech-lead-clone-reviewer-e-taref.md | alta | concluído: S18 (removido na S19) |
+| B157 | Extensão Harness Dash do VS Code em `extension/` (painel, barra de status, `.vsix`) | docs/entrada-dashboard-ia/ | alta | concluído: S18 (removido na S19) |
+| B158 | Arquivar o repo Dashboard IA depois da conferência (≤1%) e do uso de Daniel | decisão de Daniel 2026-11-20 | média | descartado (S19: só existia por causa do painel) |
 | B159 | Checar o CI sem `gh`: ler a página de Actions pelo Claude in Chrome; tags do GHCR usam o SHA de 40 caracteres | inbox: 2026-11-22-financeiro-checar-ci-pelo-claude-in-chrome.md | média | novo |
 | B160 | Migrar para o Claude Desktop no PC pessoal: salvar pendências, caminhos sem prender à máquina, guia, pacote de cópia e limpeza do notebook corp | conversa 2026-11-26 | alta | [planejado: S19] |
 | B161 | Remover a ligação com o dashboard web e a extensão do VS Code | conversa 2026-11-26 | alta | [planejado: S19] |

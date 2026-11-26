@@ -1,6 +1,6 @@
 # ADR 0019 — `state.json` por projeto e extensão do VS Code no mesmo repo
 
-- **Status:** proposto (vale com a aprovação da S18)
+- **Status:** substituído (S19): o `state.json`, o `hx state`, o `HARNESS_DASHBOARD` e a extensão foram removidos. O texto abaixo é histórico. Antes: proposto (S18)
 - **Data:** 2026-11-20
 - **Harness:** 0.16.0
 
@@ -22,7 +22,7 @@ Daniel decidiu juntar o Dashboard IA e o harness num projeto só (2026-11-20). O
 
 ## Decisão
 
-1. **Arquivo:** `~/.harness/dashboard/<id-do-projeto>.json` (a pasta `state/` já guarda o estado de runtime do `hx`; ajuste da S18/T02), central (nada dentro dos repos, funciona com a janela fechada). Contrato em `docs/contracts/state.md`, com campo `v`.
+1. **Arquivo:** `~/.harness/dashboard/<id-do-projeto>.json` (a pasta `state/` já guarda o estado de runtime do `hx`; ajuste da S18/T02), central (nada dentro dos repos, funciona com a janela fechada). Contrato em `docs/contracts/state.md` (removido na S19), com campo `v`.
 2. **Conteúdo:** projeto, sprint ativa, tarefas (status, agente do plano, papel, fase, custo), agentes ativos (id, papel, tarefa, início), sprints com situação e custo, gasto por dia e total, `updated_at`.
 3. **Quem escreve:** uma função pura `buildState` recalcula o arquivo inteiro a partir dos eventos e do plano; é chamada em `emit()` para eventos de ciclo (tarefa, revisão, sprint, agente) e uma vez por lote depois de ingerir `usage`. Recalcular tudo (e não aplicar diferença) torna a corrida entre hooks inofensiva: o último a escrever também leu tudo. Gravação atômica (arquivo temporário e `rename`). `HARNESS_DASHBOARD=off` não grava.
 4. **`hx state rebuild [--all]`** reconstrói o histórico dos eventos existentes (um projeto ou todos do registro).

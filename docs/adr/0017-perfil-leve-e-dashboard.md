@@ -3,6 +3,7 @@
 - **Status:** aceito (Daniel, 2026-11-04)
 - **Data:** 2026-11-04
 - **Harness:** 0.13.0
+- **Nota (S19):** a decisão 1 deixou de valer: a ligação com o dashboard foi removida e o `HARNESS_DASHBOARD` não existe mais. A decisão sobre o perfil leve continua.
 
 ## Contexto
 

@@ -2,7 +2,7 @@
 
 - **Projeto:** main-harness (veio do Dashboard IA, 2026-11-20)
 - **Data:** 2026-11-20
-- **Status:** rascunho (aprovado junto com a S18)
+- **Status:** substituído (S19): a extensão e o `state.json` foram removidos. O texto abaixo é histórico. Antes: aprovado junto com a S18
 - **Origem:** `docs/entrada-dashboard-ia/prd-0001-harness-dash-extensao.md` (renumerado; leitor próprio de eventos e de transcrição trocado pelo `state.json`, ADR 0019)
 
 ## Problema

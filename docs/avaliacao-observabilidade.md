@@ -1,5 +1,7 @@
 # Avaliação de observabilidade: Main Harness e Dashboard IA
 
+> Histórico. Na S19 saíram os eventos `context`, `attention` e `error`, os hooks `StopFailure` e `PostToolUseFailure` e a ligação com o dashboard.
+
 - **Data:** 2026-10-28
 - **Escopo:** só avaliação; nenhum código foi alterado.
 - **Comparado com:** Claude-Code-Agent-Monitor, Agents Observe, disler/multi-agent-observability, claude-hud e o OpenTelemetry nativo do Claude Code.

@@ -1,4 +1,4 @@
-# Contrato de eventos: Main Harness e Dashboard IA
+# Contrato de eventos do Main Harness
 
 Versão do contrato: **v1** (`EVENT_VERSION = 1`). A fonte da verdade é `cli/src/events/schema.ts`; este documento descreve o mesmo esquema.
 
@@ -8,7 +8,7 @@ Versão do contrato: **v1** (`EVENT_VERSION = 1`). A fonte da verdade é `cli/sr
 
 - Um arquivo por dia, pela data em **UTC**.
 - **Somente acréscimo** (append-only). Ninguém reescreve nem apaga linhas.
-- **Uma linha = um evento completo** em JSON. O Dashboard lê linha a linha e ignora linha incompleta no fim do arquivo.
+- **Uma linha = um evento completo** em JSON. Quem lê vai linha a linha e ignora linha incompleta no fim do arquivo.
 - Nos testes, `HARNESS_HOME` redireciona `%USERPROFILE%\.harness`.
 
 ## Envelope
@@ -50,8 +50,6 @@ Notação: `?` = campo opcional (pode faltar); `| null` = pode ser `null`. Núme
 | `turn.end` | nenhum (`{}`) | Fim da vez do agente (hook `Stop`), só quando o Stop deixa parar (não quando bloqueia). Do último `turn.end` até o próximo `prompt` da mesma sessão é espera por Daniel (desde a v0.6.0) |
 | `agent.start` | `agent_id` texto; `agent_type?` texto e `model?` texto (desde a v0.12.0; gravados pelo `hx worker run`, com `agent_type: "worker"` e `agent: "worker"` no envelope) | Subagente começou (hook `SubagentStart`). `agent` do envelope = tipo do agente (ex.: `main-harness:reviewer`; `null` se vazio); `task` = o `TNN` da descrição do Agent (ex.: `T06 eventos`, `[T06] ...`, lida do `agent-<id>.meta.json`, desde a v0.11.0); sem `TNN` na descrição, a tarefa em andamento quando há exatamente uma; senão `null` |
 | `agent.end` | `agent_id` texto | Subagente terminou (hook `SubagentStop`); mesmo envelope do `agent.start` (`task` = a do `agent.start` do mesmo `agent_id`) |
-| `project.status` | `where` texto; `next` texto | `hx status --where <onde estamos> --next <próximo passo>` (opcional, quem quiser registra) |
-| `statusline` | `five_hour` número \| null (% usado do limite de 5 h); `seven_day` número \| null (% usado do limite semanal); `title?` texto (título do chat, inclusive o automático), desde a v0.7.0 | **Obsoleto desde a v0.8.0** (o `hx statusline` foi removido; o % de uso vem do `usage.limits`). Eventos antigos continuam válidos. Era gravado pelo `hx statusline` (`rate_limits.*.used_percentage` e `session_name`) |
 | `sprint.approved` | `plan` texto; `sha256` texto; `approved_at` texto; `approver` texto | `hx sprint approve` |
 | `sprint.open` | `tasks` número; opcionais `task_info` (id → `[título, agente]`) e `task_planned` (id → minutos planejados) | `hx sprint open` |
 | `sprint.close` | `tasks_done` número; `tasks_total` número; `duration_s` número | `hx sprint close` |
@@ -64,11 +62,8 @@ Notação: `?` = campo opcional (pode faltar); `| null` = pode ser `null`. Núme
 | ~~`worker.end`~~ | `model` texto; `exit_code` número; `duration_s` número (agente `gemini`) | **Legado**, como o `worker.start`: só em logs até a v0.10 |
 | `review.result` | `result`: `pass` ou `fail` | `hx review pass\|fail` |
 | `usage` | `model` texto; `input`, `output`, `cache_write`, `cache_read` número; `usd` número \| null; `message_id` texto; `transcript`: `main` ou `subagent`; `agent_id?` texto (desde a v0.12.0; ligado ao `agent.start` do trabalhador externo) | Uma resposta nova do modelo (ADR 0007). `task` do envelope (desde a v0.11.0): resposta de subagente = `task` do `agent.start` do mesmo agente; resposta da sessão principal = a tarefa em andamento quando há exatamente uma; senão `null` |
-| `usage.limits` | `five_hour` número (% usado do limite de 5 h); `five_hour_resets_at` texto \| null (reinício da janela, ISO-8601 UTC); `seven_day` número (% usado do limite semanal); `seven_day_resets_at` texto \| null, desde a v0.8.0 | Hook `Stop`, no máximo a cada 5 min, com o valor de `GET api.anthropic.com/api/oauth/usage` (ADR 0010). Falha (sem login, rede, resposta inválida, mais de 3 s) não grava nada. Os limites são da conta: o `project` é só o do chat que leu. Mapeia para a `limit_window` do Dashboard (janela `five_hour`/`seven_day`, %, `resets_at`) |
+| `usage.limits` | `five_hour` número (% usado do limite de 5 h); `five_hour_resets_at` texto \| null (reinício da janela, ISO-8601 UTC); `seven_day` número (% usado do limite semanal); `seven_day_resets_at` texto \| null, desde a v0.8.0 | Hook `Stop`, no máximo a cada 5 min, com o valor de `GET api.anthropic.com/api/oauth/usage` (ADR 0010). Falha (sem login, rede, resposta inválida, mais de 3 s) não grava nada. Os limites são da conta: o `project` é só o do chat que leu. |
 | `alert.context` | `tokens` número; `limit` número; `handoff` booleano; `agent_id?` texto \| null (desde a v0.11.0; `null` na sessão principal) | Contexto passou de `handoffAt` (ADR 0006). `task` do envelope: a do `agent.start` do `agent_id`, senão a tarefa em andamento quando há exatamente uma (desde a v0.11.0) |
-| `context` | `tokens` número; `limit` número; `last_compact_at` texto \| null (última compactação, ISO-8601 UTC) | Cada hook `Stop` com transcrito legível, desde a v0.11.0: tamanho atual do contexto da sessão principal. `task` como no `alert.context` |
-| `attention` | `source`: `notification` ou `permission`; `kind` texto (`notification_type` da notificação, ex. `permission_prompt`, `idle_prompt`; ou nome da ferramenta no pedido de permissão; `unknown` se ausente ou fora do formato de id); `agent_id` texto \| null | Hooks `Notification` e `PermissionRequest` (assíncronos), desde a v0.11.0: o agente espera Daniel. Base do painel "Aguardando você". Nunca grava a mensagem nem a entrada da ferramenta. `task` como no `alert.context` |
-| `error` | `source`: `stop` ou `tool`; `kind` texto (tipo do erro do `StopFailure`, ex. `rate_limit`; ou nome da ferramenta que falhou; `unknown` se ausente ou fora do formato de id); `agent_id` texto \| null | Hooks `StopFailure` e `PostToolUseFailure` (assíncronos), desde a v0.11.0. Nunca grava o texto do erro, o comando nem a entrada da ferramenta. `task` como no `alert.context` |
 | `handoff` | `mode`: `compact`, `manual` ou `new-chat`; `file` texto \| null | Handoff gravado ou compactação |
 | `harness.request` | `file` texto; `priority`: `alta`, `media` ou `baixa` | `hx request` |
 | `harness.release` | `version` texto; `tag` texto; `previous` texto \| null | `hx release` |
@@ -100,11 +95,17 @@ Quem escreve um evento novo precisa passar nesse teste.
 ## Versionamento
 
 - O campo `v` diz a versão do contrato.
-- O Dashboard aceita a **versão atual e a anterior**. Evento de versão desconhecida é ignorado (e contado).
+- Quem lê aceita a **versão atual e a anterior**. Evento de versão desconhecida é ignorado (e contado).
 - Acrescentar tipo ou campo opcional não quebra o contrato. Mudança que **quebra** (remover/renomear campo, mudar tipo ou sentido) só acontece **entre sprints** e **sobe `v`**. O Release Report da sprint avisa.
 - Arquivos antigos não são reescritos: eventos antigos mantêm o `v` com que foram gravados.
 
-## Outros arquivos que o Dashboard pode ler
+## Tipos removidos na S19
+
+`project.status`, `statusline`, `context`, `attention` e `error` não são mais gravados nem aceitos; linhas antigas no log ficam como estão. Saíram junto com o dashboard web e a extensão, sem subir `v`.
+
+**Atenção, projeto Dashboard IA:** ele também usava `context`, `attention` e `error` e deixa de recebê-los a partir do release da S19.
+
+## Outros arquivos que podem ser lidos
 
 Em `%USERPROFILE%\.harness\`:
 
@@ -113,9 +114,11 @@ Em `%USERPROFILE%\.harness\`:
 | `projects.json` | `{"projects":[{"id","name","path","version","attachedAt"}]}`: projetos conectados com `/attach` |
 | `config.json` | Configuração do harness: preços por modelo, `contextLimit`, `handoffAt`, estratégia de contexto |
 
-`handoffs/`, `logs/` e `cache/` são **internos**: formato livre, podem mudar sem aviso. O Dashboard não deve depender deles.
+`handoffs/`, `logs/` e `cache/` são **internos**: formato livre, podem mudar sem aviso. Não dependa deles.
 
-## Como o Dashboard deriva indicadores
+## Como derivar indicadores
+
+Quem lê os eventos no harness: `hx metrics`, `hx usage` e o Release Report.
 
 | Indicador | Cálculo |
 |---|---|

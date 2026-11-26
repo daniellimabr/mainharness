@@ -25,7 +25,7 @@ Não precisa ser cedo.
 ## 3. Continuidade quando a cota de uso acabar
 
 - Detectar o limite (ou estimar pelo consumo) e escrever o handoff antes de parar.
-- Mostrar no Dashboard a previsão de quando a cota vai acabar.
+- Mostrar a previsão de quando a cota vai acabar.
 - Pesquisar se o Claude Code expõe esse percentual.
 - Usar **só caminhos oficiais da Anthropic**. Exceção aceita: o % de uso vem do endpoint interno do `/usage` (ADR 0010, S07).
 
@@ -43,7 +43,7 @@ Se colisões em arquivos virarem rotina (os indicadores da sprint mostram), aval
 
 ## 7. Telemetria oficial (OpenTelemetry)
 
-Quando o Dashboard for para a nuvem. O adaptador de consumo do ADR 0007 já prevê a troca: nova implementação de `UsageSource`, mesmo evento `usage`.
+Sem gatilho definido (o antigo, o dashboard na nuvem, saiu na S19). O adaptador de consumo do ADR 0007 já prevê a troca: nova implementação de `UsageSource`, mesmo evento `usage`.
 
 ## 8. Trabalhadores no Gemini (feito na S10, v0.9.0; removido na S13, v0.11.0)
 
@@ -59,7 +59,7 @@ A mesma tarefa em 3 modelos, com nota cega de dois Reviewers. Opus venceu os doi
 
 ## 11. Harness mais enxuto e mais observável (feito na S13, v0.11.0)
 
-Gemini e `hx worker` saíram (ADR 0014). `hx task drop|defer` tira ou adia tarefa e pede nova aprovação; `done`/`phase` em tarefa feita só avisa; `index.md` perde linhas de arquivos apagados. O `usage` não duplica e leva a tarefa, então `hx metrics` mostra custo por tarefa e por executor. Novos eventos para o Dashboard: TNN no `agent.start`, `agent_id` no `alert.context`, `context` a cada `Stop`, `attention` e `error`. Regra de ouro, perfil de decisão (`docs/decisoes-daniel.md`) e handoff melhor após compactar. Próximos passos: aviso no Windows (B109), medir Haiku como executor de texto (B116), `hx shot` (B123).
+Gemini e `hx worker` saíram (ADR 0014). `hx task drop|defer` tira ou adia tarefa e pede nova aprovação; `done`/`phase` em tarefa feita só avisa; `index.md` perde linhas de arquivos apagados. O `usage` não duplica e leva a tarefa, então `hx metrics` mostra custo por tarefa e por executor. Novos eventos para o Dashboard: TNN no `agent.start`, `agent_id` no `alert.context`, `context` a cada `Stop`, `attention` e `error` (`context`, `attention` e `error` removidos na S19). Regra de ouro, perfil de decisão (`docs/decisoes-daniel.md`) e handoff melhor após compactar. Próximos passos: aviso no Windows (B109), medir Haiku como executor de texto (B116), `hx shot` (B123).
 
 ## 12. Externos grátis testados e custo por tarefa (feito na S14, v0.12.0)
 
@@ -71,15 +71,15 @@ Gemini e `hx worker` saíram (ADR 0014). `hx task drop|defer` tira ou adia taref
 
 ## 14. Harness leve × atual e custo do Dashboard (feito na S16, v0.14.0)
 
-`HARNESS_DASHBOARD=off`, `scripts/overhead.mjs` (ms por hook e tokens por sprint), `bench.mjs --perfil atual|leve|sem-dashboard`. O Dashboard custa muito menos de 2% da sprint (fica ligado); o perfil leve empatou na nota (23,3 × 23,3) com 41% menos tokens, em uma corrida por caso (ADR 0017, proposto). Também: `pre-bash` avisa armadilhas de comando, tarefa reaberta aceita `phase`/`review`, `approve` troca a Aprovação, marcas `[planejado]`/`[concluído]` no backlog, `maxWorkers=3`. Repetição com 27 corridas: atual 22,2, leve 22,8, leve-plugins (leve com ponytail, remember etc.) 23,3; economia de tokens 28% no leve e 14% no leve-plugins. Padrão não muda; torná-lo padrão é decisão de Daniel.
+`HARNESS_DASHBOARD=off`, `scripts/overhead.mjs` (ms por hook e tokens por sprint), `bench.mjs --perfil atual|leve|sem-dashboard`. O Dashboard custa muito menos de 2% da sprint (ficou ligado; `HARNESS_DASHBOARD` e a ligação com o dashboard saíram na S19); o perfil leve empatou na nota (23,3 × 23,3) com 41% menos tokens, em uma corrida por caso (ADR 0017, proposto). Também: `pre-bash` avisa armadilhas de comando, tarefa reaberta aceita `phase`/`review`, `approve` troca a Aprovação, marcas `[planejado]`/`[concluído]` no backlog, `maxWorkers=3`. Repetição com 27 corridas: atual 22,2, leve 22,8, leve-plugins (leve com ponytail, remember etc.) 23,3; economia de tokens 28% no leve e 14% no leve-plugins. Padrão não muda; torná-lo padrão é decisão de Daniel.
 
 ## 15. Ajuste como tarefa, regras do projeto e conferência visual (feito na S17, v0.16.0)
 
 `hx sprint feedback` cria o TNN do ajuste; `approve` valida o plano; eventos com o agente do clone e do Reviewer; `hx metrics` por agente; `pre-bash` com regras locais do projeto; `attach` preserva regras legadas; `hx shot` (print com Chrome headless); `hx eval` repete o caso que falha (2 de 3); toast no Windows; estimativa em minutos de agente com fator padrão (ADR 0018: limite de clones por máquina).
 
-## 16. Harness Dash: estado por projeto e extensão do VS Code (S18, v0.17.0)
+## 16. Harness Dash: estado por projeto e extensão do VS Code (S18, v0.17.0; removido na S19)
 
-O `hx` grava o estado de cada projeto em `~/.harness/dashboard/<id>.json` (contrato `docs/contracts/state.md`, ADR 0019); `hx state rebuild [--all]` refaz tudo a partir dos eventos. A extensão `extension/` (painel webview e item na barra de status) só lê esses arquivos, sem servidor. Instalação por `.vsix` (README da extensão). O Dashboard IA só sai depois que Daniel usar alguns dias e a conferência (≤1%) passar. Pendente: B155 (eval com PowerShell no sandbox).
+A S18 criou um arquivo de estado por projeto e uma extensão do VS Code que o lia (ADR 0019). A S19 removeu os dois e a ligação com o dashboard web; ficam os eventos de `hx metrics`, `hx usage` e do Release Report. Pendente: B155 (eval com PowerShell no sandbox).
 
 ## Avaliado e descartado por ora
 
