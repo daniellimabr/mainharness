@@ -138,3 +138,9 @@ Formato: **Decisão** · **Porquê** · **Descartado** · **Contraponto**.
 - **Porquê:** poucas sprints do financeiro rodaram com este harness e o 6thGear foi cancelado; a diferença vem dos dados antigos.
 - **Alternativa descartada:** investigar sprint a sprint até chegar a 1%.
 - **Contraponto:** o total histórico do painel não bate com o do dashboard antigo.
+
+### Recriar o harness do zero no PC pessoal (2026-11-26)
+- **Decisão:** em vez de migrar, o Claude Desktop do PC pessoal reconstrói o harness a partir de `docs/recriar-harness-do-zero.md`.
+- **Porquê:** a migração não parecia estar funcionando e estava frustrando Daniel.
+- **Descartado:** seguir com a migração (instalar o código atual, guia `docs/instalacao-pc-pessoal.md`, S20).
+- **Contraponto:** o código e os testes já estão prontos no GitHub; refazer custa muito mais tempo e tokens, e as dúvidas sobre o Desktop continuam iguais.

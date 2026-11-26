@@ -189,6 +189,7 @@ Uma linha por arquivo: caminho e propósito. Mantido pelo hook `post-edit`.
 - `docs/migracao-desktop.md` — Migração para o Claude Desktop (PC pessoal)
 - `docs/omniroute.md` — OmniRoute: modelos grátis
 - `docs/prd/0001-harness-dash-extensao.md` — PRD 0001 — Harness Dash: painel do harness dentro do VS Code
+- `docs/recriar-harness-do-zero.md` — Recriar o Main Harness do zero (instruções para o Claude Desktop)
 - `docs/roadmap.md` — Roadmap do Main Harness
 - `docs/sprints/S00-plan.md` — sprint plan S00 (criação do harness)
 - `docs/sprints/S00-release.md` — Release Report da S00 (tabela de execução gerada pelo hx)
