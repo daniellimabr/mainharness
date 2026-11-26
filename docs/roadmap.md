@@ -81,6 +81,10 @@ Gemini e `hx worker` saíram (ADR 0014). `hx task drop|defer` tira ou adia taref
 
 A S18 criou um arquivo de estado por projeto e uma extensão do VS Code que o lia (ADR 0019). A S19 removeu os dois e a ligação com o dashboard web; ficam os eventos de `hx metrics`, `hx usage` e do Release Report. Pendente: B155 (eval com PowerShell no sandbox).
 
+## 17. Preparar a mudança para o PC pessoal (S19, entregue, sem release)
+
+Pendente dos projetos no GitHub, dashboard e extensão removidos, harness sem caminhos presos à máquina, guia de instalação, roteiro de limpeza e pacote de cópia. Próxima: S20 (instalar e testar no PC pessoal, `hx release`, B150); a limpeza do notebook corp só depois da S20 aprovada.
+
 ## Avaliado e descartado por ora
 
 - **Troca de modelo pelo % de uso (gatilho de 90%, S10).** A escolha de modelo virou reação ao limite, não decisão do plano (ADR 0013).

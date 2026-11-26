@@ -167,5 +167,5 @@ Itens ainda não planejados. Pedidos dos projetos chegam pelo `inbox/` e `/inbox
 | B157 | Extensão Harness Dash do VS Code em `extension/` (painel, barra de status, `.vsix`) | docs/entrada-dashboard-ia/ | alta | concluído: S18 (removido na S19) |
 | B158 | Arquivar o repo Dashboard IA depois da conferência (≤1%) e do uso de Daniel | decisão de Daniel 2026-11-20 | média | descartado (S19: só existia por causa do painel) |
 | B159 | Checar o CI sem `gh`: ler a página de Actions pelo Claude in Chrome; tags do GHCR usam o SHA de 40 caracteres | inbox: 2026-11-22-financeiro-checar-ci-pelo-claude-in-chrome.md | média | novo |
-| B160 | Migrar para o Claude Desktop no PC pessoal: salvar pendências, caminhos sem prender à máquina, guia, pacote de cópia e limpeza do notebook corp | conversa 2026-11-26 | alta | [planejado: S19] |
-| B161 | Remover a ligação com o dashboard web e a extensão do VS Code | conversa 2026-11-26 | alta | [planejado: S19] |
+| B160 | Migrar para o Claude Desktop no PC pessoal: salvar pendências, caminhos sem prender à máquina, guia, pacote de cópia e limpeza do notebook corp | conversa 2026-11-26 | alta | [concluído: S19] |
+| B161 | Remover a ligação com o dashboard web e a extensão do VS Code | conversa 2026-11-26 | alta | [concluído: S19] |

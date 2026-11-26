@@ -225,6 +225,7 @@ Uma linha por arquivo: caminho e propósito. Mantido pelo hook `post-edit`.
 - `docs/sprints/S18-conferencia.md` — S18: conferência do estado contra o Dashboard IA
 - `docs/sprints/S18-plan.md` — S18 — Harness Dash: estado por projeto e extensão do VS Code
 - `docs/sprints/S19-plan.md` — S19 — Preparar a mudança para o Claude Desktop no PC pessoal
+- `docs/sprints/S19-release.md` — S19 — Release Report
 - `eslint.config.js` — ESLint flat config
 - `hooks/hooks.json` — hooks do plugin (forma exec chamando o hx)
 - `package-lock.json` — versões travadas das dependências de desenvolvimento
