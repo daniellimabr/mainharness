@@ -1,4 +1,4 @@
-// S13/T06: TNN on agent.start, agent_id + task on alert.context, `context` on every Stop, task on usage.
+// S13/T06: TNN on agent.start, agent_id + task on alert.context, task on usage.
 import * as fs from "node:fs";
 import * as path from "node:path";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
@@ -56,7 +56,7 @@ const base = () => ({ cwd: proj, session_id: "sess", transcript_path: main });
 describe("agent.start task", () => {
   it("reads the TNN from the Agent description, even with several tasks open", () => {
     tasks("T06", "T08");
-    subagent("a1", "T06 eventos Dashboard");
+    subagent("a1", "T06 eventos");
     subagent("a2", "Revisar [T08] custo");
     subagentStart({ ...base(), agent_id: "a1", agent_type: "main-harness:executor" });
     subagentStart({ ...base(), agent_id: "a2", agent_type: "main-harness:executor" });
@@ -93,31 +93,6 @@ describe("usage task", () => {
     fs.writeFileSync(main, line("msg_main", 10));
     stop(base());
     expect(events("usage")[0]?.task).toBeNull();
-  });
-});
-
-describe("context event", () => {
-  it("is emitted on every Stop with tokens, limit and the compaction mark", () => {
-    tasks("T06");
-    fs.writeFileSync(main, line("m1", 500));
-    stop(base());
-    preCompact(base());
-    fs.appendFileSync(main, line("m2", 300));
-    stop(base());
-    const ctx = events("context");
-    expect(ctx).toHaveLength(2);
-    expect(ctx[0]).toMatchObject({
-      task: "T06",
-      data: { tokens: 500, limit: 1000, last_compact_at: null },
-    });
-    expect(ctx[1]?.data.tokens).toBe(300);
-    expect(typeof ctx[1]?.data.last_compact_at).toBe("string");
-    for (const e of ctx) expect(validateEvent(e)).toEqual([]);
-  });
-
-  it("is not emitted without a transcript", () => {
-    stop({ cwd: proj, session_id: "sess" });
-    expect(events("context")).toEqual([]);
   });
 });
 

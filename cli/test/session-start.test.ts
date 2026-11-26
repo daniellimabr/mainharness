@@ -1,4 +1,4 @@
-// session-start after a compaction brings back the task in progress and the hx state, not only the handoff.
+// session-start after a compaction brings back the task in progress and the runtime state, not only the handoff.
 import { afterEach, beforeEach, describe, expect, it } from "vitest";
 import { registerProject } from "../src/core/projects";
 import { updateState } from "../src/core/state";

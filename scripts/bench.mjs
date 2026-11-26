@@ -1,11 +1,10 @@
 // S12 experiment: one run of a challenge on one model, in a temp clone, under the same conditions
 // for every model (docs/experiments/S12-protocolo.md). Writes <challenge>-<model>.json and .patch.
-// usage: node scripts/bench.mjs <desafio> <opus|sonnet|gemini> [--perfil atual|leve|leve-plugins|sem-dashboard] [--rep N] [--base <commit>] [--repo <dir>]
+// usage: node scripts/bench.mjs <desafio> <opus|sonnet|gemini> [--perfil atual|leve|leve-plugins] [--rep N] [--base <commit>] [--repo <dir>]
 //        node scripts/bench.mjs --abertura <perfil>   (3x `claude -p ok`, median in S16/abertura-<perfil>.json)
 //
 // S16 profiles (docs/experiments/S16-protocolo.md). Without --perfil: old behavior, output in S15.
 // - atual: the harness as installed, nothing changed.
-// - sem-dashboard: atual with HARNESS_DASHBOARD=off in the claude process.
 // - leve, mechanism (flags of `claude -p` only; nothing outside the temp dirs is touched):
 //   1. a temp copy of the plugin named main-harness (plugin.json, scripts/perfil-leve/hooks.json,
 //      agents/executor.md, skills tdd-workflow + handoff, cli/dist/hx.js) loaded with --plugin-dir,
@@ -25,7 +24,7 @@ import * as path from "node:path";
 const TOOLS = "Read,Edit,Write,Glob,Grep,Bash,PowerShell"; // same as hx worker run
 const TIMEOUT_MS = Number(process.env.HX_BENCH_TIMEOUT_MS) || 60 * 60_000;
 const USAGE =
-  "uso: node scripts/bench.mjs <desafio> <opus|sonnet|apelido-de-workers> [--perfil atual|leve|leve-plugins|sem-dashboard] [--rep N] [--base <commit>] [--repo <dir>]\n     node scripts/bench.mjs --abertura <atual|leve|leve-plugins|sem-dashboard>";
+  "uso: node scripts/bench.mjs <desafio> <opus|sonnet|apelido-de-workers> [--perfil atual|leve|leve-plugins] [--rep N] [--base <commit>] [--repo <dir>]\n     node scripts/bench.mjs --abertura <atual|leve|leve-plugins>";
 
 const args = process.argv.slice(2);
 const flag = (name) => {
@@ -40,7 +39,7 @@ const rep = flag("--rep"); // repetition n>1 adds -rN to the output name
 const perfil = abertura ?? perfilArg;
 const [challenge, model] = abertura ? [undefined, "sonnet"] : args;
 if (
-  (perfil !== undefined && !["atual", "leve", "leve-plugins", "sem-dashboard"].includes(perfil)) ||
+  (perfil !== undefined && !["atual", "leve", "leve-plugins"].includes(perfil)) ||
   (!abertura && (!challenge || !/^[\w-]+$/.test(challenge) || !model || !/^[\w-]+$/.test(model)))
 ) {
   console.error(USAGE);
@@ -193,7 +192,6 @@ function buildLeve(dest, hxJs, keepPlugins) {
 
 /** Prepares the clone and env for the profile; returns the extra flags for claude. */
 function prepare(name, clone, tmp) {
-  if (name === "sem-dashboard") env.HARNESS_DASHBOARD = "off";
   if (name !== "leve" && name !== "leve-plugins") return "";
   fs.cpSync(path.join(root, "scripts", "perfil-leve", "CLAUDE.md"), path.join(clone, "CLAUDE.md"));
   fs.rmSync(path.join(clone, ".claude"), { recursive: true, force: true });

@@ -5,13 +5,12 @@
   "type": "commonjs",
   "scripts": {
     "build": "node cli/build.mjs",
-    "typecheck": "tsc -p cli --noEmit && tsc -p extension --noEmit",
+    "typecheck": "tsc -p cli --noEmit",
     "lint": "eslint . --max-warnings 0",
     "format": "prettier --write .",
     "format:check": "prettier --check .",
     "test": "vitest run",
-    "check": "npm run typecheck && npm run lint && npm run format:check && npm test",
-    "build:ext": "node extension/esbuild.mjs"
+    "check": "npm run typecheck && npm run lint && npm run format:check && npm test"
   },
   "engines": {
     "node": ">=20"
@@ -19,8 +18,6 @@
   "devDependencies": {
     "@eslint/js": "^10.0.1",
     "@types/node": "^26.6.5",
-    "@types/vscode": "^1.146.0",
-    "@vscode/vsce": "^4.1.1",
     "esbuild": "^0.28.2",
     "eslint": "^10.12.0",
     "globals": "^17.13.0",

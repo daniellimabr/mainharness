@@ -79,14 +79,14 @@ describe("project id from .claude/harness.json is used in file paths (review T13
   // inbox file name are built from it BEFORE emit() validates the slug.
   it("session-start does not write state outside HARNESS_HOME/state", () => {
     const home = tempDir("hx review home");
-    const proj = fakeProject("../escaped-state", "Evil");
+    const proj = fakeProject("../escaped", "Evil");
     try {
       runHx(["hook", "session-start"], {
         cwd: proj,
         stdin: { session_id: "s1", cwd: proj, source: "startup" },
         env: { HARNESS_HOME: home },
       });
-      expect(fs.existsSync(path.join(home, "escaped-state.json"))).toBe(false);
+      expect(fs.existsSync(path.join(home, "escaped.json"))).toBe(false);
     } finally {
       rm(home);
       rm(proj);

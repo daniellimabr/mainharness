@@ -149,32 +149,6 @@
           }
         ]
       }
-    ],
-    "StopFailure": [
-      {
-        "hooks": [
-          {
-            "type": "command",
-            "command": "node",
-            "args": ["${CLAUDE_PLUGIN_ROOT}/cli/dist/hx.js", "hook", "stop-failure"],
-            "timeout": 10,
-            "async": true
-          }
-        ]
-      }
-    ],
-    "PostToolUseFailure": [
-      {
-        "hooks": [
-          {
-            "type": "command",
-            "command": "node",
-            "args": ["${CLAUDE_PLUGIN_ROOT}/cli/dist/hx.js", "hook", "post-tool-failure"],
-            "timeout": 10,
-            "async": true
-          }
-        ]
-      }
     ]
   }
 }

@@ -83,20 +83,6 @@ export function stop(input: HookInput): HookOutcome {
   if (!c) return {};
   ingest(input, c);
   const tokens = tokensOf(input);
-  // B108: the Dashboard shows the current context size, not only the alert.
-  if (tokens !== null)
-    emit({
-      type: "context",
-      project: c.p.id,
-      session: c.session,
-      sprint: c.st.activeSprint,
-      task: taskOf(input, c),
-      data: {
-        tokens,
-        limit: loadConfig().contextLimit,
-        last_compact_at: c.st.lastCompactAt ?? null,
-      },
-    });
   // B064: not awaited, so the Stop logic is unchanged; the process still exits only after the call (3 s max).
   void refreshLimits({ project: c.p.id, session: c.session, sprint: c.st.activeSprint });
   const block = stopBlock(input, c, tokens);

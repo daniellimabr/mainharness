@@ -6,7 +6,7 @@
     {
       "name": "main-harness",
       "source": "./",
-      "description": "AI agent team harness: sprints, hooks, events for the Dashboard."
+      "description": "AI agent team harness: sprints, hooks, events."
     }
   ]
 }

@@ -1,4 +1,4 @@
-// Event schema v1 (contract with the Dashboard, see docs/contracts/events.md).
+// Event schema v1 (see docs/contracts/events.md).
 // Events carry metadata only: ids, times, file names, counts, durations, values.
 import { ULID_RE } from "./ulid";
 
@@ -31,14 +31,8 @@ export const DATA_SCHEMAS = {
   // agent_type/model: set by `hx worker run` (subagent hooks only send agent_id)
   "agent.start": { agent_id: s(), agent_type: s(opt), model: s(opt) },
   "agent.end": { agent_id: s() },
-  "project.status": { where: s(), next: s() },
-  statusline: {
-    five_hour: n({ nullable: true }),
-    seven_day: n({ nullable: true }),
-    title: s(opt),
-  },
   "sprint.approved": { plan: s(), sha256: s(), approved_at: s(), approver: s() },
-  // task_info: id -> [title, agent]; task_planned: id -> planned minutes (control room lists all at open)
+  // task_info: id -> [title, agent]; task_planned: id -> planned minutes
   "sprint.open": {
     tasks: n(),
     task_info: { type: "stringsRecord", optional: true },
@@ -107,13 +101,6 @@ export const DATA_SCHEMAS = {
     handoff: b(),
     agent_id: s({ optional: true, nullable: true }),
   },
-  context: { tokens: n(), limit: n(), last_compact_at: s({ nullable: true }) },
-  attention: {
-    source: s({ enum: ["notification", "permission"] }),
-    kind: s(),
-    agent_id: s({ nullable: true }),
-  },
-  error: { source: s({ enum: ["stop", "tool"] }), kind: s(), agent_id: s({ nullable: true }) },
   handoff: { mode: s({ enum: ["compact", "manual", "new-chat"] }), file: s({ nullable: true }) },
   "harness.request": { file: s(), priority: s({ enum: ["alta", "media", "baixa"] }) },
   "harness.release": { version: s(), tag: s(), previous: s({ nullable: true }) },

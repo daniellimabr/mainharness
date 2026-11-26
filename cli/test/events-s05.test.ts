@@ -1,9 +1,8 @@
-// S05 events: agent.start/agent.end, prompt (never the text), session.start title, project.status, Stop typecheck only in the harness repo.
+// S05 events: agent.start/agent.end, prompt (never the text), session.start title, Stop typecheck only in the harness repo.
 import { spawnSync } from "node:child_process";
 import * as fs from "node:fs";
 import * as path from "node:path";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
-import { run as status } from "../src/commands/status";
 import { updateState } from "../src/core/state";
 import { stop, subagentStart, subagentStop } from "../src/hooks/lifecycle";
 import { prompt } from "../src/hooks/prompt";
@@ -87,24 +86,6 @@ describe("session.start title", () => {
   it("has no title when the hook does not send it", () => {
     sessionStart({ cwd: proj, session_id: "s1", source: "startup" });
     expect(events("session.start")[0]?.data).not.toHaveProperty("title");
-  });
-});
-
-describe("hx status", () => {
-  it("emits project.status with where and next", () => {
-    vi.spyOn(process, "cwd").mockReturnValue(proj);
-    vi.spyOn(console, "log").mockImplementation(() => {});
-    expect(status(["--where", "T01 em testes", "--next", "revisão"])).toBe(0);
-    expect(events("project.status")).toMatchObject([
-      { data: { where: "T01 em testes", next: "revisão" } },
-    ]);
-  });
-
-  it("refuses without both flags", () => {
-    vi.spyOn(process, "cwd").mockReturnValue(proj);
-    vi.spyOn(console, "error").mockImplementation(() => {});
-    expect(status(["--where", "x"])).toBe(1);
-    expect(events("project.status")).toEqual([]);
   });
 });
 
