@@ -144,3 +144,11 @@ Formato: **Decisão** · **Porquê** · **Descartado** · **Contraponto**.
 - **Porquê:** a migração não parecia estar funcionando e estava frustrando Daniel.
 - **Descartado:** seguir com a migração (instalar o código atual, guia `docs/instalacao-pc-pessoal.md`, S20).
 - **Contraponto:** o código e os testes já estão prontos no GitHub; refazer custa muito mais tempo e tokens, e as dúvidas sobre o Desktop continuam iguais.
+- **Complemento (mesmo dia):** o objetivo é recriar o modelo de trabalho (harness, skills, hooks, sprint plan, ADR, PRD) **adaptado ao Claude Desktop**, não copiar peça por peça; `attach`, `doctor` e afins parecem inúteis lá. Daniel pediu para ser interrogado antes (entrevista em andamento); `docs/recriar-harness-do-zero.md` será revisto com as respostas.
+  - Entrevista 1: um projeto do Claude Code Desktop por repositório.
+  - Entrevista (dito junto): os repos no GitHub, hoje conectados ao harness atual, deverão ser "limpos", porque a instalação no Desktop é diferente.
+  - Entrevista 2: na limpeza sai só a máquina do harness (ligação, permissões, plugins, menções ao `hx`); a memória do projeto fica (sprints, ADR, PRD, backlog, roadmap, `index.md`, regras, lint). Descartado: apagar tudo menos o código.
+  - Entrevista 3: **texto e poucas travas** (agentes, skills e comandos em arquivos, hooks pequenos; sprint controlada no arquivo do plano). Saem `attach`, `doctor`, `setup`, release, evals e worker. Descartado: só texto; `hx` completo como hoje. Muda a decisão de 2026-11-04 sobre manter o harness completo.
+  - O acompanhamento de consumo e desempenho de projetos e sprints precisa ser recriado e **previsto no plano**: redescobrir como fazer no Desktop (painel, extensão, plugin próprio ou ferramenta da internet).
+  - Daniel precisa **redescobrir no Desktop o que quer do harness** antes de especificar: está acostumado a VS Code + Claude Code, e o Desktop oferece outros caminhos. Métricas ficam em aberto (pergunta 4 sem resposta).
+  - Pedido (mesmo dia): tudo que o harness atual já mostra sobre o que Daniel quer é extraído e escrito no documento, para ele não passar por isso de novo. A entrevista para aí; o Desktop testa o que falta em vez de perguntar.
