@@ -2,6 +2,12 @@
 
 Versões do Main Harness (versionamento semântico; `0.y.z` até a 1.0).
 
+## Avisos da S19 (valem a partir da primeira versão depois da 0.16.0)
+
+- **Saiu:** dashboard web, extensão do VS Code, `hx state` e `hx status`.
+- **Eventos que deixam de ser gravados:** `project.status`, `statusline`, `context`, `attention` e `error`. O Dashboard IA perde os três últimos (ver `docs/contracts/events.md`).
+- **Mudou:** o `hx setup` grava os caminhos do clone onde roda. Instalação em máquina nova: `docs/instalacao-pc-pessoal.md`.
+
 ## [0.16.0] - 2026-11-08
 
 ### Novidades

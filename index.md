@@ -63,9 +63,9 @@ Uma linha por arquivo: caminho e propósito. Mantido pelo hook `post-edit`.
 - `cli/src/core/version.ts` — Harness version: single source is .claude-plugin/plugin.json.
 - `cli/src/eval/run.ts` — hx eval runner: `claude -p` sessions (Sonnet, 1 run per query, max 3 at once), each in a temp
 - `cli/src/events/emit.ts` — Appends validated events to ~/.harness/events/YYYY-MM-DD.jsonl (UTC day). Append-only.
-- `cli/src/events/schema.ts` — Event schema v1 (contract with the Dashboard, see docs/contracts/events.md).
+- `cli/src/events/schema.ts` — Event schema v1 (see docs/contracts/events.md).
 - `cli/src/events/ulid.ts` — Minimal ULID (26 chars, Crockford base32): 48-bit time + 80-bit randomness.
-- `cli/src/hooks/attention.ts` — Notification, PermissionRequest, StopFailure, PostToolUseFailure: `attention` and `error` events (B107).
+- `cli/src/hooks/attention.ts` — Notification and PermissionRequest: toast Daniel (B109). The message is fixed, never the hook input.
 - `cli/src/hooks/index.ts` — hx hook <name>: dispatches Claude Code hook events (stdin JSON) to their handlers.
 - `cli/src/hooks/lifecycle.ts` — Stop, SubagentStop, PreCompact and SessionEnd: usage ingestion and the managed 250K context cycle.
 - `cli/src/hooks/post-edit.ts` — PostToolUse(Write|Edit|MultiEdit): keeps index.md current, formats and lints the edited file.
@@ -98,7 +98,7 @@ Uma linha por arquivo: caminho e propósito. Mantido pelo hook `post-edit`.
 - `cli/test/e2e.test.ts` — End to end with paths that have spaces: the real plugin root ("C:\Main Harness" on Daniel's
 - `cli/test/eval-maioria.test.ts` — Tests for the 2-of-3 majority rule in hx eval (B077).
 - `cli/test/eval.test.ts` — (sem descrição)
-- `cli/test/events-s05.test.ts` — S05 events: agent.start/agent.end, prompt (never the text), session.start title, project.status, Stop typecheck only ...
+- `cli/test/events-s05.test.ts` — S05 events: agent.start/agent.end, prompt (never the text), session.start title, Stop typecheck only in the harness repo.
 - `cli/test/events.test.ts` — testes de events
 - `cli/test/fsx.test.ts` — (sem descrição)
 - `cli/test/global-setup.ts` — Builds cli/dist/hx.js once before the suite, so integration tests run the real bundle.
@@ -139,7 +139,7 @@ Uma linha por arquivo: caminho e propósito. Mantido pelo hook `post-edit`.
 - `cli/test/stop-typecheck.test.ts` — Stop hook typecheck: tsc runs only when cli/src changed and blocks with its first lines.
 - `cli/test/task-drop.test.ts` — (sem descrição)
 - `cli/test/task.test.ts` — (sem descrição)
-- `cli/test/text-s06.test.ts` — S06 text fixes: hx status cleans where/next like the title (B057); session-start keeps `\|` in backlog items (B058).
+- `cli/test/text-s06.test.ts` — S06 text fix: session-start keeps `\|` in backlog items (B058).
 - `cli/test/toast.test.ts` — S17/T12 (B109): toast on Notification and PermissionRequest, through an injectable trigger.
 - `cli/test/transcript.test.ts` — (sem descrição)
 - `cli/test/turn-end.test.ts` — B045: the Stop hook emits turn.end only when it lets the agent stop.
@@ -171,7 +171,7 @@ Uma linha por arquivo: caminho e propósito. Mantido pelo hook `post-edit`.
 - `docs/adr/0019-state-json-e-extensao-vscode.md` — ADR 0019 — `state.json` por projeto e extensão do VS Code no mesmo repo
 - `docs/avaliacao-observabilidade.md` — Avaliação de observabilidade: Main Harness e Dashboard IA
 - `docs/backlog.md` — Backlog do Main Harness
-- `docs/contracts/events.md` — Contrato de eventos: Main Harness e Dashboard IA
+- `docs/contracts/events.md` — Contrato de eventos do Main Harness
 - `docs/decisoes-daniel.md` — Decisões de Daniel
 - `docs/experiments/S12-protocolo.md` — S12 — Protocolo do experimento de modelos
 - `docs/experiments/S12-resultado.md` — S12 — Resultado do experimento: Opus × Sonnet × Gemini
