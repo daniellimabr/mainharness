@@ -22,7 +22,9 @@ Pastas de trabalho não entram neste roteiro.
 | `C:\Cs-Manager` | sem GitHub, só local | não vai: perde tudo |
 | `C:\Dashboard IA` | 5 arquivos sem commit (`docs/decisoes-daniel.md`, `index.md`, `docs/levar-para-main-harness.md`, `docs/prd/0001-harness-dash-extensao.md`, `docs/sprints/S16-plan.md`) | não vai: perde esses 5 |
 | `C:\SGC` | itens da seção 1 | `git push` e copiar os soltos |
-| Financeiro | `C:\Financeiro\credentials`, `extratos xp\`, `scripts\vm-config.local.ps1`, `.claude\settings.local.json` | pacote `C:\migracao-pc` (T08) |
+| Financeiro | `extratos xp\`, `scripts\vm-config.local.ps1`, `.claude\settings.local.json` | pacote `C:\migracao-pc` (T08) |
+| Financeiro | `C:\Financeiro\credentials`: guarda uma chave de acesso. **Não vai no pacote** | copiar à mão, como as chaves abaixo |
+| Financeiro | `.scratch\` (rascunhos fora do Git). Não vai no pacote | perde-se; copie à mão se quiser |
 | RE Multimidia | `backup\` (107 MB) | pacote `C:\migracao-pc` |
 | `.harness` e memória/ajustes do Claude | histórico, eventos, memória | pacote `C:\migracao-pc` |
 | Chaves de acesso em `.ssh` e `.oci` | **sem elas você perde o acesso às máquinas da Oracle**. Não vão no pacote | copiar à mão em pen drive, ou criar novas no PC pessoal e cadastrar na Oracle antes de apagar |

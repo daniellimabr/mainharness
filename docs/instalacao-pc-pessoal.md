@@ -48,6 +48,7 @@ Copie a pasta do pen drive. O conteúdo está em `C:\migracao-pc\LISTA.md`.
 - `claude\CLAUDE.md` → `%USERPROFILE%\.claude\CLAUDE.md`
 - `claude\settings.json`: **não sobrescreva** o novo. Copie só o que quiser (permissões, `autoMode`), trocando `c:\Main Harness` pelo caminho novo.
 - `projetos\<nome>\` → por cima do clone de cada projeto.
+- Chaves de acesso (`.ssh`, `.oci` e a pasta `credentials` do financeiro) não estão no pacote: copie à mão ou crie novas.
 
 **Memória do Claude:** o nome da pasta depende do caminho do projeto. Abra um chat uma vez em cada projeto, veja a pasta que surgiu em `%USERPROFILE%\.claude\projects` e copie para dentro dela a `memory` correspondente do pacote.
 

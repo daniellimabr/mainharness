@@ -14,6 +14,6 @@ Horários de Brasília (UTC−3). ✅ feita · 🔄 em andamento · ⬜ a fazer.
 | ✅ | T04 | Harness sem caminhos fixos da máquina (`hx setup` e config) | clone (sonnet) | 26 min | 16:42 | 17:35 | 46 min (fila: 1 min, revisão: 6 min) |
 | ✅ | T05 | Guia de instalação no PC pessoal e roteiro de testes no Desktop | tech-lead | 19 min | 17:35 | 18:01 | 22 min (revisão: 3 min) |
 | ✅ | T06 | Roteiro de limpeza do notebook corp, com levantamento só de leitura | tech-lead | 17 min | 17:35 | 18:01 | 22 min (revisão: 3 min) |
-| 🔄 revisão | T07 | Revisão final, CHANGELOG, clone limpo e envio ao GitHub | tech-lead + reviewer | 26 min | 18:01 |  |  |
-| ⬜ | T08 | Pacote de cópia em `C:\migracao-pc`, com lista | tech-lead | 13 min |  |  |  |
+| ✅ | T07 | Revisão final, CHANGELOG, clone limpo e envio ao GitHub | tech-lead + reviewer | 26 min | 18:01 | 18:35 | 4 min (revisão: 30 min) |
+| 🔄 revisão | T08 | Pacote de cópia em `C:\migracao-pc`, com lista | tech-lead | 13 min | 18:29 |  |  |
 | 🔄 | **Total** | 8 tarefas |  | 2 h 33 min | 2026-11-26 16:08 | ~18:41 (previsto) |  |
