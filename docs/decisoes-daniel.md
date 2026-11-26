@@ -124,6 +124,14 @@ Formato: **Decisão** · **Porquê** · **Descartado** · **Contraponto**.
 - **Porquê:** não manter dois dashboards.
 - **Contraponto:** perde-se a visão do navegador (Backlog, Docs, Timeline, Roadmap, Chats) até alguém pedir de volta.
 
+### Migrar para o Claude Desktop no PC pessoal e tirar dashboard e extensão (2026-11-26)
+- **Decisão:** o harness passa a rodar no Claude Desktop do computador pessoal, com o mesmo fluxo e hooks; toda a ligação com o dashboard web e a extensão do VS Code sai. Substitui as decisões de 2026-11-20 sobre painel e extensão. O que se resolve instalando (ex.: `gh`) não conta como limitação. Levantamento em `docs/migracao-desktop.md`.
+- **Porquê:** sair dos limites do notebook corp; os painéis não funcionaram nem atenderam o propósito.
+- **Descartado:** manter e consertar a extensão; outro modelo de painel fica para depois, já no Desktop.
+- **Contraponto:** sem painel, o acompanhamento fica só no chat e no `hx usage` / `hx metrics`.
+- **Complemento (mesmo dia):** o notebook corp deixa de usar o harness; o histórico (`.harness`) vai junto; os eventos locais ficam, registrados no Desktop; vão financeiro, Main Harness, RE Multimidia e claude-tray.
+- **Complemento 2 (mesmo dia):** autorizado salvar e enviar o pendente do Main Harness, financeiro e RE Multimidia. Cs-Manager não vai (se precisar, Daniel faz pull do repo do Gustavo no Desktop). O notebook corp será **limpo de tudo ligado a projetos pessoais, VS Code e harness**; recomendação do Tech Lead: só depois de o PC pessoal estar testado.
+
 ### Conferência de custo da S18 dispensada (2026-11-20)
 - **Decisão:** pular a conferência de 1% contra o Dashboard IA; o custo vale daqui em diante, pelos eventos do `hx`.
 - **Porquê:** poucas sprints do financeiro rodaram com este harness e o 6thGear foi cancelado; a diferença vem dos dados antigos.

@@ -194,6 +194,7 @@ Uma linha por arquivo: caminho e propósito. Mantido pelo hook `post-edit`.
 - `docs/experiments/S16-protocolo.md` — S16 — Protocolo: harness leve × atual e custo do Dashboard
 - `docs/experiments/S16-resultado.md` — S16 — Resultado: harness leve × atual e o custo do Dashboard
 - `docs/experiments/S16/notas-juiz.md` — Notas do juiz cego (Reviewer Sonnet, 0–25)
+- `docs/migracao-desktop.md` — Migração para o Claude Desktop (PC pessoal)
 - `docs/omniroute.md` — OmniRoute: modelos grátis
 - `docs/prd/0001-harness-dash-extensao.md` — PRD 0001 — Harness Dash: painel do harness dentro do VS Code
 - `docs/roadmap.md` — Roadmap do Main Harness
@@ -231,6 +232,7 @@ Uma linha por arquivo: caminho e propósito. Mantido pelo hook `post-edit`.
 - `docs/sprints/S17-plan.md` — S17 — Backlog inteiro: ajustes com tarefa, clones identificados, plano validado
 - `docs/sprints/S18-conferencia.md` — S18: conferência do estado contra o Dashboard IA
 - `docs/sprints/S18-plan.md` — S18 — Harness Dash: estado por projeto e extensão do VS Code
+- `docs/sprints/S19-plan.md` — S19 — Preparar a mudança para o Claude Desktop no PC pessoal
 - `eslint.config.js` — ESLint flat config
 - `extension/.vscodeignore` — o que sai do .vsix do Harness Dash (src, tsconfig, esbuild, mapas)
 - `extension/README.md` — Harness Dash: o que é, instalação do .vsix, como abrir, de onde lê e como atualizar
