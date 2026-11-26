@@ -172,7 +172,6 @@ Uma linha por arquivo: caminho e propósito. Mantido pelo hook `post-edit`.
 - `docs/avaliacao-observabilidade.md` — Avaliação de observabilidade: Main Harness e Dashboard IA
 - `docs/backlog.md` — Backlog do Main Harness
 - `docs/contracts/events.md` — Contrato de eventos: Main Harness e Dashboard IA
-- `docs/contracts/state.md` — Contrato do `state.json` (v1)
 - `docs/decisoes-daniel.md` — Decisões de Daniel
 - `docs/experiments/S12-protocolo.md` — S12 — Protocolo do experimento de modelos
 - `docs/experiments/S12-resultado.md` — S12 — Resultado do experimento: Opus × Sonnet × Gemini
@@ -185,6 +184,8 @@ Uma linha por arquivo: caminho e propósito. Mantido pelo hook `post-edit`.
 - `docs/experiments/S16-protocolo.md` — S16 — Protocolo: harness leve × atual e custo do Dashboard
 - `docs/experiments/S16-resultado.md` — S16 — Resultado: harness leve × atual e o custo do Dashboard
 - `docs/experiments/S16/notas-juiz.md` — Notas do juiz cego (Reviewer Sonnet, 0–25)
+- `docs/instalacao-pc-pessoal.md` — Instalar o harness no PC pessoal (Claude Desktop)
+- `docs/limpeza-notebook-corp.md` — Roteiro de limpeza do notebook corp
 - `docs/migracao-desktop.md` — Migração para o Claude Desktop (PC pessoal)
 - `docs/omniroute.md` — OmniRoute: modelos grátis
 - `docs/prd/0001-harness-dash-extensao.md` — PRD 0001 — Harness Dash: painel do harness dentro do VS Code
