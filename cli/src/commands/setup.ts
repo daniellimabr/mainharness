@@ -4,11 +4,13 @@ import * as fs from "node:fs";
 import * as os from "node:os";
 import * as path from "node:path";
 import { parseArgs } from "../core/args";
-import { ensureConfig, loadConfig } from "../core/config";
-import { readJson, readText, writeJson } from "../core/fsx";
+import { type Config, DEFAULT_CONFIG, loadConfig } from "../core/config";
+import { isInside, readJson, readText, samePathKey, writeJson } from "../core/fsx";
 import { claudeHome, home, pluginRoot } from "../core/paths";
 import { addToUserPath, shimDir, writeShims } from "../core/shim";
 import { runTool } from "../core/proc";
+import { versionTags } from "../release/git";
+import { moveStable } from "./release";
 
 const PLACEHOLDER = "C:/harness-stable";
 
@@ -70,10 +72,11 @@ function loadSettings(): Settings | null {
 }
 
 /** Removes the statusLine older hx setups wrote (hx statusline is gone); any other one stays. */
-export function removeStatusLine(): boolean {
+export function removeStatusLine(write = true): boolean {
   const st = loadSettings();
   const hx = JSON.stringify({ type: "command", command: "hx statusline" });
   if (!st || JSON.stringify(st.statusLine) !== hx) return false;
+  if (!write) return true;
   delete st.statusLine;
   writeJson(settingsFile(), st);
   return true;
@@ -99,7 +102,81 @@ export function ensureAutoModeRule(): "added" | "present" | "invalid" {
   return "added";
 }
 
+/** The config.json object ({} when empty); null when missing. Throws when it is not a JSON object. */
+function readConfigFile(): Partial<Config> | null {
+  const file = home.config();
+  if (!fs.existsSync(file)) return null;
+  const text = fs.readFileSync(file, "utf8");
+  try {
+    // Not the trimmed text: trim() drops a BOM, which loadConfig rejects (it would use defaults).
+    const v: unknown = JSON.parse(text.trim() ? text : "{}");
+    if (isObj(v)) return v as Partial<Config>;
+  } catch {
+    // reported below
+  }
+  throw new Error(
+    `config.json com JSON inválido em ${file}: nada foi gravado. Corrija o arquivo (UTF-8 sem BOM) ou apague-o e rode hx setup de novo.`,
+  );
+}
+
+const isHarness = (dir: string) =>
+  readJson<{ name?: string }>(path.join(dir, ".claude-plugin", "plugin.json"), {})?.name ===
+  "main-harness";
+
+/** A real clone of the harness: not the stable copy, the plugin cache, a worktree or a loose folder. */
+function isHarnessRepo(root: string): boolean {
+  // Both stable dirs: the effective one (env wins) and the configured one.
+  const configured = readJson<Partial<Config>>(home.config(), {}).stableDir;
+  const excluded = [loadConfig().stableDir, configured ?? DEFAULT_CONFIG.stableDir, claudeHome()];
+  if (excluded.some((d) => isInside(root, d)) || !isHarness(root)) return false;
+  return !!fs.statSync(path.join(root, ".git"), { throwIfNoEntry: false })?.isDirectory();
+}
+
+/** True when the stable dir is missing or empty; throws when it holds something else. */
+function stableIsFree(dir: string): boolean {
+  const st = fs.statSync(dir, { throwIfNoEntry: false });
+  if (!st || (st.isDirectory() && !fs.readdirSync(dir).length)) return true;
+  if (isHarness(dir)) return false;
+  throw new Error(
+    `${dir} já tem conteúdo e não é a cópia estável do harness: nada foi alterado. Esvazie a pasta ou mude stableDir em ${home.config()} e rode hx setup de novo.`,
+  );
+}
+
+/** Creates config.json, or points it at the clone hx is running from; other keys are kept. */
+function syncConfig(dry: boolean, news: (msg: string) => void): void {
+  const file = readConfigFile();
+  const next: Partial<Config> = { ...(file ?? DEFAULT_CONFIG) };
+  const root = pluginRoot();
+  let moved = false;
+  if (isHarnessRepo(root)) {
+    const paths = { harnessRepo: root, inboxDir: path.join(root, "inbox") };
+    for (const k of ["harnessRepo", "inboxDir"] as const) {
+      if (samePathKey(next[k] ?? DEFAULT_CONFIG[k]) === samePathKey(paths[k])) continue;
+      next[k] = paths[k];
+      moved = true;
+    }
+  }
+  if (file && !moved) return;
+  if (!dry) writeJson(home.config(), next);
+  if (!file) news(`config.json criado em ${home.config()}`);
+  if (moved) news(`config.json: harnessRepo e inboxDir apontam para ${root}`);
+}
+
 export function run(args: string[]): number {
+  try {
+    return setup(args);
+  } catch (err) {
+    const e = err as NodeJS.ErrnoException;
+    console.error(
+      e.code && e.path
+        ? `Não consegui acessar ${e.path} (${e.code}): confira as permissões da pasta e rode hx setup de novo.`
+        : e.message,
+    );
+    return 1;
+  }
+}
+
+function setup(args: string[]): number {
   const dry = parseArgs(args).flags["dry-run"] === true;
   const say = (msg: string) => console.log(dry ? `[simulação] ${msg}` : msg);
   let changed = false;
@@ -108,18 +185,40 @@ export function run(args: string[]): number {
     say(msg);
   };
 
+  // Both checks come before any write: a bad config or a foreign stable dir leaves all as is.
+  readConfigFile();
+  const free = stableIsFree(loadConfig().stableDir);
+
   // Repeated runs only talk about what changed (B091).
-  if (!fs.existsSync(home.config())) {
-    if (!dry) ensureConfig();
-    news(`config.json criado em ${home.config()}`);
-  }
+  syncConfig(dry, news);
   const cfg = loadConfig();
 
-  const known = readJson<Record<string, unknown>>(
+  type Market = { installLocation?: string };
+  const market = readJson<Record<string, Market>>(
     path.join(claudeHome(), "plugins", "known_marketplaces.json"),
     {},
-  );
-  if (!known["harness-stable"]) {
+  )["harness-stable"];
+  const at = market?.installLocation;
+  const elsewhere = !!at && samePathKey(at) !== samePathKey(cfg.stableDir);
+  if (elsewhere)
+    news(
+      `Aviso: o marketplace harness-stable aponta para ${at}, não para ${cfg.stableDir}. Para trocar: claude plugin marketplace remove harness-stable, depois hx setup.`,
+    );
+
+  // New machine: create the configured stable copy. An env override is temporary, so never created.
+  if ((!market || (at && !elsewhere)) && !process.env.HARNESS_STABLE_DIR && free) {
+    const repo = path.resolve(cfg.harnessRepo);
+    const here = isHarnessRepo(pluginRoot()) ? pluginRoot() : repo;
+    const tag = versionTags(here).pop();
+    if (!tag)
+      throw new Error(
+        `A pasta estável ${cfg.stableDir} não existe e não achei tag de versão em ${here}. No clone do harness rode git fetch --tags e depois node cli/dist/hx.js setup.`,
+      );
+    news(`criando a pasta estável ${cfg.stableDir} na versão ${tag}`);
+    if (!dry) moveStable(here, path.resolve(cfg.stableDir), tag);
+  }
+
+  if (!market) {
     news(`registrando marketplace: claude plugin marketplace add "${cfg.stableDir}"`);
     if (!dry) {
       const r = runTool("claude", ["plugin", "marketplace", "add", cfg.stableDir], 60000);
@@ -137,21 +236,21 @@ export function run(args: string[]): number {
     .readFileSync(path.join(src, "SKILL.md"), "utf8")
     .split(PLACEHOLDER)
     .join(stable);
-  if (dry || readText(path.join(dest, "SKILL.md")) !== skillText)
+  if (readText(path.join(dest, "SKILL.md")) !== skillText)
     news(`instalando a skill /attach em ${dest}`);
   if (!dry) {
     fs.rmSync(dest, { recursive: true, force: true });
     fs.cpSync(src, dest, { recursive: true });
     fs.writeFileSync(path.join(dest, "SKILL.md"), skillText);
   }
-  if (dry || readText(path.join(claudeHome(), ".ponytail-band"))?.trim() !== "off")
+  if (readText(path.join(claudeHome(), ".ponytail-band"))?.trim() !== "off")
     news("desligando o painel do ponytail (Task board: /plugin → ponytail → Task board)");
   if (!dry) disablePonytailBand();
-  if (dry || autoModeRuleState() !== "current")
+  if (autoModeRuleState() !== "current")
     news("liberando o hx no modo auto (autoMode.allow em ~/.claude/settings.json)");
   if (!dry && ensureAutoModeRule() === "invalid")
     console.error("settings.json do Claude ilegível: corrija o JSON e rode hx setup de novo");
-  if (!dry && removeStatusLine()) news("status line antiga do hx (hx statusline) removida");
+  if (removeStatusLine(!dry)) news("status line antiga do hx (hx statusline) removida");
   const shimFile = path.join(shimDir(), "hx.cmd");
   const shimBefore = readText(shimFile);
   let restart = false;
@@ -163,13 +262,14 @@ export function run(args: string[]): number {
       news("pasta do hx adicionada ao PATH do usuário");
     } else if (r && r !== "present") console.error(r);
   }
-  if (dry || readText(shimFile) !== shimBefore)
+  const target = path.join(path.resolve(cfg.stableDir), "cli", "dist", "hx.js");
+  if (dry ? !shimBefore?.includes(target) : readText(shimFile) !== shimBefore)
     news(`instalando o comando hx em ${shimDir()} (aponta para ${cfg.stableDir})`);
   say(
     !changed
       ? "Tudo em ordem, nada a mudar."
       : restart
-        ? "Pronto. Feche e abra o VS Code para o hx valer nos chats novos; depois rode hx doctor."
+        ? "Pronto. Feche e abra o VS Code ou o Claude Desktop para o hx valer nos chats novos; depois rode hx doctor."
         : "Pronto. Rode hx doctor para conferir.",
   );
   return 0;
